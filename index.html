@@ -235,7 +235,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 
 /* ── MOBILE RESPONSIVE ───────────────────────────────────────────────────────*/
 @media (max-width: 680px) {
-  body { font-size: 15px; }
+  body { font-size: 15px; height: auto; overflow: auto; }
+  .app { height: auto; min-height: 100vh; }
+  .body-layout { overflow: visible; height: auto; }
+  .pages { overflow: visible; height: auto; }
+  .page { height: auto; overflow: visible; }
+  .page.active { display: block; }
 
   /* Topbar: logo left, icons right, no tab labels */
   .topbar { padding: 0 12px; gap: 6px; }
@@ -344,7 +349,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
       <!-- HOME -->
       <div class="page active home-page" id="page-home">
         <div class="mobile-search-wrap" id="mobileSearchWrap">
-          <input type="text" placeholder="Search recipes..." id="mobileSearchInput" oninput="filterRecipes(this.value)"/>
+          <input type="text" placeholder="Search recipes..." id="mobileSearchInput" oninput="filterRecipes(this.value)" enterkeyhint="search" onkeydown="if(event.key==='Enter')this.blur()"/>
         </div>
         <div class="group-tabs" id="groupTabs">
           <button class="group-tab active" onclick="setGrouping('all',this)">All</button>

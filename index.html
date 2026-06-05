@@ -65,6 +65,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 .page::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:4px}
 
 /* HOME PAGE */
+.mobile-search-wrap{display:none}
 .home-page{padding:1.5rem 2rem}
 .group-tabs{display:flex;gap:6px;margin-bottom:1.5rem;flex-wrap:wrap}
 .group-tab{font-size:12px;font-weight:500;padding:5px 12px;border-radius:20px;border:1px solid var(--border2);background:var(--white);color:var(--text2);cursor:pointer;transition:all .15s}
@@ -250,6 +251,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 
   /* Home page */
   .home-page { padding: 12px; }
+  .mobile-search-wrap { display: block; margin-bottom: 10px; }
+  .mobile-search-wrap input { width: 100%; background: var(--bg2); border: 1px solid transparent; border-radius: var(--radius-sm); padding: 9px 12px; font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--text); outline: none; transition: border-color .15s; }
+  .mobile-search-wrap input:focus { border-color: var(--accent); background: var(--white); }
+  .mobile-search-wrap input::placeholder { color: var(--text3); }
   .group-tabs { gap: 4px; margin-bottom: 12px; }
   .group-tab { font-size: 12px; padding: 5px 10px; }
   .recipe-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
@@ -338,6 +343,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 
       <!-- HOME -->
       <div class="page active home-page" id="page-home">
+        <div class="mobile-search-wrap" id="mobileSearchWrap">
+          <input type="text" placeholder="Search recipes..." id="mobileSearchInput" oninput="filterRecipes(this.value)"/>
+        </div>
         <div class="group-tabs" id="groupTabs">
           <button class="group-tab active" onclick="setGrouping('all',this)">All</button>
           <button class="group-tab" onclick="setGrouping('category',this)">Category</button>
@@ -655,7 +663,12 @@ function renderSidebar(recipes){
 
 function filterRecipes(q){
   const lq=q.toLowerCase();
-  renderSidebar(allRecipes.filter(r=>r.name.toLowerCase().includes(lq)||(r.categories||[]).some(c=>c.toLowerCase().includes(lq))||(r.collections||[]).some(c=>c.toLowerCase().includes(lq))));
+  const filtered=allRecipes.filter(r=>r.name.toLowerCase().includes(lq)||(r.categories||[]).some(c=>c.toLowerCase().includes(lq))||(r.collections||[]).some(c=>c.toLowerCase().includes(lq)));
+  renderSidebar(filtered);
+  // Sync the other search input
+  const other = q === (document.getElementById('mobileSearchInput')?.value||'') ? document.getElementById('searchInput') : document.getElementById('mobileSearchInput');
+  if(other && other.value !== q) other.value = q;
+  renderHome(filtered);
 }
 
 // ── HOME / GROUPING ──────────────────────────────────────────────────────────
@@ -666,37 +679,38 @@ function setGrouping(g, btn){
   renderHome();
 }
 
-function renderHome(){
+function renderHome(recipes){
+  if(recipes===undefined) recipes=allRecipes;
   const grid=document.getElementById('homeGrid');
   let groups={};
   if(currentGrouping==='all'){
-    groups={'All Recipes':allRecipes};
+    groups={'All Recipes':recipes};
   } else if(currentGrouping==='category'){
-    allRecipes.forEach(r=>{
+    recipes.forEach(r=>{
       const cats=(r.categories||[]);
       if(!cats.length){(groups['Uncategorized']=groups['Uncategorized']||[]).push(r);}
       else cats.forEach(c=>{(groups[c]=groups[c]||[]).push(r);});
     });
   } else if(currentGrouping==='collection'){
-    allRecipes.forEach(r=>{
+    recipes.forEach(r=>{
       const cols=(r.collections||[]);
       if(!cols.length){(groups['No Collection']=groups['No Collection']||[]).push(r);}
       else cols.forEach(c=>{(groups[c]=groups[c]||[]).push(r);});
     });
   } else if(currentGrouping==='course'){
-    allRecipes.forEach(r=>{
+    recipes.forEach(r=>{
       const cs=(r.courses||[]);
       if(!cs.length){(groups['Uncategorized']=groups['Uncategorized']||[]).push(r);}
       else cs.forEach(c=>{(groups[c]=groups[c]||[]).push(r);});
     });
   } else if(currentGrouping==='favorites'){
-    const favs=allRecipes.filter(r=>r.is_favorite);
+    const favs=recipes.filter(r=>r.is_favorite);
     groups={Favorites:favs.length?favs:[]};
   } else if(currentGrouping==='recent'){
     const viewedIds = getRecentlyViewed();
-    const viewedRecipes = viewedIds.map(id=>allRecipes.find(r=>r.id===id)).filter(Boolean);
+    const viewedRecipes = viewedIds.map(id=>recipes.find(r=>r.id===id)).filter(Boolean);
     const viewedSet = new Set(viewedIds);
-    const rest = [...allRecipes].filter(r=>!viewedSet.has(r.id))
+    const rest = [...recipes].filter(r=>!viewedSet.has(r.id))
       .sort((a,b)=>new Date(b.created_at||b.updated_at||0)-new Date(a.created_at||a.updated_at||0)).slice(0,20);
     groups={'Recently Viewed':viewedRecipes,'Recently Added':rest};
   }

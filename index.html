@@ -350,7 +350,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
       <!-- HOME -->
       <div class="page active home-page" id="page-home">
         <div class="mobile-search-wrap" id="mobileSearchWrap">
-          <input type="text" placeholder="Search recipes..." id="mobileSearchInput" oninput="filterRecipes(this.value)" enterkeyhint="search" onkeydown="if(event.key==='Enter')this.blur()"/>
+          <div style="position:relative;display:flex;align-items:center">
+            <input type="text" placeholder="Search recipes..." id="mobileSearchInput" oninput="filterRecipes(this.value);document.getElementById('mobileSearchClear').style.display=this.value?'flex':'none'" enterkeyhint="search" onkeydown="if(event.key==='Enter')this.blur()" style="padding-right:36px"/>
+            <button id="mobileSearchClear" onclick="document.getElementById('mobileSearchInput').value='';filterRecipes('');this.style.display='none'" style="display:none;position:absolute;right:8px;background:none;border:none;cursor:pointer;padding:4px;color:var(--text3);line-height:1;font-size:16px;align-items:center;justify-content:center">✕</button>
+          </div>
         </div>
         <div class="group-tabs" id="groupTabs">
           <button class="group-tab active" onclick="setGrouping('all',this)">All</button>

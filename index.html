@@ -235,10 +235,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 
 /* ── MOBILE RESPONSIVE ───────────────────────────────────────────────────────*/
 @media (max-width: 680px) {
-  body { font-size: 15px; height: auto; overflow: auto; }
-  .app { height: auto; min-height: 100vh; }
-  .body-layout { overflow: visible; height: auto; }
-  .pages { overflow: visible; height: auto; }
+  body { font-size: 15px; }
+  .topbar { position: sticky; top: 0; z-index: 10; }
+  .body-layout { height: auto; overflow: visible; }
+  .pages { height: auto; overflow: visible; }
   .page { height: auto; overflow: visible; }
   .page.active { display: block; }
 

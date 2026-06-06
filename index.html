@@ -452,7 +452,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
             <div style="display:flex;gap:8px;align-items:flex-end">
               <textarea id="aiPrompt" placeholder="e.g. A smoky chipotle salmon with mango salsa, easy enough for a weeknight..."
                 style="flex:1;min-height:70px;font-family:'DM Sans',sans-serif;font-size:16px;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--radius);border-bottom-right-radius:0;background:var(--bg);color:var(--text);resize:none;outline:none;transition:border-color .15s;line-height:1.5"
-                onfocus="this.style.borderColor='var(--accent)';setTimeout(()=>this.scrollIntoView({behavior:'smooth',block:'center'}),300)" onblur="this.style.borderColor='var(--border2)'"
+                onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"
                 onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIMessage()}"></textarea>
               <button class="btn primary" onclick="sendAIMessage()" style="height:70px;width:52px;padding:0;justify-content:center;border-bottom-left-radius:0" title="Send">
                 <svg viewBox="0 0 24 24" style="stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;width:18px;height:18px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
@@ -1587,9 +1587,7 @@ function toggleRecipeChat(){
   const body = document.getElementById('recipeChatBody');
   body.classList.toggle('open');
   if(body.classList.contains('open')){
-    const inp = document.getElementById('recipeChatInput');
-    inp?.focus();
-    setTimeout(()=>inp?.scrollIntoView({behavior:'smooth', block:'center'}), 300);
+    document.getElementById('recipeChatInput')?.focus();
   }
 }
 
@@ -1904,21 +1902,29 @@ function getRecentlyViewed(){
   return JSON.parse(localStorage.getItem('recentRecipes')||'[]');
 }
 
-// ── VISUAL VIEWPORT (keyboard pushes fixed AI panel up) ───────────────────────
-if(window.visualViewport){
-  window.visualViewport.addEventListener('resize', ()=>{
-    const panel = document.getElementById('panel-ai');
-    if(panel && panel.classList.contains('ai-active')){
-      const offset = window.innerHeight - window.visualViewport.height;
-      panel.style.bottom = offset + 'px';
-    } else {
-      // On normal scrolling pages, scroll active input into view when keyboard opens
-      const active = document.activeElement;
-      if(active && (active.tagName==='TEXTAREA'||active.tagName==='INPUT')){
-        setTimeout(()=>active.scrollIntoView({behavior:'smooth', block:'center'}), 100);
+// ── VISUAL VIEWPORT (keyboard handling) ──────────────────────────────────────
+function handleViewportResize(){
+  if(!window.visualViewport) return;
+  const kbHeight = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
+  const panel = document.getElementById('panel-ai');
+  if(panel && panel.classList.contains('ai-active')){
+    // Shift fixed AI panel up by keyboard height
+    panel.style.bottom = Math.max(0, kbHeight) + 'px';
+  } else {
+    // On scrolling pages, push focused input above keyboard
+    const active = document.activeElement;
+    if(active && (active.tagName==='TEXTAREA'||active.tagName==='INPUT') && kbHeight > 0){
+      const rect = active.getBoundingClientRect();
+      const visibleBottom = window.visualViewport.height;
+      if(rect.bottom > visibleBottom - 10){
+        window.scrollBy({top: rect.bottom - visibleBottom + 24, behavior:'smooth'});
       }
     }
-  });
+  }
+}
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', handleViewportResize);
+  window.visualViewport.addEventListener('scroll', handleViewportResize);
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────

@@ -76,6 +76,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 .group-section{margin-bottom:2rem}
 .group-title{font-family:'Lora',serif;font-size:16px;font-weight:500;margin-bottom:1rem;color:var(--text2);display:flex;align-items:center;gap:8px}
 .group-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.group-title-btn{font-family:'Lora',serif;font-size:16px;font-weight:500;margin-bottom:1rem;color:var(--accent-dark);display:flex;align-items:center;gap:8px;background:none;border:none;padding:0;cursor:pointer;width:100%;text-align:left}
+.group-title-btn:hover .group-title-label{text-decoration:underline;text-decoration-color:var(--accent)}
+.group-title-btn::after{content:'';flex:1;height:1px;background:var(--border)}
+.group-title-btn .group-title-label{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.group-back-btn{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--accent);background:none;border:none;cursor:pointer;padding:0;margin-bottom:1.25rem}
+.group-back-btn:hover{text-decoration:underline}
 .recipe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
 .recipe-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all .15s}
 .recipe-card:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 4px 12px rgba(21,71,51,0.12)}
@@ -648,7 +654,7 @@ const CLAUDE_PROXY = SUPA_URL + '/functions/v1/claude-proxy';
 const IMAGE_SEARCH_FN = SUPA_URL + '/functions/v1/image-search';
 
 let allRecipes=[], currentId=null, editingId=null;
-let currentGrouping='all', lastURLText='', lastFileText='';
+let currentGrouping='all', drilldownGroup=null, lastURLText='', lastFileText='';
 
 // ── API HELPERS ──────────────────────────────────────────────────────────────
 async function supaFetch(path, method='GET', body=null, extraHeaders={}){
@@ -721,6 +727,7 @@ function filterRecipes(q){
 // ── HOME / GROUPING ──────────────────────────────────────────────────────────
 function setGrouping(g, btn){
   currentGrouping=g;
+  drilldownGroup=null;
   document.querySelectorAll('.group-tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   renderHome();
@@ -761,25 +768,59 @@ function renderHome(recipes){
     groups={'Recently Viewed':viewedRecipes,'Recently Added':recentlyAdded};
   }
 
+  // Grouped views support drilldown — show 2 most-recent per group with clickable header
+  const drillableGroupings = ['category','collection','course'];
+  const isDrillable = drillableGroupings.includes(currentGrouping);
+
+  // If drilling into a specific group, show only that group fully
+  if(isDrillable && drilldownGroup){
+    const drillRecipes = (groups[drilldownGroup]||[]).slice().sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
+    grid.innerHTML = `
+      <button class="group-back-btn" onclick="drilldownGroup=null;renderHome()">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round"><polyline points="15 18 9 12 15 6"/></svg>
+        All ${currentGrouping === 'category' ? 'categories' : currentGrouping === 'collection' ? 'collections' : 'courses'}
+      </button>
+      <div class="group-section">
+        <div class="group-title">${esc(drilldownGroup)} <span style="font-size:11px;font-weight:400;color:var(--text3)">${drillRecipes.length}</span></div>
+        <div class="recipe-grid">${drillRecipes.map(r=>recipeCardHTML(r)).join('')}</div>
+      </div>`;
+    return;
+  }
+
   const sortedKeys=Object.keys(groups).sort((a,b)=>a==='All Recipes'?-1:b==='All Recipes'?1:a.localeCompare(b));
   grid.innerHTML=sortedKeys.map(key=>{
-    const recipes=groups[key];
-    if(!recipes.length)return`<div class="group-section"><div class="group-title">${esc(key)}</div><p style="font-size:13px;color:var(--text3)">No recipes here yet.</p></div>`;
+    const allInGroup = groups[key];
+    if(!allInGroup.length)return`<div class="group-section"><div class="group-title">${esc(key)}</div><p style="font-size:13px;color:var(--text3)">No recipes here yet.</p></div>`;
+
+    // For drillable groupings, show only 2 most-recent with a clickable header
+    const preview = isDrillable
+      ? allInGroup.slice().sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0)).slice(0,2)
+      : allInGroup;
+
+    const titleHTML = isDrillable
+      ? `<button class="group-title-btn" onclick="drilldownGroup=${JSON.stringify(key)};renderHome();document.getElementById('page-home').scrollTop=0">
+           <span class="group-title-label">${esc(key)} <span style="font-size:12px;font-weight:400;color:var(--text3)">(${allInGroup.length})</span>
+           <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:var(--accent);fill:none;stroke-width:2.5;stroke-linecap:round;flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg></span>
+         </button>`
+      : `<div class="group-title">${esc(key)} <span style="font-size:11px;font-weight:400;color:var(--text3)">${allInGroup.length}</span></div>`;
+
     return`<div class="group-section">
-      <div class="group-title">${esc(key)} <span style="font-size:11px;font-weight:400;color:var(--text3)">${recipes.length}</span></div>
-      <div class="recipe-grid">${recipes.map(r=>{
-        const img=r.image_url?`<img class="recipe-card-img" src="${r.image_url}" alt="" loading="lazy">`:`<div class="recipe-card-img-placeholder">🍽</div>`;
-        const sub=(r.categories||[]).join(', ')||(r.collections||[])[0]||'';
-        return`<div class="recipe-card" onclick="loadDetail('${r.id}')">
-          ${img}
-          <div class="recipe-card-body">
-            <div class="recipe-card-name">${esc(r.name)}</div>
-            ${sub?`<div class="recipe-card-meta">${esc(sub)}</div>`:''}
-          </div>
-        </div>`;
-      }).join('')}</div>
+      ${titleHTML}
+      <div class="recipe-grid">${preview.map(r=>recipeCardHTML(r)).join('')}</div>
     </div>`;
   }).join('');
+}
+
+function recipeCardHTML(r){
+  const img=r.image_url?`<img class="recipe-card-img" src="${r.image_url}" alt="" loading="lazy">`:`<div class="recipe-card-img-placeholder">🍽</div>`;
+  const sub=(r.categories||[]).join(', ')||(r.collections||[])[0]||'';
+  return`<div class="recipe-card" onclick="loadDetail('${r.id}')">
+    ${img}
+    <div class="recipe-card-body">
+      <div class="recipe-card-name">${esc(r.name)}</div>
+      ${sub?`<div class="recipe-card-meta">${esc(sub)}</div>`:''}
+    </div>
+  </div>`;
 }
 
 // ── NAV ──────────────────────────────────────────────────────────────────────

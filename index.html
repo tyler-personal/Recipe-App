@@ -301,9 +301,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
   #panel-ai.ai-active { position: fixed; inset: 52px 0 0 0; z-index: 50; background: var(--bg); padding: 12px; display: flex !important; flex-direction: column; overflow: hidden; border: none; border-radius: 0; margin: 0; }
   #panel-ai.ai-active #aiThread { flex: 1; max-height: none !important; overflow-y: auto; }
   /* No thread yet — textarea fills all available space */
-  #panel-ai.ai-active:not(.ai-has-thread) #aiBottomControls { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-  #panel-ai.ai-active:not(.ai-has-thread) .ai-input-row { flex: 1; align-items: stretch; }
-  #panel-ai.ai-active:not(.ai-has-thread) #aiPrompt { flex: 1; max-height: none !important; }
+  #panel-ai.ai-active:not(.ai-has-thread) #aiBottomControls { flex: 1 !important; display: flex !important; flex-direction: column; min-height: 0; }
+  #panel-ai.ai-active:not(.ai-has-thread) .ai-input-row { flex: 1 !important; align-items: stretch !important; min-height: 0; }
+  #panel-ai.ai-active:not(.ai-has-thread) .ai-input-row > button { height: auto !important; align-self: stretch; }
+  #panel-ai.ai-active:not(.ai-has-thread) #aiPrompt { flex: 1 !important; max-height: none !important; height: auto !important; }
   #aiBottomControls #genImagePreview { max-width: 80px !important; max-height: 80px !important; width: auto; border-radius: var(--radius-sm); margin-bottom: 6px; }
 
   /* Import page */
@@ -589,7 +590,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 </div>
 
 </div><!-- /app -->
-<div id="aiBackdrop" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:49"></div>
+<div id="aiBackdrop" style="display:none;position:fixed;inset:52px 0 0 0;background:var(--bg);z-index:49"></div>
 
 <!-- EDIT MODAL -->
 <div class="overlay" id="modal">

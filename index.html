@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tyler's Recipes</title>
+<title>Recipe Duck</title>
+<link rel="manifest" href="/manifest.json">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" sizes="192x192" href="/apple-touch-icon.png">
 <link rel="shortcut icon" href="/favicon.svg">
@@ -293,13 +294,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
   /* Import page */
   .import-page { padding: 12px; }
 
-  /* Modal — full screen on mobile */
+  /* Modal — sheet from bottom on mobile */
   .modal {
     width: 100% !important;
     max-width: 100% !important;
-    max-height: 100vh !important;
-    height: 100vh;
-    border-radius: 0 !important;
+    max-height: 92vh !important;
+    height: auto;
+    border-radius: 16px 16px 0 0 !important;
     margin: 0;
     overflow-y: auto;
   }
@@ -329,7 +330,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
         <path d="M 13 54 C 17 42 24 32 36 25 C 42 21 50 19 57 19 L 56 23 C 48 23 40 26 34 31 C 24 39 18 49 15 57 Z" fill="#0D2E21" opacity=".35"/>
         <text x="36" y="50" font-family="Georgia,serif" font-size="34" font-weight="900" fill="white" text-anchor="middle">R</text>
       </svg>
-      <span class="logo-text">Tyler's Recipes</span>
+      <span class="logo-text">Recipe Duck</span>
     </div>
     <div class="tabs">
       <button class="tab-btn active" id="tab-home" onclick="showTab('home')">
@@ -551,13 +552,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
     <h3>Settings</h3>
     <div style="background:var(--accent-light);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:1rem;font-size:13px;color:var(--accent-dark);line-height:1.6">
       <strong>API Key Security</strong><br>
-      Your Anthropic key is stored in your private Supabase database. Rotate it monthly for best security — generate a new one at <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a>, paste it below, and the old key becomes inactive.
+      Your key is stored securely server-side and is never sent to the browser. To rotate, generate a new one at <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a> and paste it below.
     </div>
     <label>Anthropic API Key</label>
-    <div style="display:flex;gap:8px;align-items:center">
-      <input type="password" id="settingsApiKey" placeholder="sk-ant-..." style="flex:1;font-family:monospace;font-size:12px"/>
-      <button class="btn sm" onclick="toggleKeyVisibility()" id="toggleKeyBtn">Show</button>
-    </div>
+    <input type="password" id="settingsApiKey" placeholder="Paste new key to update (sk-ant-...)" style="font-family:monospace;font-size:13px"/>
     <div style="margin-top:8px;font-size:11px;color:var(--text3)" id="keyStatus"></div>
     <label style="margin-top:1rem">Key expires / rotate by</label>
     <input type="date" id="settingsExpiry"/>
@@ -631,9 +629,8 @@ const SUPA_URL='https://qrnfkgsxygkaqmzzbdbi.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFybmZrZ3N4eWdrYXFtenpiZGJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NjMzNjEsImV4cCI6MjA5NjIzOTM2MX0.u2zVCsAXkbAS_cgMzCUrkf92lGFaeZ5hmhUAi5rSX6k';
 const IMG_BUCKET='recipe-images';
 
-// NOTE: You need your Anthropic API key to use AI features
-// Get yours at console.anthropic.com
-let ANTHROPIC_KEY = ''; // loaded from Supabase settings
+const CLAUDE_PROXY = SUPA_URL + '/functions/v1/claude-proxy';
+const IMAGE_SEARCH_FN = SUPA_URL + '/functions/v1/image-search';
 
 let allRecipes=[], currentId=null, editingId=null;
 let currentGrouping='all', lastURLText='', lastFileText='';
@@ -649,19 +646,14 @@ async function supaFetch(path, method='GET', body=null, extraHeaders={}){
 }
 
 async function claude(messages, system, model){
-  if(!ANTHROPIC_KEY||ANTHROPIC_KEY==='YOUR_ANTHROPIC_API_KEY') throw new Error('Please add your Anthropic API key to the ANTHROPIC_KEY variable in the HTML file. Get one at console.anthropic.com');
-  const r=await fetch('https://api.anthropic.com/v1/messages',{
+  const r=await fetch(CLAUDE_PROXY,{
     method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'x-api-key':ANTHROPIC_KEY,
-      'anthropic-version':'2023-06-01',
-      'anthropic-dangerous-direct-browser-access':'true'
-    },
-    body:JSON.stringify({model:model||document.getElementById('modelSelect')?.value||'claude-sonnet-4-6',max_tokens:1500,system:system||'',messages})
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:model||document.getElementById('modelSelect')?.value||'claude-sonnet-4-6',system:system||'',messages})
   });
   if(!r.ok){const e=await r.json();throw new Error(e.error?.message||'API error');}
   const d=await r.json();
+  if(d.error) throw new Error(d.error.message||'API error');
   return d.content?.[0]?.text||'';
 }
 
@@ -1709,7 +1701,6 @@ function openImgSearch(){
 async function runImageSearch(){
   const q = (document.getElementById('imgSearchInput')?.value || '').trim();
   if(!q) return;
-  if(!ANTHROPIC_KEY){ alert('Add your Anthropic API key in Settings first.'); return; }
   const grid = document.getElementById('imgGrid');
   const status = document.getElementById('imgGridStatus');
   grid.innerHTML = '';
@@ -1717,10 +1708,10 @@ async function runImageSearch(){
   status.textContent = 'Searching for photos of "' + q + '"...';
 
   try{
-    const resp = await fetch('https://qrnfkgsxygkaqmzzbdbi.supabase.co/functions/v1/image-search', {
+    const resp = await fetch(IMAGE_SEARCH_FN, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: q, apiKey: ANTHROPIC_KEY })
+      body: JSON.stringify({ query: q })
     });
     const data = await resp.json();
     const urls = data.urls || [];
@@ -1794,10 +1785,10 @@ function selectRecipeImage(url){
 
 async function fetchImageViaEdge(query){
   try{
-    const resp = await fetch('https://qrnfkgsxygkaqmzzbdbi.supabase.co/functions/v1/image-search',{
+    const resp = await fetch(IMAGE_SEARCH_FN,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({query, apiKey:ANTHROPIC_KEY})
+      body:JSON.stringify({query})
     });
     const data = await resp.json();
     return (data.urls||[])[0]||null;
@@ -1807,9 +1798,7 @@ async function fetchImageViaEdge(query){
 // ── SETTINGS & API KEY ────────────────────────────────────────────────────────
 async function loadApiKey(){
   try{
-    const data=await supaFetch('/rest/v1/settings?key=eq.anthropic_key&select=value');
-    if(data&&data[0]&&data[0].value) ANTHROPIC_KEY=data[0].value;
-    // Check expiry
+    // Only check expiry — the actual key is never sent to the browser
     const expData=await supaFetch('/rest/v1/settings?key=eq.key_expires_at&select=value');
     if(expData&&expData[0]&&expData[0].value){
       const exp=new Date(expData[0].value);
@@ -1821,8 +1810,7 @@ async function loadApiKey(){
         showKeyExpiredBanner('Your API key expires in '+daysLeft+' day'+(daysLeft===1?'':'s')+'. Rotate it soon in Settings ⚙️');
       }
     }
-    if(!ANTHROPIC_KEY) showKeyExpiredBanner('Add your Anthropic API key in Settings ⚙️ to enable AI features.');
-  }catch(e){ console.log('Could not load API key',e); }
+  }catch(e){ console.log('Could not load settings',e); }
 }
 
 function showKeyExpiredBanner(msg){
@@ -1838,20 +1826,12 @@ function showKeyExpiredBanner(msg){
 }
 
 function showSettings(){
-  // Load current values into form
-  supaFetch('/rest/v1/settings?select=key,value').then(rows=>{
-    const map={};rows.forEach(r=>map[r.key]=r.value);
-    const keyEl=document.getElementById('settingsApiKey');
-    keyEl.value=map['anthropic_key']||'';
-    keyEl.type='password';
-    document.getElementById('toggleKeyBtn').textContent='Show';
-    const expiry=map['key_expires_at']||'';
+  // Only load non-secret settings (key_expires_at is readable; anthropic_key is blocked by RLS)
+  supaFetch('/rest/v1/settings?key=eq.key_expires_at&select=value').then(rows=>{
+    const expiry=rows[0]?.value||'';
     document.getElementById('settingsExpiry').value=expiry?expiry.split('T')[0]:'';
-    // Show status
-    const status=document.getElementById('keyStatus');
-    if(map['anthropic_key']) status.textContent='✓ Key is set';
-    else status.textContent='No key saved yet';
-    // Expiry warning
+    document.getElementById('settingsApiKey').value='';
+    document.getElementById('keyStatus').textContent='Enter a new key above to replace the current one';
     const warn=document.getElementById('expiryWarning');
     if(expiry){
       const daysLeft=Math.ceil((new Date(expiry)-new Date())/(1000*60*60*24));
@@ -1864,23 +1844,18 @@ function showSettings(){
 
 function closeSettings(){ document.getElementById('settingsModal').classList.remove('open'); }
 
-function toggleKeyVisibility(){
-  const inp=document.getElementById('settingsApiKey');
-  const btn=document.getElementById('toggleKeyBtn');
-  if(inp.type==='password'){ inp.type='text'; btn.textContent='Hide'; }
-  else { inp.type='password'; btn.textContent='Show'; }
-}
 
 async function saveSettings(){
   const key=document.getElementById('settingsApiKey').value.trim();
   const expiry=document.getElementById('settingsExpiry').value;
-  if(!key){ alert('Please enter an API key.'); return; }
   try{
-    await fetch(SUPA_URL+'/rest/v1/settings?key=eq.anthropic_key',{
-      method:'PATCH',
-      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
-      body:JSON.stringify({value:key,updated_at:new Date().toISOString()})
-    });
+    if(key){
+      await fetch(SUPA_URL+'/rest/v1/settings?key=eq.anthropic_key',{
+        method:'PATCH',
+        headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:JSON.stringify({value:key,updated_at:new Date().toISOString()})
+      });
+    }
     if(expiry){
       await fetch(SUPA_URL+'/rest/v1/settings?key=eq.key_expires_at',{
         method:'PATCH',
@@ -1888,9 +1863,7 @@ async function saveSettings(){
         body:JSON.stringify({value:expiry,updated_at:new Date().toISOString()})
       });
     }
-    ANTHROPIC_KEY=key;
-    document.getElementById('keyStatus').textContent='✓ Key saved successfully';
-    // Remove any warning banner
+    document.getElementById('keyStatus').textContent='✓ Saved';
     document.getElementById('keyBanner')?.remove();
     setTimeout(closeSettings, 800);
   }catch(e){ alert('Save failed: '+e.message); }

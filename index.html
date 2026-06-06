@@ -427,7 +427,19 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
             <div id="aiThread" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:10px;max-height:420px;overflow-y:auto;flex-direction:column;gap:10px"></div>
             <!-- Bottom controls — always visible at bottom when ai-active -->
             <div id="aiBottomControls" style="flex-shrink:0">
-            <img id="genImagePreview" style="display:none;width:100%;max-width:320px;border-radius:var(--radius);margin-bottom:10px;border:1px solid var(--border)" alt="">
+            <div id="aiImgRow" style="display:none;align-items:center;gap:10px;margin-bottom:8px">
+              <div style="position:relative;display:inline-block">
+                <img id="genImagePreview" style="width:72px;height:72px;object-fit:cover;border-radius:var(--radius-sm);border:1px solid var(--border);display:block" alt="">
+                <button onclick="clearAIImage()" style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:var(--text);color:white;border:none;cursor:pointer;font-size:11px;line-height:1;display:flex;align-items:center;justify-content:center">✕</button>
+              </div>
+              <label style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--text2)">
+                <div style="width:44px;height:44px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg2);display:flex;align-items:center;justify-content:center">
+                  <svg style="width:20px;height:20px;stroke:var(--accent);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </div>
+                Swap
+                <input type="file" accept="image/*" style="display:none" onchange="swapAIImage(this)">
+              </label>
+            </div>
             <button id="aiSaveBtn" onclick="saveGeneratedRecipe()" style="display:none;margin-bottom:8px;width:100%" class="save-btn">
               <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
               Save to My Recipes
@@ -976,11 +988,31 @@ function resetAIChat(){
   thread.style.display = 'none';
   document.getElementById('aiPrompt').value = '';
   document.getElementById('aiPrompt').placeholder = 'e.g. A smoky chipotle salmon with mango salsa, easy enough for a weeknight...';
-  document.getElementById('genImagePreview').style.display = 'none';
+  document.getElementById('aiImgRow').style.display = 'none';
+  document.getElementById('genImagePreview').src = '';
   document.getElementById('aiSaveBtn').style.display = 'none';
   document.getElementById('aiResetBtn').style.display = 'none';
   document.getElementById('aiStatus').textContent = '';
   document.getElementById('panel-ai').classList.remove('ai-active');
+}
+
+function clearAIImage(){
+  lastGeneratedImgUrl = '';
+  document.getElementById('genImagePreview').src = '';
+  document.getElementById('aiImgRow').style.display = 'none';
+}
+
+async function swapAIImage(inp){
+  const file = inp.files[0];
+  if(!file) return;
+  try{
+    const blob = await file.arrayBuffer().then(b=>new Blob([b],{type:file.type}));
+    const fname = `ai_swap_${Date.now()}.jpg`;
+    const url = await uploadImage(fname, blob);
+    lastGeneratedImgUrl = url;
+    document.getElementById('genImagePreview').src = url;
+    document.getElementById('aiImgRow').style.display = 'flex';
+  }catch(e){ alert('Upload failed: '+e.message); }
 }
 
 function addAIThreadMsg(role, html){
@@ -1058,7 +1090,7 @@ For simple conversational replies (questions, clarifications), just respond natu
           lastGeneratedImgUrl = imgUrl;
           const prev = document.getElementById('genImagePreview');
           prev.src = imgUrl;
-          prev.style.display = 'block';
+          document.getElementById('aiImgRow').style.display = 'flex';
         }
         status.textContent = '';
       }

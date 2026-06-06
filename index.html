@@ -1898,6 +1898,17 @@ function getRecentlyViewed(){
   return JSON.parse(localStorage.getItem('recentRecipes')||'[]');
 }
 
+// ── VISUAL VIEWPORT (keyboard pushes fixed AI panel up) ───────────────────────
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', ()=>{
+    const panel = document.getElementById('panel-ai');
+    if(panel && panel.classList.contains('ai-active')){
+      const offset = window.innerHeight - window.visualViewport.height;
+      panel.style.bottom = offset + 'px';
+    }
+  });
+}
+
 // ── INIT ──────────────────────────────────────────────────────────────────────
 loadApiKey();
 loadRecipes();

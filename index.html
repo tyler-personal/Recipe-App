@@ -1583,7 +1583,9 @@ function toggleRecipeChat(){
   const body = document.getElementById('recipeChatBody');
   body.classList.toggle('open');
   if(body.classList.contains('open')){
-    document.getElementById('recipeChatInput')?.focus();
+    const inp = document.getElementById('recipeChatInput');
+    inp?.focus();
+    setTimeout(()=>inp?.scrollIntoView({behavior:'smooth', block:'center'}), 300);
   }
 }
 
@@ -1905,6 +1907,12 @@ if(window.visualViewport){
     if(panel && panel.classList.contains('ai-active')){
       const offset = window.innerHeight - window.visualViewport.height;
       panel.style.bottom = offset + 'px';
+    } else {
+      // On normal scrolling pages, scroll active input into view when keyboard opens
+      const active = document.activeElement;
+      if(active && (active.tagName==='TEXTAREA'||active.tagName==='INPUT')){
+        setTimeout(()=>active.scrollIntoView({behavior:'smooth', block:'center'}), 100);
+      }
     }
   });
 }

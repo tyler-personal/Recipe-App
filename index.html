@@ -425,6 +425,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
             </div>
             <!-- Conversation thread -->
             <div id="aiThread" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:10px;max-height:420px;overflow-y:auto;flex-direction:column;gap:10px"></div>
+            <!-- Bottom controls — always visible at bottom when ai-active -->
+            <div id="aiBottomControls" style="flex-shrink:0">
             <img id="genImagePreview" style="display:none;width:100%;max-width:320px;border-radius:var(--radius);margin-bottom:10px;border:1px solid var(--border)" alt="">
             <!-- Input row -->
             <div style="display:flex;gap:8px;align-items:flex-end">
@@ -444,6 +446,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
               <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
               Save to My Recipes
             </button>
+            </div><!-- /aiBottomControls -->
           </div>
 
           <!-- URL PANEL -->

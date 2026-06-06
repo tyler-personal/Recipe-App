@@ -597,6 +597,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 
 </div><!-- /app -->
 <div id="aiBackdrop" style="display:none;position:fixed;inset:52px 0 0 0;background:var(--bg);z-index:49"></div>
+<div id="aiMobileWrapper" style="display:none;position:fixed;top:52px;left:0;right:0;bottom:0;z-index:100;overflow:hidden;background:#FAFAF8;box-sizing:border-box"></div>
 
 <!-- EDIT MODAL -->
 <div class="overlay" id="modal">
@@ -2061,7 +2062,7 @@ function handleViewportResize(){
   const kbHeight = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
   const panel = document.getElementById('panel-ai');
   if(panel && panel.classList.contains('ai-active') && window.innerWidth<=680){
-    panel.style.bottom = Math.max(0, kbHeight) + 'px';
+    document.getElementById('aiMobileWrapper').style.bottom = Math.max(0, kbHeight) + 'px';
     // Keep thread scrolled to bottom after resize
     const thread = document.getElementById('aiThread');
     if(thread) thread.scrollTop = thread.scrollHeight;
@@ -2095,24 +2096,28 @@ function unlockBodyScroll(){ document.body.classList.remove('ai-panel-open'); }
 function attachAIPanel(){
   if(window.innerWidth>680) return;
   const panel=document.getElementById('panel-ai');
-  // Move to body so position:fixed escapes overflow:hidden ancestors
-  if(panel.parentNode!==document.body){
+  const wrapper=document.getElementById('aiMobileWrapper');
+  // Move panel into the fixed wrapper (wrapper is always a direct body child)
+  if(panel.parentNode!==wrapper){
     const ph=document.createElement('div');
     ph.id='panel-ai-placeholder';
     panel.parentNode.insertBefore(ph,panel);
-    document.body.appendChild(panel);
+    wrapper.appendChild(panel);
   }
-  // Set fixed positioning via inline style (more reliable than CSS class on iOS)
-  panel.style.cssText='position:fixed;top:52px;left:0;right:0;bottom:0;z-index:50;background:#FAFAF8;padding:12px;display:flex;flex-direction:column;overflow:hidden;overscroll-behavior:none;border:none;border-radius:0;margin:0;box-sizing:border-box';
+  // Style the panel to fill the wrapper
+  panel.style.cssText='display:flex;flex-direction:column;height:100%;overflow:hidden;padding:12px;box-sizing:border-box';
+  // Show the wrapper
+  wrapper.style.display='block';
 }
 function detachAIPanel(){
   const panel=document.getElementById('panel-ai');
+  const wrapper=document.getElementById('aiMobileWrapper');
   const ph=document.getElementById('panel-ai-placeholder');
   if(!ph) return;
-  // Restore inline style and move back
   panel.style.cssText='';
   ph.parentNode.insertBefore(panel,ph);
   ph.remove();
+  wrapper.style.display='none';
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────

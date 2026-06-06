@@ -818,7 +818,10 @@ function renderHome(recipes){
 function openDrilldown(btn){
   drilldownGroup = btn.dataset.group;
   renderHome();
-  document.getElementById('page-home').scrollTop = 0;
+  requestAnimationFrame(() => {
+    document.getElementById('page-home').scrollTop = 0;
+    window.scrollTo(0, 0);
+  });
 }
 
 function recipeCardHTML(r){

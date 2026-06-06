@@ -285,6 +285,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
   .method-panel { padding: 12px; }
   #aiThread { max-height: 220px !important; }
   #aiPrompt { font-size: 16px !important; min-height: 52px !important; }
+  #panel-ai.ai-active #aiThread { max-height: calc(100svh - 240px) !important; }
+  #panel-ai.ai-active .model-row { display: none; }
 
   /* Import page */
   .import-page { padding: 12px; }
@@ -974,11 +976,13 @@ function resetAIChat(){
   document.getElementById('aiSaveBtn').style.display = 'none';
   document.getElementById('aiResetBtn').style.display = 'none';
   document.getElementById('aiStatus').textContent = '';
+  document.getElementById('panel-ai').classList.remove('ai-active');
 }
 
 function addAIThreadMsg(role, html){
   const thread = document.getElementById('aiThread');
   thread.style.display = 'flex';
+  document.getElementById('panel-ai').classList.add('ai-active');
   const div = document.createElement('div');
   div.style.cssText = role === 'user'
     ? 'align-self:flex-end;background:var(--accent);color:white;padding:8px 12px;border-radius:12px 12px 2px 12px;max-width:85%;font-size:13px;line-height:1.6'

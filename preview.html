@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oregon Ducks Theme Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:#f5f5f5;padding:24px;color:#1C1A17}
+h2{font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:#888;margin-bottom:12px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px}
+.card{background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)}
+.card-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;padding:10px 16px;border-bottom:1px solid #eee;color:#888}
+
+/* ── OLD ── */
+.old{--accent:#C4522A;--accent-light:#FAF0EB;--accent-dark:#8C3518;--border:rgba(28,26,23,0.1);--bg2:#F3F2EF;--text2:#6B6760;--text3:#9B9893}
+/* ── NEW ── */
+.new{--accent:#154733;--accent-light:#E8F0EC;--accent-dark:#0D2E21;--yellow:#FEE123;--border:rgba(28,26,23,0.1);--bg2:#F3F2EF;--text2:#6B6760;--text3:#9B9893}
+
+.theme-block{padding:16px}
+
+/* Topbar */
+.topbar{display:flex;align-items:center;padding:0 14px;height:48px;background:white;border-bottom:1px solid var(--border);gap:10px;border-radius:8px;margin-bottom:12px}
+.logo-dot-old{width:8px;height:8px;border-radius:50%;background:var(--accent);margin-right:4px}
+.logo-dot-new{width:8px;height:8px;border-radius:50%;background:#FEE123;margin-right:4px}
+.logo-text{font-family:'Lora',serif;font-size:15px;font-weight:500;margin-right:auto}
+.tab{font-size:12px;font-weight:500;padding:5px 12px;border-radius:6px;border:none;cursor:pointer}
+.tab.active-old{background:var(--accent-light);color:var(--accent)}
+.tab.active-new{background:var(--accent-light);color:var(--accent)}
+.tab.plain{background:transparent;color:var(--text2,#6B6760)}
+
+/* Buttons */
+.btns{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.btn{font-size:12px;font-weight:500;padding:7px 14px;border-radius:6px;border:1px solid var(--border);background:white;cursor:pointer}
+.btn.primary{background:var(--accent);color:white;border-color:var(--accent)}
+.btn.danger{color:#A32D2D;border-color:rgba(163,45,45,0.3)}
+
+/* Recipe card */
+.recipe-card{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:white;width:140px}
+.recipe-card-img{height:80px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:28px}
+.recipe-card-body{padding:8px 10px}
+.recipe-card-name{font-size:12px;font-weight:500}
+.recipe-card-meta{font-size:10px;color:var(--text3)}
+
+/* Tag */
+.tag{font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;background:var(--accent-light);color:var(--accent);display:inline-block;margin-right:4px}
+
+/* Search */
+.search{width:100%;background:var(--bg2);border:2px solid var(--accent);border-radius:6px;padding:8px 10px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none}
+
+/* Save btn */
+.save-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;padding:8px 16px;background:var(--accent);color:white;border:none;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+/* Favicon previews */
+.favicons{display:flex;gap:20px;align-items:flex-end;margin-bottom:32px}
+.favicon-wrap{text-align:center}
+.favicon-wrap span{display:block;font-size:11px;color:#888;margin-top:6px}
+</style>
+</head>
+<body>
+
+<h2 style="margin-bottom:20px;font-size:16px;color:#333;text-transform:none;letter-spacing:0">🦆 Oregon Ducks Theme Preview</h2>
+
+<!-- FAVICON -->
+<h2>Favicon</h2>
+<div class="favicons">
+  <div class="favicon-wrap">
+    <!-- Current -->
+    <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <rect width="64" height="64" rx="14" fill="#C4522A"/>
+      <text x="32" y="44" font-family="Georgia,serif" font-size="38" font-weight="700" fill="white" text-anchor="middle">R</text>
+    </svg>
+    <span>Current</span>
+  </div>
+  <div class="favicon-wrap">
+    <!-- New: Oregon style -->
+    <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <rect width="64" height="64" rx="14" fill="#154733"/>
+      <!-- Yellow wing streak -->
+      <path d="M8 18 Q32 10 58 20 L54 28 Q30 18 10 26 Z" fill="#FEE123"/>
+      <!-- White R -->
+      <text x="32" y="47" font-family="Georgia,serif" font-size="36" font-weight="700" fill="white" text-anchor="middle">R</text>
+    </svg>
+    <span>New (Oregon style)</span>
+  </div>
+  <div class="favicon-wrap">
+    <!-- Alt: cleaner -->
+    <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <rect width="64" height="64" rx="14" fill="#154733"/>
+      <!-- Yellow bottom bar -->
+      <rect x="0" y="50" width="64" height="14" rx="0" fill="#FEE123"/>
+      <rect x="0" y="50" width="64" height="14" rx="0" fill="#FEE123"/>
+      <path d="M0 50 h64 v8 q-32 6-64 0 Z" fill="#FEE123"/>
+      <!-- White R -->
+      <text x="32" y="46" font-family="Georgia,serif" font-size="36" font-weight="700" fill="white" text-anchor="middle">R</text>
+    </svg>
+    <span>Alt (green + yellow base)</span>
+  </div>
+  <div class="favicon-wrap">
+    <!-- Alt 2: circle -->
+    <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <rect width="64" height="64" rx="14" fill="#154733"/>
+      <!-- Yellow dot top right -->
+      <circle cx="50" cy="14" r="8" fill="#FEE123"/>
+      <!-- White R -->
+      <text x="30" y="47" font-family="Georgia,serif" font-size="36" font-weight="700" fill="white" text-anchor="middle">R</text>
+    </svg>
+    <span>Alt (yellow dot)</span>
+  </div>
+</div>
+
+<!-- SIDE BY SIDE -->
+<h2>UI Components</h2>
+<div class="row">
+
+  <!-- OLD -->
+  <div class="card old">
+    <div class="card-label">Current (Rust)</div>
+    <div class="theme-block">
+      <!-- Topbar -->
+      <div class="topbar">
+        <div class="logo-dot-old"></div>
+        <span class="logo-text">Tyler's Recipes</span>
+        <button class="tab active-old">Home</button>
+        <button class="tab plain">New</button>
+      </div>
+      <!-- Buttons -->
+      <div class="btns">
+        <button class="btn primary">Save Recipe</button>
+        <button class="btn">Edit</button>
+        <button class="btn danger">Delete</button>
+      </div>
+      <!-- Tags -->
+      <div style="margin-bottom:12px">
+        <span class="tag">Chicken</span>
+        <span class="tag">Smoker</span>
+      </div>
+      <!-- Search -->
+      <input class="search" placeholder="Search recipes..." readonly style="margin-bottom:12px">
+      <!-- Recipe card -->
+      <div style="display:flex;gap:10px">
+        <div class="recipe-card">
+          <div class="recipe-card-img">🍗</div>
+          <div class="recipe-card-body">
+            <div class="recipe-card-name">Smoked Chicken</div>
+            <div class="recipe-card-meta">Smoker · Chicken</div>
+          </div>
+        </div>
+        <div class="recipe-card">
+          <div class="recipe-card-img">🥩</div>
+          <div class="recipe-card-body">
+            <div class="recipe-card-name">Brisket</div>
+            <div class="recipe-card-meta">BBQ</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEW -->
+  <div class="card new">
+    <div class="card-label">New (Oregon Ducks)</div>
+    <div class="theme-block">
+      <!-- Topbar -->
+      <div class="topbar">
+        <div class="logo-dot-new"></div>
+        <span class="logo-text">Tyler's Recipes</span>
+        <button class="tab active-new">Home</button>
+        <button class="tab plain">New</button>
+      </div>
+      <!-- Buttons -->
+      <div class="btns">
+        <button class="btn primary">Save Recipe</button>
+        <button class="btn">Edit</button>
+        <button class="btn danger">Delete</button>
+      </div>
+      <!-- Tags -->
+      <div style="margin-bottom:12px">
+        <span class="tag">Chicken</span>
+        <span class="tag">Smoker</span>
+      </div>
+      <!-- Search -->
+      <input class="search" placeholder="Search recipes..." readonly style="margin-bottom:12px">
+      <!-- Recipe card -->
+      <div style="display:flex;gap:10px">
+        <div class="recipe-card">
+          <div class="recipe-card-img">🍗</div>
+          <div class="recipe-card-body">
+            <div class="recipe-card-name">Smoked Chicken</div>
+            <div class="recipe-card-meta">Smoker · Chicken</div>
+          </div>
+        </div>
+        <div class="recipe-card">
+          <div class="recipe-card-img">🥩</div>
+          <div class="recipe-card-body">
+            <div class="recipe-card-name">Brisket</div>
+            <div class="recipe-card-meta">BBQ</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

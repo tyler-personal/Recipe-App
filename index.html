@@ -251,7 +251,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 /* ── MOBILE RESPONSIVE ───────────────────────────────────────────────────────*/
 @media (max-width: 680px) {
   body { font-size: 15px; height: auto; overflow-x: hidden; overflow-y: auto; }
-  body.ai-panel-open { overflow: hidden !important; }
+  body.ai-panel-open { touch-action: none; }
   .app { height: auto; min-height: 100vh; }
   .topbar { position: sticky; top: 0; z-index: 10; }
   .body-layout { height: auto; overflow: hidden; }
@@ -299,7 +299,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
   .method-panel { padding: 12px; }
   #aiThread { max-height: 220px !important; }
   #aiPrompt { font-size: 16px !important; min-height: 52px !important; }
-  #panel-ai.ai-active { position: fixed; inset: 52px 0 0 0; z-index: 50; background: var(--bg); padding: 12px; display: flex !important; flex-direction: column; overflow: hidden; overscroll-behavior: none; border: none; border-radius: 0; margin: 0; }
   #panel-ai.ai-active #aiThread { flex: 1; min-height: 0; max-height: none !important; overflow-y: auto; }
   #panel-ai.ai-active .model-row { display: none; }
   /* No thread yet — textarea fills all available space */
@@ -2061,7 +2060,7 @@ function handleViewportResize(){
   if(!window.visualViewport) return;
   const kbHeight = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
   const panel = document.getElementById('panel-ai');
-  if(panel && panel.classList.contains('ai-active')){
+  if(panel && panel.classList.contains('ai-active') && window.innerWidth<=680){
     panel.style.bottom = Math.max(0, kbHeight) + 'px';
     // Keep thread scrolled to bottom after resize
     const thread = document.getElementById('aiThread');
@@ -2096,16 +2095,22 @@ function unlockBodyScroll(){ document.body.classList.remove('ai-panel-open'); }
 function attachAIPanel(){
   if(window.innerWidth>680) return;
   const panel=document.getElementById('panel-ai');
-  if(panel.parentNode===document.body) return;
-  const ph=document.createElement('div');
-  ph.id='panel-ai-placeholder';
-  panel.parentNode.insertBefore(ph,panel);
-  document.body.appendChild(panel);
+  // Move to body so position:fixed escapes overflow:hidden ancestors
+  if(panel.parentNode!==document.body){
+    const ph=document.createElement('div');
+    ph.id='panel-ai-placeholder';
+    panel.parentNode.insertBefore(ph,panel);
+    document.body.appendChild(panel);
+  }
+  // Set fixed positioning via inline style (more reliable than CSS class on iOS)
+  panel.style.cssText='position:fixed;top:52px;left:0;right:0;bottom:0;z-index:50;background:#FAFAF8;padding:12px;display:flex;flex-direction:column;overflow:hidden;overscroll-behavior:none;border:none;border-radius:0;margin:0;box-sizing:border-box';
 }
 function detachAIPanel(){
   const panel=document.getElementById('panel-ai');
   const ph=document.getElementById('panel-ai-placeholder');
   if(!ph) return;
+  // Restore inline style and move back
+  panel.style.cssText='';
   ph.parentNode.insertBefore(panel,ph);
   ph.remove();
 }

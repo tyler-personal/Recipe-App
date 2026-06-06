@@ -251,6 +251,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 /* ── MOBILE RESPONSIVE ───────────────────────────────────────────────────────*/
 @media (max-width: 680px) {
   body { font-size: 15px; height: auto; overflow-x: hidden; overflow-y: auto; }
+  body.ai-panel-open { overflow: hidden !important; position: fixed; width: 100%; }
   .app { height: auto; min-height: 100vh; }
   .topbar { position: sticky; top: 0; z-index: 10; }
   .body-layout { height: auto; overflow: hidden; }
@@ -298,7 +299,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
   .method-panel { padding: 12px; }
   #aiThread { max-height: 220px !important; }
   #aiPrompt { font-size: 16px !important; min-height: 52px !important; }
-  #panel-ai.ai-active { position: fixed; inset: 52px 0 0 0; z-index: 50; background: var(--bg); padding: 12px; display: flex !important; flex-direction: column; overflow: hidden; border: none; border-radius: 0; margin: 0; }
+  #panel-ai.ai-active { position: fixed; inset: 52px 0 0 0; z-index: 50; background: var(--bg); padding: 12px; display: flex !important; flex-direction: column; overflow: hidden; overscroll-behavior: none; border: none; border-radius: 0; margin: 0; }
   #panel-ai.ai-active #aiThread { flex: 1; max-height: none !important; overflow-y: auto; }
   #panel-ai.ai-active .model-row { display: none; }
   /* No thread yet — textarea fills all available space */
@@ -480,8 +481,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
             <div class="ai-input-row" style="display:flex;gap:8px;align-items:flex-end">
               <textarea id="aiPrompt" placeholder="e.g. A smoky chipotle salmon with mango salsa, easy enough for a weeknight..."
                 style="flex:1;min-height:70px;font-family:'DM Sans',sans-serif;font-size:16px;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--radius);border-bottom-right-radius:0;background:var(--bg);color:var(--text);resize:none;outline:none;transition:border-color .15s;line-height:1.5"
-                onfocus="this.style.borderColor='var(--accent)';if(window.innerWidth<=680){document.getElementById('panel-ai').classList.add('ai-active');document.getElementById('aiBackdrop').style.display='block';}"
-                onblur="this.style.borderColor='var(--border2)';if(!document.getElementById('panel-ai').classList.contains('ai-has-thread')){setTimeout(()=>{document.getElementById('panel-ai').classList.remove('ai-active');document.getElementById('aiBackdrop').style.display='none';},200);}"
+                onfocus="this.style.borderColor='var(--accent)';if(window.innerWidth<=680){document.getElementById('panel-ai').classList.add('ai-active');document.getElementById('aiBackdrop').style.display='block';document.body.classList.add('ai-panel-open');}"
+                onblur="this.style.borderColor='var(--border2)';if(!document.getElementById('panel-ai').classList.contains('ai-has-thread')){setTimeout(()=>{document.getElementById('panel-ai').classList.remove('ai-active');document.getElementById('aiBackdrop').style.display='none';document.body.classList.remove('ai-panel-open');},200);}"
                 onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIMessage()}"></textarea>
               <button class="btn primary" onclick="sendAIMessage()" style="height:70px;width:52px;padding:0;justify-content:center;border-bottom-left-radius:0" title="Send">
                 <svg viewBox="0 0 24 24" style="stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;width:18px;height:18px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
@@ -853,6 +854,7 @@ function showTab(tab){
       panel.classList.remove('ai-active');
     }
     document.getElementById('aiBackdrop').style.display = 'none';
+    document.body.classList.remove('ai-panel-open');
   }
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -1085,6 +1087,7 @@ function resetAIChat(){
   document.getElementById('aiStatus').textContent = '';
   document.getElementById('panel-ai').classList.remove('ai-active','ai-has-thread');
   document.getElementById('aiBackdrop').style.display = 'none';
+  document.body.classList.remove('ai-panel-open');
 }
 
 function clearAIImage(){
@@ -1112,6 +1115,7 @@ function addAIThreadMsg(role, html){
   const panel = document.getElementById('panel-ai');
   panel.classList.add('ai-active','ai-has-thread');
   document.getElementById('aiBackdrop').style.display = 'block';
+  document.body.classList.add('ai-panel-open');
   const div = document.createElement('div');
   div.style.cssText = role === 'user'
     ? 'align-self:flex-end;background:var(--accent);color:white;padding:8px 12px;border-radius:12px 12px 2px 12px;max-width:85%;font-size:13px;line-height:1.6'

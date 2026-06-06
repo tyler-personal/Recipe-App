@@ -300,7 +300,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
   #aiThread { max-height: 220px !important; }
   #aiPrompt { font-size: 16px !important; min-height: 52px !important; }
   #panel-ai.ai-active { position: fixed; inset: 52px 0 0 0; z-index: 50; background: var(--bg); padding: 12px; display: flex !important; flex-direction: column; overflow: hidden; overscroll-behavior: none; border: none; border-radius: 0; margin: 0; }
-  #panel-ai.ai-active #aiThread { flex: 1; max-height: none !important; overflow-y: auto; }
+  #panel-ai.ai-active #aiThread { flex: 1; min-height: 0; max-height: none !important; overflow-y: auto; }
   #panel-ai.ai-active .model-row { display: none; }
   /* No thread yet — textarea fills all available space */
   #panel-ai.ai-active:not(.ai-has-thread) #aiBottomControls { flex: 1 !important; display: flex !important; flex-direction: column; min-height: 0; }
@@ -462,7 +462,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
             <!-- Conversation thread -->
             <div id="aiThread" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:10px;max-height:420px;overflow-y:auto;flex-direction:column;gap:10px"></div>
             <!-- Bottom controls — always visible at bottom when ai-active -->
-            <div id="aiBottomControls" style="flex-shrink:0">
+            <div id="aiBottomControls" style="flex-shrink:0;min-height:0">
             <div id="aiImgRow" style="display:none;align-items:center;gap:10px;margin-bottom:8px">
               <div style="position:relative;display:inline-block">
                 <img id="genImagePreview" style="width:72px;height:72px;object-fit:cover;border-radius:var(--radius-sm);border:1px solid var(--border);display:block" alt="">
@@ -2059,8 +2059,10 @@ function handleViewportResize(){
   const kbHeight = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
   const panel = document.getElementById('panel-ai');
   if(panel && panel.classList.contains('ai-active')){
-    // Shift fixed AI panel up by keyboard height
     panel.style.bottom = Math.max(0, kbHeight) + 'px';
+    // Keep thread scrolled to bottom after resize
+    const thread = document.getElementById('aiThread');
+    if(thread) thread.scrollTop = thread.scrollHeight;
   } else {
     // On scrolling pages, push focused input above keyboard
     const active = document.activeElement;

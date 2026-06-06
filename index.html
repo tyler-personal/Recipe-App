@@ -300,6 +300,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
   #aiPrompt { font-size: 16px !important; min-height: 52px !important; }
   #panel-ai.ai-active { position: fixed; inset: 52px 0 0 0; z-index: 50; background: var(--bg); padding: 12px; display: flex !important; flex-direction: column; overflow: hidden; border: none; border-radius: 0; margin: 0; }
   #panel-ai.ai-active #aiThread { flex: 1; max-height: none !important; overflow-y: auto; }
+  /* No thread yet — textarea fills all available space */
+  #panel-ai.ai-active:not(.ai-has-thread) #aiBottomControls { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  #panel-ai.ai-active:not(.ai-has-thread) .ai-input-row { flex: 1; align-items: stretch; }
+  #panel-ai.ai-active:not(.ai-has-thread) #aiPrompt { flex: 1; max-height: none !important; }
   #aiBottomControls #genImagePreview { max-width: 80px !important; max-height: 80px !important; width: auto; border-radius: var(--radius-sm); margin-bottom: 6px; }
 
   /* Import page */
@@ -471,10 +475,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
               Save to My Recipes
             </button>
             <!-- Input row -->
-            <div style="display:flex;gap:8px;align-items:flex-end">
+            <div class="ai-input-row" style="display:flex;gap:8px;align-items:flex-end">
               <textarea id="aiPrompt" placeholder="e.g. A smoky chipotle salmon with mango salsa, easy enough for a weeknight..."
                 style="flex:1;min-height:70px;font-family:'DM Sans',sans-serif;font-size:16px;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--radius);border-bottom-right-radius:0;background:var(--bg);color:var(--text);resize:none;outline:none;transition:border-color .15s;line-height:1.5"
-                onfocus="this.style.borderColor='var(--accent)';if(window.innerWidth<=680)document.getElementById('panel-ai').classList.add('ai-active')" onblur="this.style.borderColor='var(--border2)'"
+                onfocus="this.style.borderColor='var(--accent)';if(window.innerWidth<=680){document.getElementById('panel-ai').classList.add('ai-active');document.getElementById('aiBackdrop').style.display='block';}" onblur="this.style.borderColor='var(--border2)'"
                 onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIMessage()}"></textarea>
               <button class="btn primary" onclick="sendAIMessage()" style="height:70px;width:52px;padding:0;justify-content:center;border-bottom-left-radius:0" title="Send">
                 <svg viewBox="0 0 24 24" style="stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;width:18px;height:18px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
@@ -585,6 +589,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 </div>
 
 </div><!-- /app -->
+<div id="aiBackdrop" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:49"></div>
 
 <!-- EDIT MODAL -->
 <div class="overlay" id="modal">
@@ -1068,7 +1073,8 @@ function resetAIChat(){
   document.getElementById('aiSaveBtn').style.display = 'none';
   document.getElementById('aiResetBtn').style.display = 'none';
   document.getElementById('aiStatus').textContent = '';
-  document.getElementById('panel-ai').classList.remove('ai-active');
+  document.getElementById('panel-ai').classList.remove('ai-active','ai-has-thread');
+  document.getElementById('aiBackdrop').style.display = 'none';
 }
 
 function clearAIImage(){
@@ -1093,7 +1099,9 @@ async function swapAIImage(inp){
 function addAIThreadMsg(role, html){
   const thread = document.getElementById('aiThread');
   thread.style.display = 'flex';
-  document.getElementById('panel-ai').classList.add('ai-active');
+  const panel = document.getElementById('panel-ai');
+  panel.classList.add('ai-active','ai-has-thread');
+  document.getElementById('aiBackdrop').style.display = 'block';
   const div = document.createElement('div');
   div.style.cssText = role === 'user'
     ? 'align-self:flex-end;background:var(--accent);color:white;padding:8px 12px;border-radius:12px 12px 2px 12px;max-width:85%;font-size:13px;line-height:1.6'

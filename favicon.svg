@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="12" fill="#154733"/>
+  <path d="M 5 52 C 6 40 10 30 18 22 C 24 16 32 12 44 10 C 52 8 60 12 60 18 C 56 14 48 13 40 16 C 28 21 20 30 16 44 C 14 48 12 52 10 56 Z" fill="#FEE123"/>
+  <path d="M 9 54 C 12 42 18 32 28 24 C 34 19 42 16 50 15 L 48 19 C 40 20 32 24 26 30 C 18 38 14 48 11 57 Z" fill="#0D2E21" opacity=".35"/>
+  <path d="M 13 54 C 17 42 24 32 36 25 C 42 21 50 19 57 19 L 56 23 C 48 23 40 26 34 31 C 24 39 18 49 15 57 Z" fill="#0D2E21" opacity=".35"/>
+  <text x="36" y="50" font-family="Georgia,serif" font-size="34" font-weight="900" fill="white" text-anchor="middle">R</text>
+</svg>

@@ -235,12 +235,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 
 /* ── MOBILE RESPONSIVE ───────────────────────────────────────────────────────*/
 @media (max-width: 680px) {
-  body { font-size: 15px; height: auto; overflow-y: auto; }
+  body { font-size: 15px; height: auto; overflow-x: hidden; overflow-y: auto; }
   .app { height: auto; min-height: 100vh; }
   .topbar { position: sticky; top: 0; z-index: 10; }
-  .body-layout { height: auto; overflow: visible; }
-  .pages { height: auto; overflow: visible; }
-  .page { height: auto; overflow: visible; }
+  .body-layout { height: auto; overflow: hidden; }
+  .pages { height: auto; overflow: hidden; }
+  .page { height: auto; overflow-x: hidden; overflow-y: visible; }
   .page.active { display: block; }
 
   /* Topbar: logo left, icons right, no tab labels */

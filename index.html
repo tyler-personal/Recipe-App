@@ -304,8 +304,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
   #panel-ai.ai-active .model-row { display: none; }
   /* No thread yet — textarea fills all available space */
   #panel-ai.ai-active:not(.ai-has-thread) #aiBottomControls { flex: 1 !important; display: flex !important; flex-direction: column; min-height: 0; }
-  #panel-ai.ai-active:not(.ai-has-thread) .ai-input-row { flex: 1 !important; align-items: stretch !important; min-height: 0; }
-  #panel-ai.ai-active:not(.ai-has-thread) .ai-input-row > button { height: 52px !important; align-self: flex-end; }
+  #panel-ai.ai-active:not(.ai-has-thread) .ai-input-row { flex: 1 !important; min-height: 0; }
   #panel-ai.ai-active:not(.ai-has-thread) #aiPrompt { flex: 1 !important; max-height: none !important; height: auto !important; }
   #aiBottomControls #genImagePreview { max-width: 80px !important; max-height: 80px !important; width: auto; border-radius: var(--radius-sm); margin-bottom: 6px; }
 
@@ -446,6 +445,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 
           <!-- AI PANEL -->
           <div class="method-panel active" id="panel-ai">
+            <div id="aiPanelHeader" style="display:none;align-items:center;justify-content:space-between;margin-bottom:10px;flex-shrink:0">
+              <span style="font-family:'Lora',serif;font-size:16px;font-weight:500">AI Recipe Generator</span>
+              <button onclick="resetAIChat()" style="font-size:13px;color:var(--text2);background:none;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:5px 12px;cursor:pointer">✕ Close</button>
+            </div>
             <div class="model-row">
               <label style="text-transform:none;letter-spacing:0;font-size:13px;color:var(--text2)">Model:</label>
               <select class="model-select" id="modelSelect">
@@ -478,14 +481,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
               Save to My Recipes
             </button>
             <!-- Input row -->
-            <div class="ai-input-row" style="display:flex;gap:8px;align-items:flex-end">
+            <div class="ai-input-row" style="display:flex;position:relative">
               <textarea id="aiPrompt" placeholder="e.g. A smoky chipotle salmon with mango salsa, easy enough for a weeknight..."
-                style="flex:1;min-height:70px;font-family:'DM Sans',sans-serif;font-size:16px;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--radius);border-bottom-right-radius:0;background:var(--bg);color:var(--text);resize:none;outline:none;transition:border-color .15s;line-height:1.5"
-                onfocus="this.style.borderColor='var(--accent)';if(window.innerWidth<=680){document.getElementById('panel-ai').classList.add('ai-active');document.getElementById('aiBackdrop').style.display='block';document.body.classList.add('ai-panel-open');lockBodyScroll();}"
-                onblur="this.style.borderColor='var(--border2)';if(!document.getElementById('panel-ai').classList.contains('ai-has-thread')){setTimeout(()=>{document.getElementById('panel-ai').classList.remove('ai-active');document.getElementById('aiBackdrop').style.display='none';document.body.classList.remove('ai-panel-open');unlockBodyScroll();},200);}"
+                style="flex:1;min-height:70px;font-family:'DM Sans',sans-serif;font-size:16px;padding:9px 52px 9px 12px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);resize:none;outline:none;transition:border-color .15s;line-height:1.5"
+                onfocus="this.style.borderColor='var(--accent)';if(window.innerWidth<=680){document.getElementById('panel-ai').classList.add('ai-active');document.getElementById('aiBackdrop').style.display='block';document.getElementById('aiPanelHeader').style.display='flex';document.body.classList.add('ai-panel-open');lockBodyScroll();}"
+                onblur="this.style.borderColor='var(--border2)';if(!document.getElementById('panel-ai').classList.contains('ai-has-thread')){setTimeout(()=>{document.getElementById('panel-ai').classList.remove('ai-active');document.getElementById('aiBackdrop').style.display='none';document.getElementById('aiPanelHeader').style.display='none';document.body.classList.remove('ai-panel-open');unlockBodyScroll();},200);}"
                 onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIMessage()}"></textarea>
-              <button class="btn primary" onclick="sendAIMessage()" style="height:70px;width:52px;padding:0;justify-content:center;border-bottom-left-radius:0" title="Send">
-                <svg viewBox="0 0 24 24" style="stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;width:18px;height:18px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              <button class="btn primary" onclick="sendAIMessage()" title="Send"
+                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:36px;height:36px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);flex-shrink:0">
+                <svg viewBox="0 0 24 24" style="stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;width:16px;height:16px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
               </button>
             </div>
             <div style="display:flex;gap:6px;margin-top:10px;align-items:center;flex-wrap:wrap">
@@ -1087,6 +1091,7 @@ function resetAIChat(){
   document.getElementById('aiStatus').textContent = '';
   document.getElementById('panel-ai').classList.remove('ai-active','ai-has-thread');
   document.getElementById('aiBackdrop').style.display = 'none';
+  document.getElementById('aiPanelHeader').style.display = 'none';
   document.body.classList.remove('ai-panel-open');unlockBodyScroll();
 }
 
@@ -1115,6 +1120,7 @@ function addAIThreadMsg(role, html){
   const panel = document.getElementById('panel-ai');
   panel.classList.add('ai-active','ai-has-thread');
   document.getElementById('aiBackdrop').style.display = 'block';
+  document.getElementById('aiPanelHeader').style.display = 'flex';
   document.body.classList.add('ai-panel-open');lockBodyScroll();
   const div = document.createElement('div');
   div.style.cssText = role === 'user'
@@ -2073,16 +2079,14 @@ if(window.visualViewport){
 }
 
 // Prevent iOS rubber-band scroll behind the AI panel
-function _aiTouchBlock(e){
+// Single always-on listener — only blocks when panel is actually open
+document.addEventListener('touchmove', function(e){
+  if(!document.body.classList.contains('ai-panel-open')) return;
   if(e.target.closest('#aiThread')) return; // allow scroll inside thread
   e.preventDefault();
-}
-function lockBodyScroll(){
-  document.addEventListener('touchmove', _aiTouchBlock, {passive:false});
-}
-function unlockBodyScroll(){
-  document.removeEventListener('touchmove', _aiTouchBlock);
-}
+}, {passive:false});
+function lockBodyScroll(){ document.body.classList.add('ai-panel-open'); }
+function unlockBodyScroll(){ document.body.classList.remove('ai-panel-open'); }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 loadApiKey();

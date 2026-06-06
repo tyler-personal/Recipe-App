@@ -126,6 +126,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 .img-picker-loading{text-align:center;padding:1.5rem;font-size:13px;color:var(--text3);font-style:italic}
 .img-picker-wrap{margin-top:8px;background:var(--bg2);border-radius:var(--radius);padding:12px;border:1px solid var(--border)}
 .img-picker-wrap p{font-size:12px;color:var(--text2);margin-bottom:8px}
+
+/* AUTOCOMPLETE */
+.ac-wrap{position:relative}
+.ac-dropdown{position:absolute;top:100%;left:0;right:0;z-index:500;background:var(--white);border:1px solid var(--border2);border-radius:var(--radius-sm);box-shadow:0 4px 16px rgba(0,0,0,0.12);max-height:160px;overflow-y:auto;margin-top:2px}
+.ac-option{padding:8px 12px;font-size:13px;cursor:pointer;transition:background .1s}
+.ac-option:hover,.ac-option.focused{background:var(--accent-light);color:var(--accent)}
 /* FAVORITE BUTTON */
 .fav-btn{background:none;border:none;cursor:pointer;padding:4px;border-radius:50%;transition:transform .15s;display:flex;align-items:center;justify-content:center}
 .fav-btn:hover{transform:scale(1.2)}
@@ -305,6 +311,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
     overflow-y: auto;
   }
   .overlay { align-items: flex-end; }
+
+  /* Modal inputs — prevent iOS zoom (must be ≥16px) */
+  .modal input, .modal textarea, .modal select { font-size: 16px !important; }
 
   /* Recipe chat */
   .recipe-chat-msgs { max-height: 220px; }
@@ -578,8 +587,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
     <h3 id="modalTitle">New Recipe</h3>
     <label>Name *</label><input type="text" id="mName"/>
     <label>Category <span style="font-weight:400;text-transform:none;letter-spacing:0">(comma-separated)</span></label>
-    <input type="text" id="mCat" placeholder="e.g. Chicken, Pasta"/>
-    <label>Collection</label><input type="text" id="mColl" placeholder="e.g. Smoker, Blackstone, Slow Cooker"/>
+    <div class="ac-wrap">
+      <input type="text" id="mCat" placeholder="e.g. Chicken, Pasta"
+        oninput="showAcSuggestions(this,'categories')" onblur="setTimeout(closeAcSuggestions,150)" onkeydown="acKeyNav(event)"/>
+    </div>
+    <label>Collection</label>
+    <div class="ac-wrap">
+      <input type="text" id="mColl" placeholder="e.g. Smoker, Blackstone, Slow Cooker"
+        oninput="showAcSuggestions(this,'collections')" onblur="setTimeout(closeAcSuggestions,150)" onkeydown="acKeyNav(event)"/>
+    </div>
     <label>Yield / Servings</label><input type="text" id="mYield"/>
     <label>Prep time</label><input type="text" id="mPrep" placeholder="e.g. 15 min"/>
     <label>Cook time</label><input type="text" id="mCook" placeholder="e.g. 1 hr 30 min"/>
@@ -590,17 +606,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
     <img id="mImgPreview" class="img-preview" style="display:none" onerror="this.style.display='none'" alt="">
     <div class="img-options">
       <button class="img-option-btn" onclick="openImgSearch()">🔍 Search photos</button>
-      <button class="img-option-btn" onclick="document.getElementById('mImgFile').click()">📁 Upload photo</button>
+      <button class="img-option-btn" onclick="document.getElementById('mImgFile').click()">📷 Upload / Camera</button>
+      <input type="file" id="mImgFile" accept="image/*" style="display:none" onchange="handleModalImageUpload(this)">
       <button class="img-option-btn" onclick="clearModalImage()">✕ Remove</button>
     </div>
     <div id="imgPickerWrap" style="display:none;margin-top:10px">
-      <div style="display:flex;gap:6px;margin-bottom:10px">
+      <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
         <input type="text" id="imgSearchInput" placeholder="Search for an image..."
-          style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);outline:none;font-family:'DM Sans',sans-serif"
+          style="flex:1;min-width:120px;font-size:16px;padding:7px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);outline:none;font-family:'DM Sans',sans-serif"
           onkeydown="if(event.key==='Enter'){event.preventDefault();runImageSearch();}"
           onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
-        <button class="btn sm primary" onclick="runImageSearch()" style="white-space:nowrap">Search</button>
-        <button class="btn sm" onclick="openGoogleImages()" style="white-space:nowrap">Google Images ↗</button>
+        <button class="btn sm primary" onclick="runImageSearch()">Search</button>
+        <button class="btn sm" onclick="openGoogleImages()">Google Images ↗</button>
       </div>
       <div id="imgGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"></div>
       <p id="imgGridStatus" style="font-size:12px;color:var(--text3);text-align:center;padding:1rem;display:none"></p>
@@ -1189,6 +1206,76 @@ function prefillModal(data, imgUrl){
   const prev=document.getElementById('mImgPreview');
   if(imgUrl){prev.src=imgUrl;prev.style.display='block';}else{prev.style.display='none';}
   document.getElementById('modal').classList.add('open');
+}
+
+// ── AUTOCOMPLETE ─────────────────────────────────────────────────────────────
+let _acDropdown = null, _acInput = null;
+
+function getAcOptions(field) {
+  const vals = new Set();
+  allRecipes.forEach(r => {
+    (Array.isArray(r[field]) ? r[field] : []).forEach(v => { if(v) vals.add(v.trim()); });
+  });
+  return [...vals].sort((a, b) => a.localeCompare(b));
+}
+
+function showAcSuggestions(inputEl, field) {
+  closeAcSuggestions();
+  const raw = inputEl.value;
+  const lastComma = raw.lastIndexOf(',');
+  const token = (lastComma >= 0 ? raw.slice(lastComma + 1) : raw).trimStart().toLowerCase();
+  if (!token) return;
+
+  const already = raw.split(',').map(s => s.trim().toLowerCase());
+  const matches = getAcOptions(field).filter(v =>
+    v.toLowerCase().includes(token) && !already.slice(0, -1).includes(v.toLowerCase())
+  ).slice(0, 8);
+  if (!matches.length) return;
+
+  const dropdown = document.createElement('div');
+  dropdown.className = 'ac-dropdown';
+  matches.forEach(val => {
+    const opt = document.createElement('div');
+    opt.className = 'ac-option';
+    opt.textContent = val;
+    opt.onmousedown = e => {
+      e.preventDefault();
+      const prefix = lastComma >= 0 ? raw.slice(0, lastComma + 1) + ' ' : '';
+      inputEl.value = prefix + val + ', ';
+      closeAcSuggestions();
+      inputEl.focus();
+    };
+    dropdown.appendChild(opt);
+  });
+
+  _acInput = inputEl;
+  _acDropdown = dropdown;
+  inputEl.parentElement.appendChild(dropdown);
+}
+
+function closeAcSuggestions() {
+  if (_acDropdown) { _acDropdown.remove(); _acDropdown = null; _acInput = null; }
+}
+
+function acKeyNav(e) {
+  if (!_acDropdown) return;
+  const opts = [..._acDropdown.querySelectorAll('.ac-option')];
+  const focused = _acDropdown.querySelector('.focused');
+  const idx = opts.indexOf(focused);
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (focused) focused.classList.remove('focused');
+    opts[(idx + 1) % opts.length]?.classList.add('focused');
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (focused) focused.classList.remove('focused');
+    opts[(idx - 1 + opts.length) % opts.length]?.classList.add('focused');
+  } else if (e.key === 'Enter' && focused) {
+    e.preventDefault();
+    focused.onmousedown(e);
+  } else if (e.key === 'Escape') {
+    closeAcSuggestions();
+  }
 }
 
 function openNewModal(){

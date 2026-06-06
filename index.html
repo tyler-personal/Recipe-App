@@ -484,8 +484,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
             <div class="ai-input-row" style="display:flex;position:relative">
               <textarea id="aiPrompt" placeholder="e.g. A smoky chipotle salmon with mango salsa, easy enough for a weeknight..."
                 style="flex:1;min-height:70px;font-family:'DM Sans',sans-serif;font-size:16px;padding:9px 52px 9px 12px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);resize:none;outline:none;transition:border-color .15s;line-height:1.5"
-                onfocus="this.style.borderColor='var(--accent)';if(window.innerWidth<=680){document.getElementById('panel-ai').classList.add('ai-active');document.getElementById('aiBackdrop').style.display='block';document.getElementById('aiPanelHeader').style.display='flex';document.body.classList.add('ai-panel-open');lockBodyScroll();}"
-                onblur="this.style.borderColor='var(--border2)';if(!document.getElementById('panel-ai').classList.contains('ai-has-thread')){setTimeout(()=>{document.getElementById('panel-ai').classList.remove('ai-active');document.getElementById('aiBackdrop').style.display='none';document.getElementById('aiPanelHeader').style.display='none';document.body.classList.remove('ai-panel-open');unlockBodyScroll();},200);}"
+                onfocus="this.style.borderColor='var(--accent)';if(window.innerWidth<=680){attachAIPanel();document.getElementById('panel-ai').classList.add('ai-active');document.getElementById('aiBackdrop').style.display='block';document.getElementById('aiPanelHeader').style.display='flex';document.body.classList.add('ai-panel-open');lockBodyScroll();}"
+                onblur="this.style.borderColor='var(--border2)';if(!document.getElementById('panel-ai').classList.contains('ai-has-thread')){setTimeout(()=>{document.getElementById('panel-ai').classList.remove('ai-active');detachAIPanel();document.getElementById('aiBackdrop').style.display='none';document.getElementById('aiPanelHeader').style.display='none';document.body.classList.remove('ai-panel-open');unlockBodyScroll();},200);}"
                 onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIMessage()}"></textarea>
               <button class="btn primary" onclick="sendAIMessage()" title="Send"
                 style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:36px;height:36px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);flex-shrink:0">
@@ -856,6 +856,7 @@ function showTab(tab){
     const panel = document.getElementById('panel-ai');
     if(panel && !panel.classList.contains('ai-has-thread')){
       panel.classList.remove('ai-active');
+      detachAIPanel();
     }
     document.getElementById('aiBackdrop').style.display = 'none';
     document.body.classList.remove('ai-panel-open');unlockBodyScroll();
@@ -1090,6 +1091,7 @@ function resetAIChat(){
   document.getElementById('aiResetBtn').style.display = 'none';
   document.getElementById('aiStatus').textContent = '';
   document.getElementById('panel-ai').classList.remove('ai-active','ai-has-thread');
+  detachAIPanel();
   document.getElementById('aiBackdrop').style.display = 'none';
   document.getElementById('aiPanelHeader').style.display = 'none';
   document.body.classList.remove('ai-panel-open');unlockBodyScroll();
@@ -1119,6 +1121,7 @@ function addAIThreadMsg(role, html){
   thread.style.display = 'flex';
   const panel = document.getElementById('panel-ai');
   panel.classList.add('ai-active','ai-has-thread');
+  attachAIPanel();
   document.getElementById('aiBackdrop').style.display = 'block';
   document.getElementById('aiPanelHeader').style.display = 'flex';
   document.body.classList.add('ai-panel-open');lockBodyScroll();
@@ -2089,6 +2092,23 @@ document.addEventListener('touchmove', function(e){
 }, {passive:false});
 function lockBodyScroll(){ document.body.classList.add('ai-panel-open'); }
 function unlockBodyScroll(){ document.body.classList.remove('ai-panel-open'); }
+
+function attachAIPanel(){
+  if(window.innerWidth>680) return;
+  const panel=document.getElementById('panel-ai');
+  if(panel.parentNode===document.body) return;
+  const ph=document.createElement('div');
+  ph.id='panel-ai-placeholder';
+  panel.parentNode.insertBefore(ph,panel);
+  document.body.appendChild(panel);
+}
+function detachAIPanel(){
+  const panel=document.getElementById('panel-ai');
+  const ph=document.getElementById('panel-ai-placeholder');
+  if(!ph) return;
+  ph.parentNode.insertBefore(panel,ph);
+  ph.remove();
+}
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 loadApiKey();

@@ -784,7 +784,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
     <label style="display:block;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:4px">Email</label>
     <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email" style="width:100%;margin-bottom:12px" onkeydown="if(event.key==='Enter')handleLogin()">
     <label style="display:block;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:4px">Password</label>
-    <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" style="width:100%;margin-bottom:4px" onkeydown="if(event.key==='Enter')handleLogin()">
+    <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" style="width:100%;margin-bottom:12px" onkeydown="if(event.key==='Enter')handleLogin()">
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer;margin-bottom:4px;user-select:none" id="rememberMeRow">
+      <input type="checkbox" id="rememberMe" checked style="width:14px;height:14px;accent-color:var(--accent);cursor:pointer">
+      Keep me signed in for 30 days
+    </label>
     <div id="loginError" style="font-size:12px;min-height:18px;margin-bottom:12px"></div>
     <button class="btn primary" id="loginSubmitBtn" onclick="handleLogin()" style="width:100%;justify-content:center;padding:10px">Sign In</button>
     <div style="text-align:center;font-size:13px;margin-top:14px;color:var(--text2)">
@@ -2647,6 +2651,10 @@ async function initAuth(){
 async function onSignedIn(session){
   currentSession=session;
   currentUser=session.user;
+  // If user didn't check "remember me", sign out when tab closes
+  if(localStorage.getItem('rd_remember')==='0'){
+    window.addEventListener('beforeunload',()=>supabaseClient.auth.signOut(),{once:true});
+  }
   try{
     const rows=await supaFetch('/rest/v1/profiles?id=eq.'+currentUser.id+'&select=*');
     currentProfile=rows[0]||{id:currentUser.id,display_name:currentUser.email,is_admin:false};
@@ -2698,6 +2706,8 @@ async function handleLogin(){
       const displayName=[firstName,lastName].filter(Boolean).join(' ')||email.split('@')[0];
       result=await supabaseClient.auth.signUp({email,password,options:{data:{display_name:displayName,first_name:firstName,last_name:lastName}}});
     } else {
+      const remember=document.getElementById('rememberMe').checked;
+      localStorage.setItem('rd_remember',remember?'1':'0');
       result=await supabaseClient.auth.signInWithPassword({email,password});
     }
     if(result.error)throw result.error;
@@ -2722,6 +2732,7 @@ function toggleLoginMode(){
   document.getElementById('loginToggleText').textContent=isSignUp?'Already have an account?':"Don't have an account?";
   document.getElementById('loginToggleBtn').textContent=isSignUp?'Sign in':'Create one';
   document.getElementById('loginNameRow').style.display=isSignUp?'':'none';
+  document.getElementById('rememberMeRow').style.display=isSignUp?'none':'';
   document.getElementById('loginError').textContent='';
 }
 

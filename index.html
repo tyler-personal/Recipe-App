@@ -1881,6 +1881,7 @@ async function runImageSearch(){
     const data = await resp.json();
     const urls = data.urls || [];
 
+    if(data.error) { status.textContent = 'Error: ' + data.error; return; }
     if(!urls.length){
       status.textContent = 'No photos found. Try a different search term.';
       return;

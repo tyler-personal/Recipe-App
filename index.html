@@ -159,6 +159,38 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 .login-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:500;opacity:0;pointer-events:none;transition:opacity .2s}
 .login-overlay.open{opacity:1;pointer-events:all}
 .login-card{background:var(--white);border-radius:var(--radius);padding:2rem;max-width:380px;width:calc(100% - 2rem);box-shadow:0 8px 40px rgba(0,0,0,.18)}
+/* SWIPE */
+.swipe-page{display:flex;flex-direction:column;align-items:center;padding:2rem 1rem;min-height:100%;gap:0}
+.swipe-screen{display:none;flex-direction:column;align-items:center;width:100%;max-width:420px;gap:1.25rem}
+.swipe-screen.active{display:flex}
+.swipe-lobby-title{font-family:'Lora',serif;font-size:22px;font-weight:500;color:var(--text);text-align:center;margin-bottom:.5rem}
+.swipe-lobby-sub{font-size:13px;color:var(--text2);text-align:center;line-height:1.6}
+.swipe-divider{display:flex;align-items:center;gap:10px;width:100%;color:var(--text3);font-size:12px}
+.swipe-divider::before,.swipe-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.swipe-code-display{font-family:'Lora',serif;font-size:2.8rem;font-weight:600;letter-spacing:.18em;color:var(--accent);background:var(--accent-light);padding:1rem 2.5rem;border-radius:var(--radius);text-align:center;line-height:1}
+.swipe-participants{width:100%;background:var(--bg2);border-radius:var(--radius);padding:10px 14px;font-size:13px;min-height:44px}
+.swipe-participant{display:flex;align-items:center;gap:8px;padding:4px 0}
+.swipe-participant-avatar{width:24px;height:24px;border-radius:50%;background:var(--accent);color:white;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.card-stack-wrap{position:relative;width:100%;height:440px;flex-shrink:0}
+.swipe-card{position:absolute;inset:0;background:var(--white);border:1px solid var(--border);border-radius:16px;overflow:hidden;cursor:grab;user-select:none;touch-action:none;box-shadow:0 4px 20px rgba(0,0,0,.1);will-change:transform}
+.swipe-card:active{cursor:grabbing}
+.swipe-card-img{width:100%;height:280px;object-fit:cover;background:var(--bg3);display:block;pointer-events:none}
+.swipe-card-img-ph{width:100%;height:280px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:72px}
+.swipe-card-body{padding:14px 16px}
+.swipe-card-name{font-family:'Lora',serif;font-size:17px;font-weight:500;margin-bottom:3px;line-height:1.3}
+.swipe-card-meta{font-size:12px;color:var(--text3)}
+.swipe-card-like{position:absolute;top:20px;left:20px;font-family:'DM Sans',sans-serif;font-size:20px;font-weight:700;color:#2D6A3F;background:rgba(255,255,255,.9);padding:4px 12px;border-radius:6px;border:2px solid #2D6A3F;transform:rotate(-15deg);opacity:0;pointer-events:none;transition:opacity .1s}
+.swipe-card-nope{position:absolute;top:20px;right:20px;font-family:'DM Sans',sans-serif;font-size:20px;font-weight:700;color:#A32D2D;background:rgba(255,255,255,.9);padding:4px 12px;border-radius:6px;border:2px solid #A32D2D;transform:rotate(15deg);opacity:0;pointer-events:none;transition:opacity .1s}
+.swipe-btns{display:flex;gap:2rem;align-items:center;margin-top:.5rem}
+.swipe-btn{width:60px;height:60px;border-radius:50%;border:2px solid;cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--white);transition:all .15s;box-shadow:0 2px 8px rgba(0,0,0,.1);flex-shrink:0}
+.swipe-btn-nope{border-color:#e55;color:#e55}.swipe-btn-nope:hover{background:#e55;color:white}
+.swipe-btn-like{border-color:var(--accent);color:var(--accent)}.swipe-btn-like:hover{background:var(--accent);color:white}
+.swipe-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.swipe-progress{font-size:12px;color:var(--text3)}
+.match-toast{position:fixed;top:64px;left:50%;transform:translateX(-50%);background:var(--accent);color:white;padding:12px 20px;border-radius:var(--radius);display:flex;align-items:center;gap:12px;box-shadow:0 4px 24px rgba(0,0,0,.25);z-index:200;cursor:pointer;white-space:nowrap}
+.match-toast-img{width:40px;height:40px;border-radius:6px;object-fit:cover;flex-shrink:0}
+.match-results-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;width:100%}
+@keyframes matchPop{from{transform:translateX(-50%) scale(.8);opacity:0}to{transform:translateX(-50%) scale(1);opacity:1}}
 
 /* SERVING SCALER */
 .scaler-bar{display:flex;align-items:center;gap:12px;background:var(--bg2);padding:10px 14px;border-radius:var(--radius);margin-bottom:1rem}
@@ -376,6 +408,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
       <button class="tab-btn" id="tab-import" onclick="showTab('import')">
         <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>Import
       </button>
+      <button class="tab-btn" id="tab-swipe" onclick="showTab('swipe')">
+        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>Swipe
+      </button>
     </div>
     <button class="tab-btn" id="tab-settings" onclick="showSettings()" title="Settings" style="margin-left:4px;display:none">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -591,6 +626,78 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
           <input type="file" id="importFileInput" style="display:none" accept=".zip,.html,.json,.md,.txt" onchange="handleImportSelect(this)">
           <div class="progress-wrap" id="progressWrap"><div class="progress-bar" id="progressBar"></div></div>
           <div class="import-log" id="importLog"></div>
+        </div>
+      </div>
+
+      <!-- SWIPE -->
+      <div class="page" id="page-swipe">
+        <div class="swipe-page">
+
+          <!-- LOBBY -->
+          <div class="swipe-screen active" id="swipeScreen-lobby">
+            <div>
+              <p class="swipe-lobby-title">Recipe Roulette 🍽</p>
+              <p class="swipe-lobby-sub">Swipe through recipes together and find something everyone wants to make.</p>
+            </div>
+            <button class="btn primary" style="width:100%;justify-content:center;padding:11px" onclick="createSwipeSession()">
+              <svg viewBox="0 0 24 24" style="stroke:white;fill:none;stroke-width:2;width:15px;height:15px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Create New Session
+            </button>
+            <div class="swipe-divider">or join one</div>
+            <div style="display:flex;gap:8px;width:100%">
+              <input type="text" id="joinCodeInput" placeholder="Enter code (e.g. AB1234)" style="flex:1;text-transform:uppercase;letter-spacing:.08em" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')joinSwipeSession()">
+              <button class="btn" onclick="joinSwipeSession()">Join</button>
+            </div>
+            <div id="swipeLobbyError" style="font-size:12px;color:var(--error);display:none"></div>
+          </div>
+
+          <!-- WAITING ROOM -->
+          <div class="swipe-screen" id="swipeScreen-waiting">
+            <div style="text-align:center">
+              <p style="font-size:13px;color:var(--text2);margin-bottom:8px">Share this code with others</p>
+              <div class="swipe-code-display" id="swipeCodeDisplay">—</div>
+            </div>
+            <div style="width:100%">
+              <p style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:8px">In this session</p>
+              <div class="swipe-participants" id="swipeParticipantsList">—</div>
+            </div>
+            <div style="display:flex;gap:8px;width:100%">
+              <button class="btn" style="flex:1;justify-content:center" onclick="leaveSwipeSession()">Leave</button>
+              <button class="btn primary" style="flex:2;justify-content:center" id="startSwipeBtn" onclick="startSwiping()">Start Swiping →</button>
+            </div>
+            <p style="font-size:12px;color:var(--text3);text-align:center">Anyone can start when everyone has joined</p>
+          </div>
+
+          <!-- SWIPING -->
+          <div class="swipe-screen" id="swipeScreen-swiping">
+            <div class="card-stack-wrap" id="cardStack"></div>
+            <div class="swipe-btns">
+              <button class="swipe-btn swipe-btn-nope" onclick="triggerSwipe(false)" title="Nope">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <button class="swipe-btn swipe-btn-like" onclick="triggerSwipe(true)" title="Like">
+                <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="currentColor" stroke="none"/></svg>
+              </button>
+            </div>
+            <div class="swipe-progress" id="swipeProgress"></div>
+          </div>
+
+          <!-- RESULTS -->
+          <div class="swipe-screen" id="swipeScreen-results">
+            <div style="text-align:center">
+              <p style="font-family:'Lora',serif;font-size:22px;font-weight:500;margin-bottom:4px">You matched!</p>
+              <p style="font-size:13px;color:var(--text2)" id="swipeMatchSub">Everyone agreed on these recipes.</p>
+            </div>
+            <div class="match-results-grid" id="swipeMatchGrid"></div>
+            <div id="swipeNoMatches" style="display:none;text-align:center;color:var(--text3);font-size:13px;padding:2rem">
+              No matches this round. Try again with a fresh shuffle!
+            </div>
+            <div style="display:flex;gap:8px;width:100%">
+              <button class="btn" style="flex:1;justify-content:center" onclick="showSwipeScreen('lobby');resetSwipeState()">New Session</button>
+              <button class="btn primary" style="flex:1;justify-content:center" onclick="reshuffleSwipe()">Reshuffle →</button>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -938,7 +1045,7 @@ function showTab(tab){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
   document.getElementById('tab-'+tab)?.classList.add('active');
-  const noSidebar=(tab==='new'||tab==='import'||tab==='detail');
+  const noSidebar=(tab==='new'||tab==='import'||tab==='detail'||tab==='swipe');
   document.getElementById('bodyLayout').classList.toggle('no-sidebar',noSidebar);
   document.getElementById('sidebar').style.display = noSidebar ? 'none' : 'flex';
   const page = document.getElementById('page-'+tab);
@@ -2160,6 +2267,278 @@ function detachAIPanel(){
   ph.parentNode.insertBefore(panel,ph);
   ph.remove();
   wrapper.style.display='none';
+}
+
+// ── SWIPE ────────────────────────────────────────────────────────────────────
+let swipeSession=null, swipeParticipants=[], swipeQueue=[], swipeIndex=0, swipePoller=null, swipeMatches=[];
+
+function showSwipeScreen(name){
+  document.querySelectorAll('.swipe-screen').forEach(s=>s.classList.remove('active'));
+  const el=document.getElementById('swipeScreen-'+name);
+  if(el) el.classList.add('active');
+}
+
+function genSwipeCode(){
+  return Math.random().toString(36).substring(2,8).toUpperCase();
+}
+
+async function createSwipeSession(){
+  const code=genSwipeCode();
+  try{
+    const [session]=await supaFetch('/rest/v1/swipe_sessions','POST',{code,created_by:currentUser.id},{});
+    await supaFetch('/rest/v1/session_participants','POST',{session_id:session.id,user_id:currentUser.id},{'Prefer':'return=minimal'});
+    swipeSession=session;
+    document.getElementById('swipeCodeDisplay').textContent=code;
+    showSwipeScreen('waiting');
+    startParticipantPoller();
+  }catch(e){showSwipeLobbyError('Could not create session: '+e.message);}
+}
+
+async function joinSwipeSession(){
+  const code=document.getElementById('joinCodeInput').value.trim().toUpperCase();
+  if(!code){showSwipeLobbyError('Enter a session code.');return;}
+  try{
+    const sessions=await supaFetch('/rest/v1/swipe_sessions?code=eq.'+code+'&select=*');
+    if(!sessions.length){showSwipeLobbyError('Session not found. Check the code and try again.');return;}
+    swipeSession=sessions[0];
+    if(swipeSession.status==='complete'){showSwipeLobbyError('That session has already ended.');return;}
+    // Join (ignore duplicate if already in)
+    try{ await supaFetch('/rest/v1/session_participants','POST',{session_id:swipeSession.id,user_id:currentUser.id},{'Prefer':'return=minimal,resolution=ignore-duplicates'}); }catch{}
+    document.getElementById('swipeCodeDisplay').textContent=code;
+    document.getElementById('joinCodeInput').value='';
+    showSwipeScreen('waiting');
+    startParticipantPoller();
+  }catch(e){showSwipeLobbyError('Error: '+e.message);}
+}
+
+function showSwipeLobbyError(msg){
+  const el=document.getElementById('swipeLobbyError');
+  if(!el)return;
+  el.textContent=msg;el.style.display='block';
+  setTimeout(()=>{el.style.display='none';},4000);
+}
+
+function startParticipantPoller(){
+  clearInterval(swipePoller);
+  pollParticipants();
+  swipePoller=setInterval(pollParticipants,3000);
+}
+
+async function pollParticipants(){
+  if(!swipeSession) return;
+  try{
+    const rows=await supaFetch('/rest/v1/session_participants?session_id=eq.'+swipeSession.id+'&select=user_id,joined_at');
+    const ids=rows.map(r=>r.user_id);
+    // Fetch display names
+    if(ids.length){
+      const profiles=await supaFetch('/rest/v1/profiles?id=in.('+ids.join(',')+')'+'&select=id,display_name');
+      swipeParticipants=profiles;
+      renderParticipants(profiles);
+    }
+  }catch{}
+}
+
+function renderParticipants(profiles){
+  const el=document.getElementById('swipeParticipantsList');
+  if(!el) return;
+  el.innerHTML=profiles.map(p=>{
+    const init=(p.display_name||'?')[0].toUpperCase();
+    const isYou=p.id===currentUser?.id;
+    return`<div class="swipe-participant">
+      <div class="swipe-participant-avatar">${esc(init)}</div>
+      <span style="font-size:13px">${esc(p.display_name||'Unknown')}${isYou?' <span style="color:var(--text3)">(you)</span>':''}</span>
+    </div>`;
+  }).join('');
+}
+
+async function leaveSwipeSession(){
+  if(!swipeSession) return;
+  clearInterval(swipePoller);swipePoller=null;
+  try{ await supaFetch('/rest/v1/session_participants?session_id=eq.'+swipeSession.id+'&user_id=eq.'+currentUser.id,'DELETE',null,{'Prefer':'return=minimal'}); }catch{}
+  swipeSession=null;swipeParticipants=[];
+  showSwipeScreen('lobby');
+}
+
+async function startSwiping(){
+  if(!swipeSession) return;
+  clearInterval(swipePoller);swipePoller=null;
+  // Update status to active
+  try{ await supaFetch('/rest/v1/swipe_sessions?id=eq.'+swipeSession.id,'PATCH',{status:'active'},{'Prefer':'return=minimal'}); }catch{}
+  // Build shuffled queue from allRecipes
+  swipeQueue=[...allRecipes].sort(()=>Math.random()-.5);
+  swipeIndex=0;swipeMatches=[];
+  showSwipeScreen('swiping');
+  renderCardStack();
+  startMatchPoller();
+}
+
+function reshuffleSwipe(){
+  swipeQueue=[...allRecipes].sort(()=>Math.random()-.5);
+  swipeIndex=0;swipeMatches=[];
+  showSwipeScreen('swiping');
+  renderCardStack();
+}
+
+function renderCardStack(){
+  const stack=document.getElementById('cardStack');
+  if(!stack) return;
+  const remaining=swipeQueue.slice(swipeIndex,swipeIndex+3);
+  if(!remaining.length){showSwipeResults();return;}
+  // Render back-to-front so top card is last (highest z-index)
+  stack.innerHTML=remaining.map((r,i)=>{
+    const isTop=i===0;
+    const scale=1-i*.04;
+    const ty=i*-10;
+    const img=r.image_url
+      ?`<img class="swipe-card-img" src="${r.image_url}" alt="" draggable="false">`
+      :`<div class="swipe-card-img-ph">🍽</div>`;
+    const meta=[...(r.categories||[]),...(r.collections||[])].slice(0,2).join(' · ');
+    return`<div class="swipe-card" id="${isTop?'topSwipeCard':''}" style="transform:scale(${scale}) translateY(${ty}px);z-index:${10-i};transition:transform .2s">
+      ${img}
+      <div class="swipe-card-like">LIKE ❤️</div>
+      <div class="swipe-card-nope">✕ NOPE</div>
+      <div class="swipe-card-body">
+        <div class="swipe-card-name">${esc(r.name)}</div>
+        ${meta?`<div class="swipe-card-meta">${esc(meta)}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  const top=document.getElementById('topSwipeCard');
+  if(top) attachDrag(top);
+  const prog=document.getElementById('swipeProgress');
+  if(prog) prog.textContent=`${swipeIndex} of ${swipeQueue.length}`;
+}
+
+function attachDrag(card){
+  let sx=0,sy=0,cx=0,cy=0;
+  card.addEventListener('pointerdown',e=>{
+    sx=e.clientX;sy=e.clientY;cx=0;cy=0;
+    card.setPointerCapture(e.pointerId);
+    card.style.transition='none';
+  });
+  card.addEventListener('pointermove',e=>{
+    if(!(e.buttons&1)) return;
+    cx=e.clientX-sx;cy=e.clientY-sy;
+    const rot=cx*.06;
+    card.style.transform=`translateX(${cx}px) translateY(${cy}px) rotate(${rot}deg)`;
+    const like=card.querySelector('.swipe-card-like');
+    const nope=card.querySelector('.swipe-card-nope');
+    if(like) like.style.opacity=Math.max(0,Math.min(1,cx/60));
+    if(nope) nope.style.opacity=Math.max(0,Math.min(1,-cx/60));
+  });
+  card.addEventListener('pointerup',()=>{
+    card.style.transition='';
+    if(cx>80) flyAndRecord(card,1);
+    else if(cx<-80) flyAndRecord(card,-1);
+    else{ card.style.transform=`scale(${1}) translateY(0px)`; }
+  });
+}
+
+function triggerSwipe(liked){
+  const card=document.getElementById('topSwipeCard');
+  if(!card) return;
+  flyAndRecord(card, liked?1:-1);
+}
+
+function flyAndRecord(card,dir){
+  card.style.transition='transform .35s ease,opacity .35s ease';
+  card.style.transform=`translateX(${dir*800}px) rotate(${dir*25}deg)`;
+  card.style.opacity='0';
+  card.style.pointerEvents='none';
+  const recipe=swipeQueue[swipeIndex];
+  setTimeout(()=>recordSwipe(recipe,dir>0),350);
+}
+
+async function recordSwipe(recipe,liked){
+  try{
+    await supaFetch('/rest/v1/swipes','POST',{session_id:swipeSession.id,user_id:currentUser.id,recipe_id:recipe.id,liked},{'Prefer':'return=minimal'});
+  }catch{}
+  swipeIndex++;
+  if(swipeIndex>=swipeQueue.length){
+    showSwipeResults();
+  } else {
+    renderCardStack();
+    checkForMatches();
+  }
+}
+
+function startMatchPoller(){
+  clearInterval(swipePoller);
+  swipePoller=setInterval(checkForMatches,3000);
+}
+
+async function checkForMatches(){
+  if(!swipeSession||swipeParticipants.length<2) return;
+  try{
+    const allSwipes=await supaFetch('/rest/v1/swipes?session_id=eq.'+swipeSession.id+'&select=user_id,recipe_id,liked');
+    const participants=await supaFetch('/rest/v1/session_participants?session_id=eq.'+swipeSession.id+'&select=user_id');
+    const pCount=participants.length;
+    if(pCount<2) return;
+    // Find recipes all participants liked
+    const liked=allSwipes.filter(s=>s.liked);
+    const byRecipe={};
+    liked.forEach(s=>{
+      if(!byRecipe[s.recipe_id]) byRecipe[s.recipe_id]=new Set();
+      byRecipe[s.recipe_id].add(s.user_id);
+    });
+    const newMatches=Object.entries(byRecipe)
+      .filter(([,users])=>users.size>=pCount)
+      .map(([id])=>id)
+      .filter(id=>!swipeMatches.includes(id));
+    if(newMatches.length){
+      swipeMatches=[...swipeMatches,...newMatches];
+      newMatches.forEach(id=>{
+        const r=allRecipes.find(r=>r.id===id);
+        if(r) showMatchToast(r);
+      });
+    }
+  }catch{}
+}
+
+function showMatchToast(recipe){
+  const existing=document.querySelector('.match-toast');
+  if(existing) existing.remove();
+  const img=recipe.image_url?`<img class="match-toast-img" src="${recipe.image_url}" alt="">`:'<span style="font-size:28px">🍽</span>';
+  const toast=document.createElement('div');
+  toast.className='match-toast';
+  toast.style.animation='matchPop .3s ease';
+  toast.innerHTML=`${img}<div><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;opacity:.8">It's a match!</div><div style="font-size:14px;font-weight:500">${esc(recipe.name)}</div></div>`;
+  toast.onclick=()=>{toast.remove();loadDetail(recipe.id);};
+  document.body.appendChild(toast);
+  setTimeout(()=>toast.remove(),5000);
+}
+
+async function showSwipeResults(){
+  clearInterval(swipePoller);swipePoller=null;
+  try{ await supaFetch('/rest/v1/swipe_sessions?id=eq.'+swipeSession.id,'PATCH',{status:'complete'},{'Prefer':'return=minimal'}); }catch{}
+  // Final match check
+  await checkForMatches();
+  const grid=document.getElementById('swipeMatchGrid');
+  const noMatch=document.getElementById('swipeNoMatches');
+  const sub=document.getElementById('swipeMatchSub');
+  if(!swipeMatches.length){
+    grid.style.display='none';
+    if(noMatch) noMatch.style.display='block';
+    if(sub) sub.textContent='No mutual matches this round.';
+  } else {
+    grid.style.display='grid';
+    if(noMatch) noMatch.style.display='none';
+    if(sub) sub.textContent=`${swipeMatches.length} recipe${swipeMatches.length>1?'s':''} everyone agreed on.`;
+    grid.innerHTML=swipeMatches.map(id=>{
+      const r=allRecipes.find(r=>r.id===id);
+      if(!r) return '';
+      const img=r.image_url?`<img class="recipe-card-img" src="${r.image_url}" alt="" loading="lazy">`:`<div class="recipe-card-img-placeholder">🍽</div>`;
+      return`<div class="recipe-card" onclick="loadDetail('${r.id}');showTab('home')">${img}<div class="recipe-card-body"><div class="recipe-card-name">${esc(r.name)}</div></div></div>`;
+    }).join('');
+  }
+  showSwipeScreen('results');
+}
+
+function resetSwipeState(){
+  swipeSession=null;swipeParticipants=[];swipeQueue=[];swipeIndex=0;swipeMatches=[];
+  clearInterval(swipePoller);swipePoller=null;
+  document.getElementById('joinCodeInput').value='';
+  document.getElementById('swipeLobbyError').style.display='none';
 }
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────

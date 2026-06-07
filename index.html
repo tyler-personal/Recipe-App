@@ -697,7 +697,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
           <!-- RESULTS -->
           <div class="swipe-screen" id="swipeScreen-results">
             <div style="text-align:center">
-              <p style="font-family:'Lora',serif;font-size:22px;font-weight:500;margin-bottom:4px">You matched!</p>
+              <p style="font-family:'Lora',serif;font-size:22px;font-weight:500;margin-bottom:4px">Round Over</p>
               <p style="font-size:13px;color:var(--text2)" id="swipeMatchSub">Everyone agreed on these recipes.</p>
             </div>
             <div class="match-results-grid" id="swipeMatchGrid"></div>
@@ -2594,10 +2594,14 @@ async function showSwipeResults(){
   if(!swipeMatches.length){
     grid.style.display='none';
     if(noMatch) noMatch.style.display='block';
-    if(sub) sub.textContent='No mutual matches this round.';
+    if(sub) sub.textContent='Neither of you swiped right on the same recipes.';
+    const heading=document.querySelector('#swipeScreen-results p[style*="Lora"]');
+    if(heading) heading.textContent='No Matches 😔';
   } else {
     grid.style.display='grid';
     if(noMatch) noMatch.style.display='none';
+    const heading=document.querySelector('#swipeScreen-results p[style*="Lora"]');
+    if(heading) heading.textContent='It\'s a Match! 🎉';
     if(sub) sub.textContent=`${swipeMatches.length} recipe${swipeMatches.length>1?'s':''} everyone agreed on.`;
     grid.innerHTML=swipeMatches.map(id=>{
       const r=allRecipes.find(r=>r.id===id);

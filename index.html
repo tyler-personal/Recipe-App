@@ -639,6 +639,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
               <p class="swipe-lobby-title">Recipe Roulette 🍽</p>
               <p class="swipe-lobby-sub">Swipe through recipes together and find something everyone wants to make.</p>
             </div>
+            <div style="width:100%;background:var(--bg2);border-radius:var(--radius);padding:14px 16px">
+              <p style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:10px">Filter recipes</p>
+              <select id="swipeFilterType" style="width:100%;margin-bottom:8px" onchange="updateSwipeFilterValue()">
+                <option value="all">All Recipes</option>
+                <option value="favorites">Favorites</option>
+                <option value="category">By Category</option>
+                <option value="collection">By Collection</option>
+                <option value="course">By Course</option>
+              </select>
+              <select id="swipeFilterValue" style="width:100%;display:none"></select>
+            </div>
             <button class="btn primary" style="width:100%;justify-content:center;padding:11px" onclick="createSwipeSession()">
               <svg viewBox="0 0 24 24" style="stroke:white;fill:none;stroke-width:2;width:15px;height:15px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Create New Session
@@ -661,6 +672,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
               <p style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:8px">In this session</p>
               <div class="swipe-participants" id="swipeParticipantsList">—</div>
             </div>
+            <p id="swipeWaitingFilter" style="display:none;font-size:12px;color:var(--accent);font-weight:500;text-align:center"></p>
             <div style="display:flex;gap:8px;width:100%">
               <button class="btn" style="flex:1;justify-content:center" onclick="leaveSwipeSession()">Leave</button>
               <button class="btn primary" style="flex:2;justify-content:center" id="startSwipeBtn" onclick="startSwiping()">Start Swiping →</button>
@@ -729,6 +741,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 </div>
 
 </div><!-- /app -->
+
+<!-- MATCH OVERLAY -->
+<div id="matchOverlay" style="display:none;position:fixed;inset:0;background:var(--accent);z-index:400;flex-direction:column;align-items:center;justify-content:center;gap:1.25rem;padding:2rem;text-align:center">
+  <div style="font-size:56px;line-height:1;animation:matchPop .4s ease">❤️</div>
+  <div>
+    <p style="font-family:'Lora',serif;font-size:28px;font-weight:500;color:white;margin-bottom:4px">It's a Match!</p>
+    <p style="font-size:14px;color:rgba(255,255,255,.75)">Everyone wants to make this</p>
+  </div>
+  <div id="matchOverlayImg" style="width:200px;height:200px;border-radius:16px;overflow:hidden;border:3px solid rgba(255,255,255,.3);background:var(--accent-dark);display:flex;align-items:center;justify-content:center;font-size:72px;flex-shrink:0"></div>
+  <p style="font-family:'Lora',serif;font-size:20px;font-weight:500;color:white;max-width:280px;line-height:1.3" id="matchOverlayName"></p>
+  <div style="display:flex;gap:12px;margin-top:.5rem">
+    <button onclick="closeMatchOverlay()" style="padding:11px 24px;border-radius:var(--radius);border:2px solid rgba(255,255,255,.5);background:transparent;color:white;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Keep Swiping</button>
+    <button onclick="viewMatchedRecipe()" style="padding:11px 24px;border-radius:var(--radius);border:none;background:white;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">View Recipe →</button>
+  </div>
+</div>
 
 <!-- LOGIN MODAL -->
 <div class="login-overlay" id="loginModal" data-mode="signin">
@@ -2270,7 +2297,7 @@ function detachAIPanel(){
 }
 
 // ── SWIPE ────────────────────────────────────────────────────────────────────
-let swipeSession=null, swipeParticipants=[], swipeQueue=[], swipeIndex=0, swipePoller=null, swipeMatches=[];
+let swipeSession=null, swipeParticipants=[], swipeQueue=[], swipeIndex=0, swipePoller=null, swipeMatches=[], swipeShownMatches=new Set(), swipeMatchedRecipe=null;
 
 function showSwipeScreen(name){
   document.querySelectorAll('.swipe-screen').forEach(s=>s.classList.remove('active'));
@@ -2282,13 +2309,43 @@ function genSwipeCode(){
   return Math.random().toString(36).substring(2,8).toUpperCase();
 }
 
+function updateSwipeFilterValue(){
+  const type=document.getElementById('swipeFilterType').value;
+  const valSel=document.getElementById('swipeFilterValue');
+  if(type==='all'||type==='favorites'){valSel.style.display='none';return;}
+  valSel.style.display='';
+  const opts=type==='category'
+    ?[...new Set(allRecipes.flatMap(r=>r.categories||[]))].sort()
+    :type==='collection'
+    ?[...new Set(allRecipes.flatMap(r=>r.collections||[]))].sort()
+    :[...new Set(allRecipes.flatMap(r=>r.courses||[]))].sort();
+  valSel.innerHTML=opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('');
+}
+
+function applySwipeFilter(recipes, filterType, filterValue){
+  if(!filterType||filterType==='all') return recipes;
+  if(filterType==='favorites') return recipes.filter(r=>r.is_favorite);
+  if(filterType==='category') return recipes.filter(r=>(r.categories||[]).includes(filterValue));
+  if(filterType==='collection') return recipes.filter(r=>(r.collections||[]).includes(filterValue));
+  if(filterType==='course') return recipes.filter(r=>(r.courses||[]).includes(filterValue));
+  return recipes;
+}
+
 async function createSwipeSession(){
   const code=genSwipeCode();
+  const filterType=document.getElementById('swipeFilterType').value;
+  const filterValue=(filterType!=='all'&&filterType!=='favorites')
+    ?document.getElementById('swipeFilterValue').value||null
+    :null;
   try{
-    const [session]=await supaFetch('/rest/v1/swipe_sessions','POST',{code,created_by:currentUser.id},{});
+    const [session]=await supaFetch('/rest/v1/swipe_sessions','POST',{code,created_by:currentUser.id,filter_type:filterType,filter_value:filterValue},{});
     await supaFetch('/rest/v1/session_participants','POST',{session_id:session.id,user_id:currentUser.id},{'Prefer':'return=minimal'});
     swipeSession=session;
     document.getElementById('swipeCodeDisplay').textContent=code;
+    // Show filter label in waiting room
+    const label=filterType==='all'?'All Recipes':filterType==='favorites'?'Favorites':`${filterType.charAt(0).toUpperCase()+filterType.slice(1)}: ${filterValue||'All'}`;
+    const sub=document.getElementById('swipeWaitingFilter');
+    if(sub){sub.textContent='Filter: '+label;sub.style.display='';}
     showSwipeScreen('waiting');
     startParticipantPoller();
   }catch(e){showSwipeLobbyError('Could not create session: '+e.message);}
@@ -2362,19 +2419,24 @@ async function leaveSwipeSession(){
 async function startSwiping(){
   if(!swipeSession) return;
   clearInterval(swipePoller);swipePoller=null;
-  // Update status to active
   try{ await supaFetch('/rest/v1/swipe_sessions?id=eq.'+swipeSession.id,'PATCH',{status:'active'},{'Prefer':'return=minimal'}); }catch{}
-  // Build shuffled queue from allRecipes
-  swipeQueue=[...allRecipes].sort(()=>Math.random()-.5);
-  swipeIndex=0;swipeMatches=[];
+  // Re-fetch session to get filter (joiners need creator's filter)
+  try{
+    const [s]=await supaFetch('/rest/v1/swipe_sessions?id=eq.'+swipeSession.id+'&select=*');
+    if(s) swipeSession=s;
+  }catch{}
+  const filtered=applySwipeFilter(allRecipes, swipeSession.filter_type, swipeSession.filter_value);
+  swipeQueue=[...filtered].sort(()=>Math.random()-.5);
+  swipeIndex=0;swipeMatches=[];swipeShownMatches=new Set();
   showSwipeScreen('swiping');
   renderCardStack();
   startMatchPoller();
 }
 
 function reshuffleSwipe(){
-  swipeQueue=[...allRecipes].sort(()=>Math.random()-.5);
-  swipeIndex=0;swipeMatches=[];
+  const filtered=applySwipeFilter(allRecipes, swipeSession?.filter_type||'all', swipeSession?.filter_value||null);
+  swipeQueue=[...filtered].sort(()=>Math.random()-.5);
+  swipeIndex=0;swipeMatches=[];swipeShownMatches=new Set();
   showSwipeScreen('swiping');
   renderCardStack();
 }
@@ -2487,25 +2549,38 @@ async function checkForMatches(){
       .filter(id=>!swipeMatches.includes(id));
     if(newMatches.length){
       swipeMatches=[...swipeMatches,...newMatches];
-      newMatches.forEach(id=>{
-        const r=allRecipes.find(r=>r.id===id);
-        if(r) showMatchToast(r);
-      });
+      // Show overlay for first unseen match
+      const unseen=newMatches.find(id=>!swipeShownMatches.has(id));
+      if(unseen){
+        const r=allRecipes.find(r=>r.id===unseen);
+        if(r) showMatchOverlay(r);
+      }
     }
   }catch{}
 }
 
-function showMatchToast(recipe){
-  const existing=document.querySelector('.match-toast');
-  if(existing) existing.remove();
-  const img=recipe.image_url?`<img class="match-toast-img" src="${recipe.image_url}" alt="">`:'<span style="font-size:28px">🍽</span>';
-  const toast=document.createElement('div');
-  toast.className='match-toast';
-  toast.style.animation='matchPop .3s ease';
-  toast.innerHTML=`${img}<div><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;opacity:.8">It's a match!</div><div style="font-size:14px;font-weight:500">${esc(recipe.name)}</div></div>`;
-  toast.onclick=()=>{toast.remove();loadDetail(recipe.id);};
-  document.body.appendChild(toast);
-  setTimeout(()=>toast.remove(),5000);
+function showMatchOverlay(recipe){
+  swipeShownMatches.add(recipe.id);
+  swipeMatchedRecipe=recipe;
+  const overlay=document.getElementById('matchOverlay');
+  const imgEl=document.getElementById('matchOverlayImg');
+  document.getElementById('matchOverlayName').textContent=recipe.name;
+  imgEl.innerHTML=recipe.image_url
+    ?`<img src="${recipe.image_url}" style="width:100%;height:100%;object-fit:cover" alt="">`
+    :'🍽';
+  overlay.style.display='flex';
+  overlay.style.animation='matchPop .35s ease';
+}
+
+function closeMatchOverlay(){
+  document.getElementById('matchOverlay').style.display='none';
+  swipeMatchedRecipe=null;
+}
+
+function viewMatchedRecipe(){
+  const r=swipeMatchedRecipe;
+  closeMatchOverlay();
+  if(r){loadDetail(r.id);showTab('home');}
 }
 
 async function showSwipeResults(){
@@ -2535,10 +2610,13 @@ async function showSwipeResults(){
 }
 
 function resetSwipeState(){
-  swipeSession=null;swipeParticipants=[];swipeQueue=[];swipeIndex=0;swipeMatches=[];
+  swipeSession=null;swipeParticipants=[];swipeQueue=[];swipeIndex=0;swipeMatches=[];swipeShownMatches=new Set();swipeMatchedRecipe=null;
   clearInterval(swipePoller);swipePoller=null;
   document.getElementById('joinCodeInput').value='';
   document.getElementById('swipeLobbyError').style.display='none';
+  document.getElementById('matchOverlay').style.display='none';
+  document.getElementById('swipeFilterType').value='all';
+  document.getElementById('swipeFilterValue').style.display='none';
 }
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────

@@ -623,30 +623,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
     <label>Image</label>
     <img id="mImgPreview" class="img-preview" style="display:none" onerror="this.style.display='none'" alt="">
     <div class="img-options">
-      <button class="img-option-btn" onclick="openImgSearch()">🔍 Search photos</button>
       <button class="img-option-btn" onclick="document.getElementById('mImgFile').click()">📷 Upload / Camera</button>
       <input type="file" id="mImgFile" accept="image/*" style="display:none" onchange="handleModalImageUpload(this)">
+      <button class="img-option-btn" onclick="openImgSearch()">🔍 Search photos</button>
       <button class="img-option-btn" onclick="clearModalImage()">✕ Remove</button>
     </div>
     <div id="imgPickerWrap" style="display:none;margin-top:10px">
-      <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
-        <input type="text" id="imgSearchInput" placeholder="Search for an image..."
-          style="flex:1;min-width:120px;font-size:16px;padding:7px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);outline:none;font-family:'DM Sans',sans-serif"
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <input type="text" id="imgSearchInput" placeholder="Search for a photo..."
+          style="flex:1;font-size:16px;padding:7px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);outline:none;font-family:'DM Sans',sans-serif"
           onkeydown="if(event.key==='Enter'){event.preventDefault();runImageSearch();}"
           onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
         <button class="btn sm primary" onclick="runImageSearch()">Search</button>
-        <button class="btn sm" onclick="openGoogleImages()">Google Images ↗</button>
       </div>
       <div id="imgGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"></div>
       <p id="imgGridStatus" style="font-size:12px;color:var(--text3);text-align:center;padding:1rem;display:none"></p>
-      <div style="display:flex;gap:6px;margin-top:8px;align-items:center">
-        <input type="text" id="imgUrlPaste" placeholder="Or paste an image URL directly..."
-          style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);outline:none;font-family:'DM Sans',sans-serif"
-          oninput="previewPastedUrl(this.value)"
-          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
-        <button class="btn sm primary" onclick="usePastedUrl()" style="white-space:nowrap">Use URL</button>
-      </div>
-      <img id="pastedPreview" style="display:none;width:100%;max-height:140px;object-fit:cover;border-radius:var(--radius-sm);margin-top:6px;border:1px solid var(--border)" onerror="this.style.display='none'" alt="">
     </div>
     <input type="hidden" id="mImgUrl">
     <div class="modal-footer">
@@ -1909,39 +1900,6 @@ async function runImageSearch(){
 }
 
 
-function previewPastedUrl(url){
-  const prev = document.getElementById('pastedPreview');
-  if(url && url.startsWith('http')){ prev.src=url; prev.style.display='block'; }
-  else { prev.style.display='none'; }
-}
-
-function usePastedUrl(){
-  const url = (document.getElementById('imgUrlPaste')?.value||'').trim();
-  if(!url||!url.startsWith('http')){ alert('Please paste a valid image URL.'); return; }
-  selectRecipeImage(url);
-  document.getElementById('imgUrlPaste').value='';
-  document.getElementById('pastedPreview').style.display='none';
-}
-
-function previewPastedUrl(url){
-  const prev = document.getElementById('pastedPreview');
-  if(url && url.startsWith('http')){ prev.src=url; prev.style.display='block'; }
-  else { prev.style.display='none'; }
-}
-
-function usePastedUrl(){
-  const url = (document.getElementById('imgUrlPaste')?.value||'').trim();
-  if(!url||!url.startsWith('http')){ alert('Please paste a valid image URL.'); return; }
-  selectRecipeImage(url);
-  document.getElementById('imgUrlPaste').value='';
-  document.getElementById('pastedPreview').style.display='none';
-}
-
-function openGoogleImages(){
-  const q = (document.getElementById('imgSearchInput')?.value || '').trim();
-  const search = q ? q + ' food recipe' : 'food recipe';
-  window.open('https://www.google.com/search?tbm=isch&q=' + encodeURIComponent(search), '_blank');
-}
 
 function selectRecipeImage(url){
   // Set preview in modal

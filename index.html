@@ -97,6 +97,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 .browse-page{padding:2rem}
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5rem 2rem;text-align:center;gap:8px;color:var(--text3)}
 .recipe-detail{max-width:680px}
+@media(min-width:960px){
+  .recipe-detail{max-width:1200px;display:grid;grid-template-columns:1fr 1fr;column-gap:2.5rem;align-items:start}
+  .recipe-detail-left{min-width:0}
+  .recipe-detail-right{min-width:0;padding-top:0}
+  /* Make back button span full width above both columns */
+  .recipe-detail-back{grid-column:1/-1}
+}
 .recipe-hero{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:var(--radius);margin-bottom:1.25rem;border:1px solid var(--border);display:block}
 .recipe-hero-placeholder{width:100%;height:180px;background:var(--bg2);border-radius:var(--radius);margin-bottom:1.25rem;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:10px}
 .recipe-detail h1{font-family:'Lora',serif;font-size:26px;font-weight:500;line-height:1.2;margin-bottom:10px}
@@ -1315,45 +1322,61 @@ async function loadDetail(id){
     </div>`;
     document.getElementById('recipeDetail').innerHTML=`
       <div class="recipe-detail">
-        <button onclick="goHome()" style="display:inline-flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text2);background:none;border:none;cursor:pointer;padding:0;margin-bottom:1rem;transition:color .15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text2)'">
-          <svg style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-          All recipes
-        </button>
-        ${heroSection}
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px">
-          <h1 style="margin-bottom:0">${esc(r.name)}</h1>
-          <div style="display:flex;align-items:center;gap:2px;flex-shrink:0">
-            ${!isOwner?`<button class="save-recipe-btn${isSaved?' active':''}" id="saveBtn" onclick="toggleSave('${id}')" title="${isSaved?'Remove from My Recipes':'Save to My Recipes'}">
-              <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-            </button>`:''}
-            <button class="fav-btn${r.is_favorite?' active':''}" id="favBtn" onclick="toggleFavorite('${id}',${r.is_favorite})" title="${r.is_favorite?'Remove from favorites':'Add to favorites'}">
-              <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-            </button>
+        <div class="recipe-detail-back">
+          <button onclick="goHome()" style="display:inline-flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text2);background:none;border:none;cursor:pointer;padding:0;margin-bottom:1rem;transition:color .15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text2)'">
+            <svg style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            All recipes
+          </button>
+        </div>
+        <div class="recipe-detail-left">
+          ${heroSection}
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px">
+            <h1 style="margin-bottom:0">${esc(r.name)}</h1>
+            <div style="display:flex;align-items:center;gap:2px;flex-shrink:0">
+              ${!isOwner?`<button class="save-recipe-btn${isSaved?' active':''}" id="saveBtn" onclick="toggleSave('${id}')" title="${isSaved?'Remove from My Recipes':'Save to My Recipes'}">
+                <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              </button>`:''}
+              <button class="fav-btn${r.is_favorite?' active':''}" id="favBtn" onclick="toggleFavorite('${id}',${r.is_favorite})" title="${r.is_favorite?'Remove from favorites':'Add to favorites'}">
+                <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </button>
+            </div>
+          </div>
+          ${tags?`<div class="tags-row">${tags}</div>`:''}
+          ${scalerBar}
+          ${timeBar}${src}
+          <div class="recipe-chat-section">
+            <div class="recipe-chat-header">
+              <h3>Ask Claude about this recipe</h3>
+              <button class="chat-toggle-btn" onclick="toggleRecipeChat()">Ask a question</button>
+            </div>
+            <div class="recipe-chat-body" id="recipeChatBody">
+              <div class="recipe-chat-msgs" id="recipeChatMsgs">
+                <div class="rc-msg ai" style="font-size:12px;color:var(--text2)">Ask me anything about ${esc(r.name)} — substitutions, timing, scaling tips, wine pairings, technique questions...</div>
+              </div>
+              <div class="recipe-chat-input-row">
+                <textarea id="recipeChatInput" placeholder="e.g. Can I substitute the butter with olive oil?" rows="1"
+                  onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendRecipeChat()}"
+                  oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+                <button class="rc-send-btn" onclick="sendRecipeChat()"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+              </div>
+              <div class="chat-action-row" id="rcActionRow" style="display:none">
+                <button class="chat-action-btn" onclick="saveChatAsNote()">💾 Save as note</button>
+                <button class="chat-action-btn" onclick="updateRecipeFromChat()">✏️ Update recipe from this</button>
+              </div>
+            </div>
           </div>
         </div>
-        ${tags?`<div class="tags-row">${tags}</div>`:''}
-        ${scalerBar}
-        ${timeBar}${src}
-        <div class="recipe-chat-section">
-          <div class="recipe-chat-header">
-            <h3>Ask Claude about this recipe</h3>
-            <button class="chat-toggle-btn" onclick="toggleRecipeChat()">Ask a question</button>
+        <div class="recipe-detail-right">
+          ${r.ingredients?`<div class="section-head">Ingredients</div><div class="content-block" id="ingredientsBlock">${formatIngredients(r.ingredients)}</div>`:''}
+          ${r.directions?`<div class="section-head">Directions</div><div class="content-block" id="directionsBlock">${formatDirections(r.directions)}</div>`:''}
+          ${r.notes?`<div class="section-head">Notes</div><div id="notesBlock">${formatNotes(r.notes)}</div>`:''}
+          ${nutLine}
+          <div class="actions-row">
+            ${canEdit?`<button class="btn" onclick="openEdit('${id}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>`:''}
+            <button class="btn primary" onclick="sharePDF()"><svg viewBox="0 0 24 24" style="stroke:white"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Share PDF</button>
+            ${canEdit?`<button class="btn danger" onclick="deleteRecipe('${id}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>`:''}
           </div>
-          <div class="recipe-chat-body" id="recipeChatBody">
-            <div class="recipe-chat-msgs" id="recipeChatMsgs">
-              <div class="rc-msg ai" style="font-size:12px;color:var(--text2)">Ask me anything about ${esc(r.name)} — substitutions, timing, scaling tips, wine pairings, technique questions...</div>
-            </div>
-            <div class="recipe-chat-input-row">
-              <textarea id="recipeChatInput" placeholder="e.g. Can I substitute the butter with olive oil?" rows="1"
-                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendRecipeChat()}"
-                oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
-              <button class="rc-send-btn" onclick="sendRecipeChat()"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
-            </div>
-            <div class="chat-action-row" id="rcActionRow" style="display:none">
-              <button class="chat-action-btn" onclick="saveChatAsNote()">💾 Save as note</button>
-              <button class="chat-action-btn" onclick="updateRecipeFromChat()">✏️ Update recipe from this</button>
-            </div>
-          </div>
+          ${ratingsHTML}
         </div>
         ${r.ingredients?`<div class="section-head">Ingredients</div><div class="content-block" id="ingredientsBlock">${formatIngredients(r.ingredients)}</div>`:''}
         ${r.directions?`<div class="section-head">Directions</div><div class="content-block" id="directionsBlock">${formatDirections(r.directions)}</div>`:''}

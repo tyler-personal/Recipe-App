@@ -414,7 +414,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 .sl-empty{text-align:center;padding:4rem 2rem;color:var(--text3)}
 .sl-empty p{margin-bottom:8px;font-size:15px}
 .sl-empty small{font-size:12px}
-.sl-add-btn{display:inline-flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:9px 18px;border-radius:50px;border:none;background:var(--accent);color:white;cursor:pointer;transition:background .15s;margin-top:1rem}
+.sl-add-row{display:flex;gap:8px;margin-bottom:1.25rem}
+.sl-add-input{flex:1;background:var(--white);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:9px 12px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;transition:border-color .15s}
+.sl-add-input:focus{border-color:var(--accent)}
+.sl-add-input::placeholder{color:var(--text3)}
+.sl-add-btn{display:flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:9px 16px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:white;cursor:pointer;white-space:nowrap;transition:background .15s;flex-shrink:0}
 .sl-add-btn:hover{background:var(--accent-dark)}
 /* ── MOBILE RESPONSIVE ───────────────────────────────────────────────────────*/
 @media (max-width: 680px) {
@@ -881,6 +885,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
               <button class="btn sm" onclick="clearCheckedItems()" title="Remove checked items">Clear checked</button>
               <button class="btn sm danger" onclick="clearAllItems()" title="Clear entire list">Clear all</button>
             </div>
+          </div>
+          <div class="sl-add-row">
+            <input type="text" id="slAddInput" class="sl-add-input" placeholder="Add an item (e.g. olive oil, paper towels…)" onkeydown="if(event.key==='Enter')addSlManualItem()">
+            <button class="sl-add-btn" onclick="addSlManualItem()">
+              <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add
+            </button>
           </div>
           <div id="slContent">
             <div style="padding:3rem;text-align:center;color:var(--text3);font-size:14px">Loading...</div>
@@ -3713,6 +3723,20 @@ function showToast(msg){
     document.body.appendChild(t); }
   t.textContent=msg; t.style.opacity='1';
   clearTimeout(t._to); t._to=setTimeout(()=>t.style.opacity='0',2500);
+}
+
+async function addSlManualItem(){
+  const input=document.getElementById('slAddInput');
+  const text=input.value.trim(); if(!text) return;
+  if(!currentUser){ alert('Sign in to use the shopping list.'); return; }
+  input.value='';
+  const maxOrder=Math.max(0,...(window._slItems||[]).map(i=>i.sort_order||0));
+  const row={user_id:currentUser.id,recipe_id:null,recipe_name:null,ingredient:text,category:categorizeIngredient(text),checked:false,sort_order:maxOrder+1};
+  try{
+    const [saved]=await supaFetch('/rest/v1/shopping_list_items','POST',[row],{});
+    window._slItems=(window._slItems||[]).concat(saved||{...row,id:crypto.randomUUID()});
+    renderShoppingList(window._slItems);
+  }catch(e){ input.value=text; showToast('Failed to add item.'); }
 }
 
 // ── NOTIFICATIONS ─────────────────────────────────────────────────────────────

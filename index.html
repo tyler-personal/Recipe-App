@@ -2037,7 +2037,9 @@ function scaleIngredients(mult){
   const QTY_INLINE = new RegExp(QTY_PAT, 'gu');
 
   const lines = r.ingredients.split('\n').map(line => {
-    const m = line.match(LINE_RE);
+    // Strip leading bullets/numbering (same as formatIngredients) before matching
+    const stripped = line.replace(/^\s*[\d]+[.)]\s*/,'').replace(/^\s*[-•*·]\s*/,'').trim();
+    const m = stripped.match(LINE_RE);
     if(!m) return line;
 
     const fullMatch = m[0];
@@ -2062,7 +2064,7 @@ function scaleIngredients(mult){
     }
 
     // Scale numbers inside parentheses too (e.g. "2 Costco bags")
-    const rest = line.slice(fullMatch.length).replace(/\(([^)]+)\)/g, (paren, inner) => {
+    const rest = stripped.slice(fullMatch.length).replace(/\(([^)]+)\)/g, (paren, inner) => {
       const scaled = inner.replace(QTY_INLINE, qty => {
         const v = parseFraction(qty);
         return v !== null ? formatScaled(v * mult) : qty;
@@ -2074,7 +2076,8 @@ function scaleIngredients(mult){
   });
 
   const ib = document.getElementById('ingredientsBlock');
-  if(ib) ib.innerHTML = formatIngredients(lines.join('\n'));
+  // Join as clean lines — formatIngredients will handle bullets/numbering
+  if(ib) ib.innerHTML = formatIngredients(lines.map(l=>l.replace(/^\s*[\d]+[.)]\s*/,'').replace(/^\s*[-•*·]\s*/,'').trim()).join('\n'));
 }
 
 // ── RECIPE CHAT ──────────────────────────────────────────────────────────────

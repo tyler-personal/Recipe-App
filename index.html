@@ -1533,7 +1533,7 @@ async function loadDetail(id){
           <div class="actions-row">
             ${canEdit?`<button class="btn" onclick="openEdit('${id}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>`:''}
             <button class="btn primary" onclick="sharePDF()"><svg viewBox="0 0 24 24" style="stroke:white"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Share PDF</button>
-            ${r.ingredients?`<button class="btn" id="addToListBtn" onclick="addToShoppingList('${id}','${esc(r.name).replace(/'/g,"\\'")}',${JSON.stringify(r.ingredients)})"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add to List</button>`:''}
+            ${r.ingredients?`<button class="btn" id="addToListBtn" onclick="addToShoppingList('${id}')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add to List</button>`:''}
             ${canEdit?`<button class="btn danger" onclick="deleteRecipe('${id}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>`:''}
           </div>
           ${ratingsHTML}
@@ -3456,11 +3456,15 @@ async function clearAllItems(){
   await supaFetch('/rest/v1/shopping_list_items?user_id=eq.'+currentUser.id,'DELETE');
 }
 
-async function addToShoppingList(recipeId, recipeName, ingredientsRaw){
+async function addToShoppingList(recipeId){
   if(!currentUser){ alert('Sign in to use the shopping list.'); return; }
   const btn = document.getElementById('addToListBtn');
   if(btn){ btn.disabled=true; btn.textContent='Adding…'; }
   try{
+    const [recipe] = await supaFetch('/rest/v1/recipes?id=eq.'+recipeId+'&select=name,ingredients');
+    if(!recipe?.ingredients){ showToast('No ingredients found.'); if(btn){btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add to List';} return; }
+    const recipeName = recipe.name;
+    const ingredientsRaw = recipe.ingredients;
     // Check if recipe already on list
     const existing = await supaFetch('/rest/v1/shopping_list_items?user_id=eq.'+currentUser.id+'&recipe_id=eq.'+recipeId+'&select=id&limit=1');
     if(existing&&existing.length){

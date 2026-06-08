@@ -397,12 +397,20 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 .sl-view-btn.active{background:var(--accent-light);color:var(--accent)}
 .sl-group{margin-bottom:1.5rem}
 .sl-group-title{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
-.sl-item{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;transition:opacity .2s}
+.sl-item-group{margin-bottom:6px}
+.sl-item{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-sm);transition:opacity .2s}
+.sl-item-group:has(.sl-subitems) .sl-item{border-radius:var(--radius-sm) var(--radius-sm) 0 0;border-bottom-color:transparent}
 .sl-item.checked{opacity:.45}
 .sl-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
 .sl-item-text{flex:1;font-size:14px}
 .sl-item.checked .sl-item-text{text-decoration:line-through;color:var(--text3)}
 .sl-item-recipe{font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
+.sl-subitems{border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);overflow:hidden}
+.sl-subitem{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 38px;background:var(--bg2);border-top:1px solid var(--border);font-size:12px;color:var(--text2)}
+.sl-subitem-qty{color:var(--text3);flex-shrink:0;min-width:50px}
+.sl-subitem-recipe{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sl-subitem-del{background:none;border:none;cursor:pointer;padding:2px 4px;color:var(--text3);flex-shrink:0;display:flex;align-items:center;opacity:.6}
+.sl-subitem-del:hover{opacity:1}
 .sl-empty{text-align:center;padding:4rem 2rem;color:var(--text3)}
 .sl-empty p{margin-bottom:8px;font-size:15px}
 .sl-empty small{font-size:12px}
@@ -3346,29 +3354,122 @@ const SL_CATEGORIES = [
   {name:'Beverages', rx:/\b(wine|beer|vodka|rum|whiskey|bourbon|gin|tequila|brandy|juice|broth|stock|water|sparkling|soda|coffee|tea|espresso|milk alternative|oat milk|almond milk|coconut milk|soy milk)\b/i},
 ];
 
-function categorizeIngredient(ing){
-  const t = ing.toLowerCase();
-  for(const c of SL_CATEGORIES){
-    if(c.rx.test(t)) return c.name;
+const SL_UNIT_MAP = {
+  tbsp:'tbsp',tablespoon:'tbsp',tablespoons:'tbsp',
+  tsp:'tsp',teaspoon:'tsp',teaspoons:'tsp',
+  cup:'cup',cups:'cup',c:'cup',
+  oz:'oz',ounce:'oz',ounces:'oz',
+  lb:'lb',lbs:'lb',pound:'lb',pounds:'lb',
+  g:'g',gram:'g',grams:'g',
+  kg:'kg',kilogram:'kg',kilograms:'kg',
+  ml:'ml',milliliter:'ml',milliliters:'ml',
+  l:'l',liter:'l',liters:'l',
+  clove:'clove',cloves:'clove',
+  slice:'slice',slices:'slice',
+  piece:'piece',pieces:'piece',
+  can:'can',cans:'can',
+  pkg:'pkg',package:'pkg',packages:'pkg',
+  stick:'stick',sticks:'stick',
+  sprig:'sprig',sprigs:'sprig',
+  bunch:'bunch',bunches:'bunch',
+  head:'head',heads:'head',
+  stalk:'stalk',stalks:'stalk',
+  pinch:'pinch',pinches:'pinch',
+  dash:'dash',dashes:'dash',
+};
+
+function slParseFraction(s){
+  s=s.trim();
+  const mix=s.match(/^(\d+)\s+(\d+)\/(\d+)$/);
+  if(mix) return +mix[1]+parseInt(mix[2])/parseInt(mix[3]);
+  const fr=s.match(/^(\d+)\/(\d+)$/);
+  if(fr) return parseInt(fr[1])/parseInt(fr[2]);
+  return parseFloat(s)||0;
+}
+
+// Unicode fractions → decimal
+function slNormalizeUnicode(s){
+  return s.replace(/½/g,'1/2').replace(/¼/g,'1/4').replace(/¾/g,'3/4')
+          .replace(/⅓/g,'1/3').replace(/⅔/g,'2/3').replace(/⅛/g,'1/8').replace(/⅜/g,'3/8');
+}
+
+function slParseIngredient(text){
+  text=slNormalizeUnicode(text.trim());
+  // Match leading quantity: mixed fraction, simple fraction, or decimal/int
+  const qtyRe=/^((?:\d+\s+)?\d+\/\d+|\d+(?:\.\d+)?)\s*/;
+  const qm=text.match(qtyRe);
+  if(!qm) return{qty:null,unit:null,name:text.toLowerCase(),prep:null};
+  const qty=slParseFraction(qm[1]);
+  let rest=text.slice(qm[0].length);
+  // Check if next token is a known unit
+  const unitRe=/^([a-zA-Z]+\.?)\s+/;
+  const um=rest.match(unitRe);
+  let unit=null;
+  if(um){
+    const cand=um[1].toLowerCase().replace(/\.$/,'');
+    if(SL_UNIT_MAP[cand]){ unit=SL_UNIT_MAP[cand]; rest=rest.slice(um[0].length); }
   }
+  // Split name from prep at first comma or parenthesis
+  let name=rest, prep=null;
+  const ci=rest.search(/[,(]/);
+  if(ci>0){ name=rest.slice(0,ci).trim(); prep=rest.slice(ci+1).trim(); }
+  return{qty,unit,name:name.toLowerCase(),prep};
+}
+
+function slFormatQty(n){
+  if(!n) return '';
+  if(n===Math.floor(n)) return String(n);
+  const whole=Math.floor(n), frac=n-whole;
+  const FRACS=[[1,8,'⅛'],[1,4,'¼'],[1,3,'⅓'],[3,8,'⅜'],[1,2,'½'],[5,8,'⅝'],[2,3,'⅔'],[3,4,'¾'],[7,8,'⅞']];
+  for(const[a,b,sym] of FRACS){ if(Math.abs(frac-a/b)<0.04) return (whole?whole+' ':'')+sym; }
+  return n%1<0.1?String(Math.round(n)):n.toFixed(1);
+}
+
+function slFormatConsolidated(totalQty,unit,name,prep){
+  let s='';
+  if(totalQty) s+=slFormatQty(totalQty)+' ';
+  if(unit) s+=unit+' ';
+  s+=name;
+  if(prep) s+=', '+prep;
+  return s;
+}
+
+function slConsolidate(items){
+  // Group by (unit, normalized name) — only consolidate when units match
+  const map=new Map();
+  for(const it of items){
+    const p=slParseIngredient(it.ingredient);
+    // Key: unit (or '') + '||' + name
+    const key=(p.unit||'')+'||'+p.name;
+    if(!map.has(key)) map.set(key,{p,sources:[],totalQty:0});
+    const g=map.get(key);
+    if(p.qty!==null) g.totalQty+=p.qty; else g.totalQty=null;
+    g.sources.push(it);
+  }
+  return Array.from(map.values());
+}
+
+function categorizeIngredient(ing){
+  const t=ing.toLowerCase();
+  for(const c of SL_CATEGORIES){ if(c.rx.test(t)) return c.name; }
   return 'Pantry';
 }
 
-let slView = 'aisle'; // 'aisle' | 'recipe'
+let slView='aisle';
 
 function setSlView(v){
-  slView = v;
-  document.getElementById('slViewAisle').classList.toggle('active', v==='aisle');
-  document.getElementById('slViewRecipe').classList.toggle('active', v==='recipe');
-  renderShoppingList(window._slItems || []);
+  slView=v;
+  document.getElementById('slViewAisle').classList.toggle('active',v==='aisle');
+  document.getElementById('slViewRecipe').classList.toggle('active',v==='recipe');
+  renderShoppingList(window._slItems||[]);
 }
 
 async function loadShoppingList(){
   if(!currentUser){ renderSlEmpty(); return; }
   document.getElementById('slContent').innerHTML='<div style="padding:3rem;text-align:center;color:var(--text3)">Loading...</div>';
   try{
-    const items = await supaFetch('/rest/v1/shopping_list_items?user_id=eq.'+currentUser.id+'&order=sort_order.asc,created_at.asc');
-    window._slItems = items;
+    const items=await supaFetch('/rest/v1/shopping_list_items?user_id=eq.'+currentUser.id+'&order=sort_order.asc,created_at.asc');
+    window._slItems=items;
     renderShoppingList(items);
   }catch(e){ document.getElementById('slContent').innerHTML='<div style="padding:2rem;text-align:center;color:var(--error)">Failed to load list.</div>'; }
 }
@@ -3381,69 +3482,118 @@ function renderSlEmpty(){
 }
 
 function renderShoppingList(items){
-  const el = document.getElementById('slContent');
+  const el=document.getElementById('slContent');
   if(!items||!items.length){ renderSlEmpty(); return; }
-  const CATEGORY_ORDER = ['Produce','Meat & Seafood','Dairy & Eggs','Bakery','Beverages','Frozen','Pantry','Other'];
-  let html = '';
+  const CATEGORY_ORDER=['Produce','Meat & Seafood','Dairy & Eggs','Bakery','Beverages','Frozen','Pantry','Other'];
+  let html='';
   if(slView==='aisle'){
-    const groups = {};
+    // Group by category first
+    const catGroups={};
     for(const it of items){
-      const k = it.category||'Other';
-      if(!groups[k]) groups[k]=[];
-      groups[k].push(it);
+      const k=it.category||'Other';
+      if(!catGroups[k]) catGroups[k]=[];
+      catGroups[k].push(it);
     }
-    const sorted = [...CATEGORY_ORDER.filter(k=>groups[k]), ...Object.keys(groups).filter(k=>!CATEGORY_ORDER.includes(k))];
+    const sorted=[...CATEGORY_ORDER.filter(k=>catGroups[k]),...Object.keys(catGroups).filter(k=>!CATEGORY_ORDER.includes(k))];
     for(const cat of sorted){
-      html += `<div class="sl-group"><div class="sl-group-title">${esc(cat)}</div>`;
-      for(const it of groups[cat]) html += slItemHTML(it, true);
-      html += '</div>';
+      html+=`<div class="sl-group"><div class="sl-group-title">${esc(cat)}</div>`;
+      const consolidated=slConsolidate(catGroups[cat]);
+      for(const g of consolidated) html+=slGroupHTML(g);
+      html+='</div>';
     }
   } else {
-    const groups = {};
+    // By recipe — no consolidation, individual items
+    const recipeGroups={};
     for(const it of items){
-      const k = it.recipe_name||'Other items';
-      if(!groups[k]) groups[k]=[];
-      groups[k].push(it);
+      const k=it.recipe_name||'Other items';
+      if(!recipeGroups[k]) recipeGroups[k]=[];
+      recipeGroups[k].push(it);
     }
-    for(const [rec, its] of Object.entries(groups)){
-      html += `<div class="sl-group"><div class="sl-group-title">${esc(rec)}</div>`;
-      for(const it of its) html += slItemHTML(it, false);
-      html += '</div>';
+    for(const[rec,its] of Object.entries(recipeGroups)){
+      html+=`<div class="sl-group"><div class="sl-group-title">${esc(rec)}</div>`;
+      for(const it of its) html+=slSingleItemHTML(it);
+      html+='</div>';
     }
   }
-  el.innerHTML = html;
+  el.innerHTML=html;
 }
 
-function slItemHTML(it, showRecipe){
-  return `<div class="sl-item${it.checked?' checked':''}" id="sli-${it.id}">
-    <input type="checkbox" ${it.checked?'checked':''} onchange="toggleSlItem('${it.id}',this.checked)">
-    <span class="sl-item-text">${esc(it.ingredient)}</span>
-    ${showRecipe&&it.recipe_name?`<span class="sl-item-recipe">${esc(it.recipe_name)}</span>`:''}
-    <button onclick="deleteSlItem('${it.id}')" style="background:none;border:none;cursor:pointer;padding:2px 4px;color:var(--text3);flex-shrink:0;display:flex;align-items:center" title="Remove">
-      <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
+function slGroupHTML(g){
+  const{p,sources,totalQty}=g;
+  const multi=sources.length>1;
+  const allChecked=sources.every(s=>s.checked);
+  const someChecked=sources.some(s=>s.checked);
+  // Display text for the consolidated row
+  const displayText=multi&&totalQty!==null
+    ? slFormatConsolidated(totalQty,p.unit,p.name,p.prep)
+    : sources[0].ingredient;
+  const ids=sources.map(s=>s.id).join(',');
+  let html=`<div class="sl-item-group" id="slg-${sources[0].id}">
+    <div class="sl-item${allChecked?' checked':''}">
+      <input type="checkbox" ${allChecked?'checked':''} ${someChecked&&!allChecked?'data-indeterminate="true"':''}
+        onchange="toggleSlGroup([${sources.map(s=>`'${s.id}'`).join(',')}],this.checked)"
+        ${someChecked&&!allChecked?'style="opacity:.5"':''}>
+      <span class="sl-item-text">${esc(displayText)}</span>
+      ${!multi?`<button onclick="deleteSlItem('${sources[0].id}')" style="background:none;border:none;cursor:pointer;padding:2px 4px;color:var(--text3);flex-shrink:0;display:flex;align-items:center" title="Remove"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`:''}
+    </div>`;
+  if(multi){
+    html+=`<div class="sl-subitems">`;
+    for(const s of sources){
+      const sp=slParseIngredient(s.ingredient);
+      const qtyStr=sp.qty!==null?(slFormatQty(sp.qty)+(sp.unit?' '+sp.unit:'')+'  '):'';
+      html+=`<div class="sl-subitem">
+        <span class="sl-subitem-qty">${esc(qtyStr)}</span>
+        <span class="sl-subitem-recipe">${esc(s.recipe_name||'')}</span>
+        <button class="sl-subitem-del" onclick="deleteSlItem('${s.id}')" title="Remove">
+          <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>`;
+    }
+    html+=`</div>`;
+  }
+  html+=`</div>`;
+  return html;
+}
+
+function slSingleItemHTML(it){
+  return `<div class="sl-item-group" id="slg-${it.id}">
+    <div class="sl-item${it.checked?' checked':''}">
+      <input type="checkbox" ${it.checked?'checked':''} onchange="toggleSlItem('${it.id}',this.checked)">
+      <span class="sl-item-text">${esc(it.ingredient)}</span>
+      <button onclick="deleteSlItem('${it.id}')" style="background:none;border:none;cursor:pointer;padding:2px 4px;color:var(--text3);flex-shrink:0;display:flex;align-items:center" title="Remove">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
   </div>`;
 }
 
+async function toggleSlGroup(ids, checked){
+  for(const id of ids){
+    const item=(window._slItems||[]).find(i=>i.id===id);
+    if(item) item.checked=checked;
+  }
+  // Re-render to update group checked state
+  renderShoppingList(window._slItems||[]);
+  await Promise.all(ids.map(id=>supaFetch('/rest/v1/shopping_list_items?id=eq.'+id,'PATCH',{checked},{'Prefer':'return=minimal'})));
+}
+
 async function toggleSlItem(id, checked){
-  const item = (window._slItems||[]).find(i=>i.id===id);
-  if(item) item.checked = checked;
-  document.getElementById('sli-'+id)?.classList.toggle('checked', checked);
+  const item=(window._slItems||[]).find(i=>i.id===id);
+  if(item) item.checked=checked;
+  renderShoppingList(window._slItems||[]);
   await supaFetch('/rest/v1/shopping_list_items?id=eq.'+id,'PATCH',{checked},{'Prefer':'return=minimal'});
 }
 
 async function deleteSlItem(id){
-  window._slItems = (window._slItems||[]).filter(i=>i.id!==id);
-  document.getElementById('sli-'+id)?.remove();
-  if(!(window._slItems||[]).length) renderSlEmpty();
+  window._slItems=(window._slItems||[]).filter(i=>i.id!==id);
+  renderShoppingList(window._slItems||[]);
   await supaFetch('/rest/v1/shopping_list_items?id=eq.'+id,'DELETE');
 }
 
 async function clearCheckedItems(){
   if(!currentUser) return;
-  const checked = (window._slItems||[]).filter(i=>i.checked).map(i=>i.id);
-  if(!checked.length) return;
-  window._slItems = (window._slItems||[]).filter(i=>!i.checked);
+  if(!(window._slItems||[]).some(i=>i.checked)) return;
+  window._slItems=(window._slItems||[]).filter(i=>!i.checked);
   renderShoppingList(window._slItems);
   await supaFetch('/rest/v1/shopping_list_items?user_id=eq.'+currentUser.id+'&checked=eq.true','DELETE');
 }
@@ -3451,39 +3601,29 @@ async function clearCheckedItems(){
 async function clearAllItems(){
   if(!currentUser) return;
   if(!confirm('Clear your entire shopping list?')) return;
-  window._slItems = [];
+  window._slItems=[];
   renderSlEmpty();
   await supaFetch('/rest/v1/shopping_list_items?user_id=eq.'+currentUser.id,'DELETE');
 }
 
 async function addToShoppingList(recipeId){
   if(!currentUser){ alert('Sign in to use the shopping list.'); return; }
-  const btn = document.getElementById('addToListBtn');
+  const btn=document.getElementById('addToListBtn');
   if(btn){ btn.disabled=true; btn.textContent='Adding…'; }
   try{
-    const [recipe] = await supaFetch('/rest/v1/recipes?id=eq.'+recipeId+'&select=name,ingredients');
+    const [recipe]=await supaFetch('/rest/v1/recipes?id=eq.'+recipeId+'&select=name,ingredients');
     if(!recipe?.ingredients){ showToast('No ingredients found.'); if(btn){btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add to List';} return; }
-    const recipeName = recipe.name;
-    const ingredientsRaw = recipe.ingredients;
-    // Check if recipe already on list
-    const existing = await supaFetch('/rest/v1/shopping_list_items?user_id=eq.'+currentUser.id+'&recipe_id=eq.'+recipeId+'&select=id&limit=1');
+    const recipeName=recipe.name, ingredientsRaw=recipe.ingredients;
+    const existing=await supaFetch('/rest/v1/shopping_list_items?user_id=eq.'+currentUser.id+'&recipe_id=eq.'+recipeId+'&select=id&limit=1');
     if(existing&&existing.length){
       if(!confirm('This recipe is already on your list. Add it again?')){
         if(btn){ btn.disabled=false; btn.innerHTML='<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add to List'; }
         return;
       }
     }
-    const lines = ingredientsRaw.split('\n').map(l=>l.trim()).filter(l=>l&&!/^[#\[\{]/.test(l)&&l.length<200);
-    const maxOrder = Math.max(0,...(window._slItems||[]).map(i=>i.sort_order||0));
-    const rows = lines.map((ing,i)=>({
-      user_id:currentUser.id,
-      recipe_id:recipeId,
-      recipe_name:recipeName,
-      ingredient:ing,
-      category:categorizeIngredient(ing),
-      checked:false,
-      sort_order:maxOrder+i+1
-    }));
+    const lines=ingredientsRaw.split('\n').map(l=>l.trim()).filter(l=>l&&!/^[#\[\{]/.test(l)&&l.length<200);
+    const maxOrder=Math.max(0,...(window._slItems||[]).map(i=>i.sort_order||0));
+    const rows=lines.map((ing,i)=>({user_id:currentUser.id,recipe_id:recipeId,recipe_name:recipeName,ingredient:ing,category:categorizeIngredient(ing),checked:false,sort_order:maxOrder+i+1}));
     await supaFetch('/rest/v1/shopping_list_items','POST',rows,{'Prefer':'return=minimal'});
     showToast('Added to shopping list');
     if(btn){ btn.disabled=false; btn.innerHTML='<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add to List'; }
@@ -3493,60 +3633,78 @@ async function addToShoppingList(recipeId){
   }
 }
 
-function slListToText(){
-  const items = window._slItems||[];
-  if(!items.length) return '';
-  const CATEGORY_ORDER = ['Produce','Meat & Seafood','Dairy & Eggs','Bakery','Beverages','Frozen','Pantry','Other'];
-  const groups = {};
-  for(const it of items){ const k=it.category||'Other'; if(!groups[k]) groups[k]=[]; groups[k].push(it); }
-  const sorted = [...CATEGORY_ORDER.filter(k=>groups[k]), ...Object.keys(groups).filter(k=>!CATEGORY_ORDER.includes(k))];
-  let text = 'Shopping List\n\n';
+function slBuildConsolidatedGroups(items){
+  const CATEGORY_ORDER=['Produce','Meat & Seafood','Dairy & Eggs','Bakery','Beverages','Frozen','Pantry','Other'];
+  const catGroups={};
+  for(const it of items){ const k=it.category||'Other'; if(!catGroups[k]) catGroups[k]=[]; catGroups[k].push(it); }
+  const sorted=[...CATEGORY_ORDER.filter(k=>catGroups[k]),...Object.keys(catGroups).filter(k=>!CATEGORY_ORDER.includes(k))];
+  const result=[];
   for(const cat of sorted){
-    text += cat + '\n';
-    for(const it of groups[cat]) text += (it.checked?'✓ ':'• ') + it.ingredient + '\n';
-    text += '\n';
+    for(const g of slConsolidate(catGroups[cat])){
+      const{p,sources,totalQty}=g;
+      const multi=sources.length>1;
+      const displayText=multi&&totalQty!==null?slFormatConsolidated(totalQty,p.unit,p.name,p.prep):sources[0].ingredient;
+      result.push({cat,displayText,sources,totalQty,p,multi});
+    }
+  }
+  return result;
+}
+
+function slListToText(){
+  const items=window._slItems||[];
+  if(!items.length) return '';
+  const groups=slBuildConsolidatedGroups(items);
+  let text='Shopping List\n\n';
+  let lastCat='';
+  for(const g of groups){
+    if(g.cat!==lastCat){ text+=g.cat+'\n'; lastCat=g.cat; }
+    text+=(g.sources.every(s=>s.checked)?'✓ ':'• ')+g.displayText+'\n';
+    if(g.multi) for(const s of g.sources){
+      const sp=slParseIngredient(s.ingredient);
+      const qty=sp.qty!==null?(slFormatQty(sp.qty)+(sp.unit?' '+sp.unit:'')):'';
+      text+='    – '+(qty?qty+' for ':'')+s.recipe_name+'\n';
+    }
   }
   return text.trim();
 }
 
 async function shareShoppingList(){
-  const text = slListToText();
+  const text=slListToText();
   if(!text){ alert('Your shopping list is empty.'); return; }
-  if(navigator.share){
-    try{ await navigator.share({title:'Shopping List',text}); return; }catch(e){}
-  }
+  if(navigator.share){ try{ await navigator.share({title:'Shopping List',text}); return; }catch(e){} }
   await navigator.clipboard.writeText(text);
   showToast('List copied to clipboard');
 }
 
 function printShoppingList(){
-  const text = slListToText();
-  if(!text){ alert('Your shopping list is empty.'); return; }
-  const w = window.open('','_blank','width=600,height=800');
+  const items=window._slItems||[];
+  if(!items.length){ alert('Your shopping list is empty.'); return; }
+  const groups=slBuildConsolidatedGroups(items);
+  const w=window.open('','_blank','width=600,height=800');
   w.document.write(`<!DOCTYPE html><html><head><title>Shopping List</title><style>
     body{font-family:Georgia,serif;padding:2rem;max-width:500px;margin:0 auto}
     h1{font-size:22px;margin-bottom:1.5rem}
-    h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:#666;margin:1.2rem 0 .4rem;border-bottom:1px solid #ddd;padding-bottom:4px}
-    li{font-size:15px;margin:.25rem 0;list-style:none;display:flex;align-items:center;gap:.5rem}
-    li::before{content:'□';font-size:16px;color:#333}
-    li.checked::before{content:'☑';color:#888}
-    li.checked{text-decoration:line-through;color:#888}
-    @media print{body{padding:1rem}}
-  </style></head><body>`);
-  w.document.write('<h1>Shopping List</h1>');
-  const CATEGORY_ORDER = ['Produce','Meat & Seafood','Dairy & Eggs','Bakery','Beverages','Frozen','Pantry','Other'];
-  const items = window._slItems||[];
-  const groups = {};
-  for(const it of items){ const k=it.category||'Other'; if(!groups[k]) groups[k]=[]; groups[k].push(it); }
-  const sorted = [...CATEGORY_ORDER.filter(k=>groups[k]), ...Object.keys(groups).filter(k=>!CATEGORY_ORDER.includes(k))];
-  for(const cat of sorted){
-    w.document.write('<h2>'+cat+'</h2><ul>');
-    for(const it of groups[cat]) w.document.write('<li'+(it.checked?' class="checked"':'')+'>'+it.ingredient+'</li>');
-    w.document.write('</ul>');
+    h2{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:#888;margin:1.4rem 0 .5rem;border-bottom:1px solid #e0e0e0;padding-bottom:4px}
+    .item{display:flex;gap:.6rem;align-items:baseline;margin:.35rem 0;font-size:15px}
+    .item::before{content:'□';font-size:14px;flex-shrink:0}
+    .item.checked::before{content:'☑';color:#aaa}
+    .item.checked span{text-decoration:line-through;color:#aaa}
+    .sub{margin:.15rem 0 .15rem 2rem;font-size:12px;color:#888;display:flex;gap:.4rem}
+    .sub::before{content:'–'}
+    @media print{body{padding:.75rem}}
+  </style></head><body><h1>Shopping List</h1>`);
+  let lastCat='';
+  for(const g of groups){
+    if(g.cat!==lastCat){ w.document.write('<h2>'+g.cat+'</h2>'); lastCat=g.cat; }
+    const checked=g.sources.every(s=>s.checked);
+    w.document.write('<div class="item'+(checked?' checked':'')+'"><span>'+g.displayText+'</span></div>');
+    if(g.multi) for(const s of g.sources){
+      const sp=slParseIngredient(s.ingredient);
+      const qty=sp.qty!==null?(slFormatQty(sp.qty)+(sp.unit?' '+sp.unit:'')):'';
+      w.document.write('<div class="sub">'+(qty?qty+' for ':'')+s.recipe_name+'</div>');
+    }
   }
-  w.document.write('</body></html>');
-  w.document.close();
-  w.print();
+  w.document.write('</body></html>'); w.document.close(); w.print();
 }
 
 function showToast(msg){

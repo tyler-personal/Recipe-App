@@ -3534,13 +3534,12 @@ function slGroupHTML(g){
         onchange="toggleSlGroup([${sources.map(s=>`'${s.id}'`).join(',')}],this.checked)"
         ${someChecked&&!allChecked?'style="opacity:.5"':''}>
       <span class="sl-item-text">${esc(displayText)}</span>
-      ${!multi?`<button onclick="deleteSlItem('${sources[0].id}')" style="background:none;border:none;cursor:pointer;padding:2px 4px;color:var(--text3);flex-shrink:0;display:flex;align-items:center" title="Remove"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`:''}
     </div>`;
-  if(multi){
+  {
     html+=`<div class="sl-subitems">`;
     for(const s of sources){
       const sp=slParseIngredient(s.ingredient);
-      const qtyStr=sp.qty!==null?(slFormatQty(sp.qty)+(sp.unit?' '+sp.unit:'')+'  '):'';
+      const qtyStr=sp.qty!==null?(slFormatQty(sp.qty)+(sp.unit?' '+sp.unit:'')):'';
       html+=`<div class="sl-subitem">
         <span class="sl-subitem-qty">${esc(qtyStr)}</span>
         <span class="sl-subitem-recipe">${esc(s.recipe_name||'')}</span>

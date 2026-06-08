@@ -1193,7 +1193,7 @@ function parseDur(iso){
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function formatIngredients(text){
   if(!text)return'';
-  const lines=text.split('\n').map(l=>l.replace(/^\s*[\d]+[.)]\s*/,'').replace(/^\s*[-•*·]\s*/,'').trim()).filter(Boolean);
+  const lines=text.split('\n').map(l=>l.replace(/^\s*[\d]+[.)]\s*/,'').replace(/^\s*[-•*·~]\s*/,'').trim()).filter(Boolean);
   return`<ul class="ing-list">${lines.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>`;
 }
 function formatDirections(text){
@@ -2037,8 +2037,8 @@ function scaleIngredients(mult){
   const QTY_INLINE = new RegExp(QTY_PAT, 'gu');
 
   const lines = r.ingredients.split('\n').map(line => {
-    // Strip leading bullets/numbering (same as formatIngredients) before matching
-    const stripped = line.replace(/^\s*[\d]+[.)]\s*/,'').replace(/^\s*[-•*·]\s*/,'').trim();
+    // Strip any non-quantity prefix (bullets, numbers, tildes, symbols) before matching
+    const stripped = line.replace(/^\s*[\d]+[.)]\s*/,'').replace(/^\s*[^0-9¼½¾⅓⅔⅛⅜⅝⅞\d]*/,'').trim();
     const m = stripped.match(LINE_RE);
     if(!m) return line;
 

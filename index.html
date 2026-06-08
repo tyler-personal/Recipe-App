@@ -1226,8 +1226,14 @@ async function loadDetail(id){
   try{
     const[[r],ratings]=await Promise.all([
       supaFetch('/rest/v1/recipes?id=eq.'+id),
-      supaFetch('/rest/v1/recipe_ratings?recipe_id=eq.'+id+'&select=taste,ease,accuracy,feedback,cooked_at,user_id,profiles(display_name)&order=cooked_at.desc')
+      supaFetch('/rest/v1/recipe_ratings?recipe_id=eq.'+id+'&select=taste,ease,accuracy,feedback,cooked_at,user_id&order=cooked_at.desc')
     ]);
+    // Fetch display names for raters
+    const raterIds = [...new Set(ratings.map(r=>r.user_id))];
+    const profiles = raterIds.length
+      ? await supaFetch('/rest/v1/profiles?id=in.('+raterIds.join(',')+')'+'&select=id,display_name')
+      : [];
+    const profileMap = Object.fromEntries(profiles.map(p=>[p.id,p.display_name]));
     const prep=parseDur(r.prep_time),cook=parseDur(r.cook_time);
     const tags=(r.courses||[]).map(c=>`<span class="tag course">${esc(c)}</span>`).join('')+
                (r.categories||[]).map(c=>`<span class="tag">${esc(c)}</span>`).join('')+
@@ -1278,7 +1284,7 @@ async function loadDetail(id){
     </div>` : '';
     const starsDisplay = n => n ? '★'.repeat(n)+'☆'.repeat(5-n) : '';
     const logEntriesHTML = ratings.map(entry => {
-      const name = entry.profiles?.display_name || 'Someone';
+      const name = profileMap[entry.user_id] || 'Someone';
       const date = new Date(entry.cooked_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
       const stars = [
         entry.taste ? `<span title="Taste">${starsDisplay(entry.taste)}</span>` : '',

@@ -129,6 +129,45 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 .notes-list li::before{content:'–';position:absolute;left:0;color:var(--accent)}
 .nut-line{font-size:12px;color:var(--text3);margin-top:8px}
 
+/* NOTIFICATIONS */
+.notif-btn{position:relative;background:none;border:none;cursor:pointer;padding:6px;border-radius:var(--radius-sm);color:var(--text2);display:flex;align-items:center;transition:color .15s}
+.notif-btn:hover,.notif-btn.has-unread{color:var(--accent)}
+.notif-btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.notif-badge{position:absolute;top:0px;right:0px;min-width:16px;height:16px;background:var(--accent);color:white;font-size:10px;font-weight:700;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px;pointer-events:none}
+#notifArea{position:relative;margin-left:2px;display:none}
+.notif-dropdown{position:absolute;right:0;top:calc(100% + 6px);width:300px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:200;display:none;max-height:380px;overflow-y:auto}
+.notif-dropdown.open{display:block}
+.notif-header{font-size:11px;font-weight:600;padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
+.notif-item{padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+.notif-item:last-child{border-bottom:none}
+.notif-item:hover{background:var(--bg2)}
+.notif-item.unread{background:var(--accent-light)}
+.notif-item-text{font-size:13px;color:var(--text);line-height:1.4}
+.notif-item-time{font-size:11px;color:var(--text3);margin-top:2px}
+.notif-empty{padding:24px;text-align:center;font-size:13px;color:var(--text3)}
+/* COMMUNITY FEED */
+.community-section{margin-top:1.5rem}
+.community-section h3{font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px}
+.community-entry{padding:12px 0;border-bottom:1px solid var(--border)}
+.community-entry:last-child{border-bottom:none}
+.community-entry-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.community-avatar{width:28px;height:28px;border-radius:50%;background:var(--accent);color:white;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;text-transform:uppercase}
+.community-entry-meta{flex:1;min-width:0}
+.community-entry-name{font-size:13px;font-weight:500;color:var(--text)}
+.community-entry-time{font-size:11px;color:var(--text3);margin-top:1px}
+.community-entry-actions{display:flex;gap:2px;flex-shrink:0}
+.community-action-btn{background:none;border:none;cursor:pointer;font-size:11px;color:var(--text3);padding:2px 7px;border-radius:4px;transition:all .1s;font-family:'DM Sans',sans-serif}
+.community-action-btn:hover{background:var(--bg2);color:var(--text)}
+.community-action-btn.danger:hover{background:#fee;color:#c00}
+.community-stars{font-size:12px;color:var(--accent);margin-bottom:4px}
+.community-text{font-size:13px;color:var(--text2);line-height:1.6;margin:0}
+.community-type-badge{font-size:10px;font-weight:500;padding:1px 6px;border-radius:10px;margin-left:5px;vertical-align:middle;background:var(--accent-light);color:var(--accent-dark)}
+.community-input-row{display:flex;gap:8px;margin-top:14px;align-items:flex-end}
+.community-input{flex:1;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;font-size:14px;font-family:'DM Sans',sans-serif;resize:none;outline:none;background:var(--bg2);transition:border-color .15s;line-height:1.5;min-height:38px;max-height:100px}
+.community-input:focus{border-color:var(--accent);background:var(--white)}
+.community-send-btn{background:var(--accent);color:white;border:none;border-radius:var(--radius-sm);padding:8px 16px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;flex-shrink:0;height:38px}
+.community-send-btn:hover{opacity:.9}
+
 /* IMAGE PICKER */
 .img-picker-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
 .img-picker-option{position:relative;cursor:pointer;border-radius:var(--radius-sm);overflow:hidden;border:2px solid transparent;transition:all .15s;aspect-ratio:4/3}
@@ -469,6 +508,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
     <button class="tab-btn" id="tab-settings" onclick="showSettings()" title="Settings" style="margin-left:4px;display:none">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
+    <div id="notifArea">
+      <button class="notif-btn" id="notifBtn" onclick="toggleNotifDropdown()" title="Notifications">
+        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+      </button>
+      <div class="notif-dropdown" id="notifDropdown">
+        <div class="notif-header">Notifications</div>
+        <div id="notifList"><div class="notif-empty">No notifications yet</div></div>
+      </div>
+    </div>
     <div id="userArea" style="position:relative;margin-left:6px">
       <button class="user-avatar-btn" id="userBtn" onclick="toggleUserDropdown()" title="Account">
         <span id="userInitials">?</span>
@@ -821,8 +870,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 <!-- RATING MODAL -->
 <div class="rating-modal-overlay" id="ratingModal">
   <div class="rating-modal">
-    <h2>I cooked this!</h2>
-    <p class="modal-sub">How did it go?</p>
+    <h2 id="ratingModalTitle">I cooked this!</h2>
+    <p class="modal-sub" id="ratingModalSub">How did it go?</p>
+    <div id="cookAgainRow" style="display:none;margin-bottom:1rem;padding:10px 12px;background:var(--bg2);border-radius:var(--radius-sm)">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;color:var(--text)">
+        <input type="checkbox" id="cookAgainCheck" checked style="width:16px;height:16px;accent-color:var(--accent)">
+        I cooked this again (new cook)
+      </label>
+    </div>
     <div class="rating-row">
       <label>Taste</label>
       <div class="ratings-stars" id="starsTaste" data-val="0">
@@ -857,9 +912,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
       <label>Notes (optional)</label>
       <textarea class="rating-feedback" id="ratingFeedback" placeholder="Any thoughts?"></textarea>
     </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button class="btn" onclick="closeRatingModal()">Cancel</button>
-      <button class="btn primary" onclick="submitRating()">Save</button>
+    <div style="display:flex;gap:8px;justify-content:space-between;align-items:center">
+      <button class="btn danger" id="ratingDeleteBtn" onclick="deleteRating()" style="display:none">Delete</button>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn" onclick="closeRatingModal()">Cancel</button>
+        <button class="btn primary" onclick="submitRating()">Save</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1231,14 +1289,14 @@ async function loadDetail(id){
   document.querySelectorAll('.recipe-row').forEach(el=>{if(el.getAttribute('onclick')?.includes(`'${id}'`))el.classList.add('active');});
   document.getElementById('recipeDetail').innerHTML='<div class="empty-state"><p style="color:var(--text3);font-size:12px">Loading...</p></div>';
   try{
-    const[[r],ratings]=await Promise.all([
+    const[[r],ratings,comments]=await Promise.all([
       supaFetch('/rest/v1/recipes?id=eq.'+id),
-      supaFetch('/rest/v1/recipe_ratings?recipe_id=eq.'+id+'&select=taste,ease,accuracy,feedback,cooked_at,user_id&order=cooked_at.desc')
+      supaFetch('/rest/v1/recipe_ratings?recipe_id=eq.'+id+'&select=id,taste,ease,accuracy,feedback,cooked_at,user_id,is_new_cook&order=cooked_at.asc'),
+      supaFetch('/rest/v1/recipe_comments?recipe_id=eq.'+id+'&select=id,comment,created_at,user_id&order=created_at.asc')
     ]);
-    // Fetch display names for raters
-    const raterIds = [...new Set(ratings.map(r=>r.user_id))];
-    const profiles = raterIds.length
-      ? await supaFetch('/rest/v1/profiles?id=in.('+raterIds.join(',')+')'+'&select=id,display_name')
+    const allUserIds = [...new Set([...ratings.map(x=>x.user_id),...comments.map(x=>x.user_id)])];
+    const profiles = allUserIds.length
+      ? await supaFetch('/rest/v1/profiles?id=in.('+allUserIds.join(',')+')'+'&select=id,display_name')
       : [];
     const profileMap = Object.fromEntries(profiles.map(p=>[p.id,p.display_name]));
     const prep=parseDur(r.prep_time),cook=parseDur(r.cook_time);

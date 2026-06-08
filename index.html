@@ -848,21 +848,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
     <!-- Name row (signup only) -->
     <div id="loginNameRow" style="display:none" class="login-name-grid">
       <div class="login-field">
-        <input type="text" id="loginFirstName" placeholder="First name" autocomplete="given-name" onkeydown="if(event.key==='Enter')handleLogin()">
+        <input type="text" id="loginFirstName" placeholder="First name" autocomplete="given-name" disabled onkeydown="if(event.key==='Enter')handleLogin()">
       </div>
       <div class="login-field">
-        <input type="text" id="loginLastName" placeholder="Last name" autocomplete="family-name" onkeydown="if(event.key==='Enter')handleLogin()">
+        <input type="text" id="loginLastName" placeholder="Last name" autocomplete="family-name" disabled onkeydown="if(event.key==='Enter')handleLogin()">
       </div>
     </div>
 
     <!-- Email -->
     <div class="login-field">
-      <input type="email" id="loginEmail" placeholder="Email" autocomplete="email" onkeydown="if(event.key==='Enter')handleLogin()">
+      <input type="email" id="loginEmail" placeholder="Email" autocomplete="email" disabled onkeydown="if(event.key==='Enter')handleLogin()">
     </div>
 
     <!-- Password -->
     <div class="login-field">
-      <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')handleLogin()">
+      <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password" disabled onkeydown="if(event.key==='Enter')handleLogin()">
     </div>
 
     <!-- Forgot password (sign in only) -->
@@ -2810,11 +2810,13 @@ function updateTopbarUser(){
 function showLoginModal(){
   document.getElementById('loginModal').classList.add('open');
   document.getElementById('app').style.display='none';
+  document.querySelectorAll('#loginModal input').forEach(i=>i.removeAttribute('disabled'));
 }
 
 function hideLoginModal(){
   document.getElementById('loginModal').classList.remove('open');
   document.getElementById('app').style.display='';
+  document.querySelectorAll('#loginModal input').forEach(i=>i.setAttribute('disabled',''));
 }
 
 async function handleLogin(){

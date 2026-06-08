@@ -2032,7 +2032,7 @@ function scaleIngredients(mult){
   // Matches a single quantity token: "2 1/2", "1/2", "1.5", unicode fractions, integers
   const QTY_PAT = '(\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|\\d+\\.\\d+|[\u00bc\u00bd\u00be\u2153\u2154\u215b\u215c\u215d\u215e]|\\d+[\u00bc\u00bd\u00be\u2153\u2154\u215b\u215c\u215d\u215e]?\\d*(?:\\.\\d+)?)';
   // Full line pattern: optional leading qty, optional range (dash or " to "), rest of line
-  const LINE_RE = new RegExp('^(' + QTY_PAT + ')((?:\\s*(?:[-\u2013]|\\bto\\b)\\s*)(' + QTY_PAT + '))?(\\s+)', 'u');
+  const LINE_RE = new RegExp('^(' + QTY_PAT + ')((?:\\s*(?:[-\u2013]|\\bto\\b)\\s*)(' + QTY_PAT + '))?(\\s*)', 'u');
 
   const QTY_INLINE = new RegExp(QTY_PAT, 'gu');
 

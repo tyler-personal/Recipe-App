@@ -193,6 +193,31 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 .match-results-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;width:100%}
 @keyframes matchPop{from{transform:translateX(-50%) scale(.8);opacity:0}to{transform:translateX(-50%) scale(1);opacity:1}}
 
+/* RATINGS */
+.ratings-section{margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border)}
+.ratings-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.ratings-header h3{font-family:'Lora',serif;font-size:16px;font-weight:500}
+.ratings-agg{display:flex;gap:1.5rem;background:var(--bg2);padding:12px 16px;border-radius:var(--radius);margin-bottom:1rem}
+.ratings-agg-item{text-align:center;flex:1}
+.ratings-agg-item .rai-label{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:4px}
+.ratings-agg-item .rai-val{font-size:18px;font-weight:600;color:var(--accent);line-height:1}
+.ratings-agg-item .rai-count{font-size:10px;color:var(--text3)}
+.ratings-stars{display:flex;gap:2px;align-items:center}
+.star{font-size:20px;cursor:pointer;transition:transform .1s;user-select:none;line-height:1}
+.star:hover{transform:scale(1.2)}
+.star-sm{font-size:14px;cursor:default}
+.rating-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:400;opacity:0;pointer-events:none;transition:opacity .2s}
+.rating-modal-overlay.open{opacity:1;pointer-events:all}
+.rating-modal{background:var(--white);border-radius:var(--radius);padding:1.75rem;max-width:380px;width:calc(100% - 2rem);max-height:90vh;overflow-y:auto}
+.rating-modal h2{font-family:'Lora',serif;font-size:20px;font-weight:500;margin-bottom:.25rem}
+.rating-modal .modal-sub{font-size:13px;color:var(--text2);margin-bottom:1.5rem}
+.rating-row{margin-bottom:1.25rem}
+.rating-row label{font-size:13px;font-weight:500;display:block;margin-bottom:6px;color:var(--text)}
+.rating-feedback{width:100%;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px;font-size:13px;font-family:'DM Sans',sans-serif;resize:vertical;min-height:80px;outline:none;transition:border-color .15s}
+.rating-feedback:focus{border-color:var(--accent)}
+.cook-btn{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;padding:8px 16px;border-radius:var(--radius-sm);border:1px solid var(--accent);color:var(--accent);background:transparent;cursor:pointer;transition:all .15s}
+.cook-btn:hover{background:var(--accent-light)}
+
 /* SERVING SCALER */
 .scaler-bar{display:flex;align-items:center;gap:12px;background:var(--bg2);padding:10px 14px;border-radius:var(--radius);margin-bottom:1rem}
 .scaler-label{font-size:12px;color:var(--text2);white-space:nowrap}
@@ -758,6 +783,52 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
   </div>
 </div>
 
+<!-- RATING MODAL -->
+<div class="rating-modal-overlay" id="ratingModal">
+  <div class="rating-modal">
+    <h2>I cooked this!</h2>
+    <p class="modal-sub">How did it go?</p>
+    <div class="rating-row">
+      <label>Taste</label>
+      <div class="ratings-stars" id="starsTaste" data-val="0">
+        <span class="star" onclick="setRatingStar('taste',1)">☆</span>
+        <span class="star" onclick="setRatingStar('taste',2)">☆</span>
+        <span class="star" onclick="setRatingStar('taste',3)">☆</span>
+        <span class="star" onclick="setRatingStar('taste',4)">☆</span>
+        <span class="star" onclick="setRatingStar('taste',5)">☆</span>
+      </div>
+    </div>
+    <div class="rating-row">
+      <label>Ease</label>
+      <div class="ratings-stars" id="starsEase" data-val="0">
+        <span class="star" onclick="setRatingStar('ease',1)">☆</span>
+        <span class="star" onclick="setRatingStar('ease',2)">☆</span>
+        <span class="star" onclick="setRatingStar('ease',3)">☆</span>
+        <span class="star" onclick="setRatingStar('ease',4)">☆</span>
+        <span class="star" onclick="setRatingStar('ease',5)">☆</span>
+      </div>
+    </div>
+    <div class="rating-row">
+      <label>Accuracy of directions</label>
+      <div class="ratings-stars" id="starsAccuracy" data-val="0">
+        <span class="star" onclick="setRatingStar('accuracy',1)">☆</span>
+        <span class="star" onclick="setRatingStar('accuracy',2)">☆</span>
+        <span class="star" onclick="setRatingStar('accuracy',3)">☆</span>
+        <span class="star" onclick="setRatingStar('accuracy',4)">☆</span>
+        <span class="star" onclick="setRatingStar('accuracy',5)">☆</span>
+      </div>
+    </div>
+    <div class="rating-row">
+      <label>Notes (optional)</label>
+      <textarea class="rating-feedback" id="ratingFeedback" placeholder="Any thoughts?"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="closeRatingModal()">Cancel</button>
+      <button class="btn primary" onclick="submitRating()">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- LOGIN MODAL -->
 <div class="login-overlay" id="loginModal" data-mode="signin">
   <div class="login-card">
@@ -1185,7 +1256,10 @@ async function loadDetail(id){
   document.querySelectorAll('.recipe-row').forEach(el=>{if(el.getAttribute('onclick')?.includes(`'${id}'`))el.classList.add('active');});
   document.getElementById('recipeDetail').innerHTML='<div class="empty-state"><p style="color:var(--text3);font-size:12px">Loading...</p></div>';
   try{
-    const[r]=await supaFetch('/rest/v1/recipes?id=eq.'+id);
+    const[[r],ratings]=await Promise.all([
+      supaFetch('/rest/v1/recipes?id=eq.'+id),
+      supaFetch('/rest/v1/recipe_ratings?recipe_id=eq.'+id+'&select=taste,ease,accuracy,user_id')
+    ]);
     const prep=parseDur(r.prep_time),cook=parseDur(r.cook_time);
     const tags=(r.courses||[]).map(c=>`<span class="tag course">${esc(c)}</span>`).join('')+
                (r.categories||[]).map(c=>`<span class="tag">${esc(c)}</span>`).join('')+
@@ -1220,6 +1294,31 @@ async function loadDetail(id){
     const isAdmin = currentProfile?.is_admin === true;
     const canEdit = isOwner || isAdmin;
     const isSaved = savedRecipeIds.has(id);
+    // Compute aggregate ratings
+    const avg = (arr, key) => {
+      const vals = arr.map(x=>x[key]).filter(Boolean);
+      return vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1) : null;
+    };
+    const avgTaste = avg(ratings,'taste'), avgEase = avg(ratings,'ease'), avgAcc = avg(ratings,'accuracy');
+    const ratingCount = ratings.length;
+    const myRating = ratings.find(x=>x.user_id===currentUser?.id);
+    const ratingsAggHTML = ratingCount > 0 ? `<div class="ratings-agg">
+      ${avgTaste?`<div class="ratings-agg-item"><div class="rai-label">Taste</div><div class="rai-val">${avgTaste}</div><div class="rai-count">/ 5</div></div>`:''}
+      ${avgEase?`<div class="ratings-agg-item"><div class="rai-label">Ease</div><div class="rai-val">${avgEase}</div><div class="rai-count">/ 5</div></div>`:''}
+      ${avgAcc?`<div class="ratings-agg-item"><div class="rai-label">Accuracy</div><div class="rai-val">${avgAcc}</div><div class="rai-count">/ 5</div></div>`:''}
+      <div class="ratings-agg-item"><div class="rai-label">Cooks</div><div class="rai-val">${ratingCount}</div><div class="rai-count">&nbsp;</div></div>
+    </div>` : '';
+    const ratingsHTML = `<div class="ratings-section">
+      <div class="ratings-header">
+        <h3>Cooking log</h3>
+        <button class="cook-btn" onclick="openRatingModal('${id}')">
+          <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          ${myRating ? 'Cook again' : 'I cooked this'}
+        </button>
+      </div>
+      ${ratingsAggHTML}
+      ${ratingCount===0?'<p style="font-size:13px;color:var(--text3)">No one has logged cooking this yet. Be the first!</p>':''}
+    </div>`;
     document.getElementById('recipeDetail').innerHTML=`
       <div class="recipe-detail">
         <button onclick="goHome()" style="display:inline-flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text2);background:none;border:none;cursor:pointer;padding:0;margin-bottom:1rem;transition:color .15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text2)'">
@@ -1250,6 +1349,7 @@ async function loadDetail(id){
           <button class="btn primary" onclick="sharePDF()"><svg viewBox="0 0 24 24" style="stroke:white"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Share PDF</button>
           ${canEdit?`<button class="btn danger" onclick="deleteRecipe('${id}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>`:''}
         </div>
+        ${ratingsHTML}
         <div class="recipe-chat-section">
           <div class="recipe-chat-header">
             <h3>Ask Claude about this recipe</h3>
@@ -2809,6 +2909,52 @@ async function toggleSave(id){
     }
   }catch(e){alert('Could not save recipe: '+e.message);}
 }
+
+// ── RATINGS ───────────────────────────────────────────────────────────────────
+let _ratingRecipeId = null;
+
+function openRatingModal(recipeId){
+  _ratingRecipeId = recipeId;
+  ['taste','ease','accuracy'].forEach(k=>setRatingStar(k,0));
+  document.getElementById('ratingFeedback').value='';
+  document.getElementById('ratingModal').classList.add('open');
+}
+
+function closeRatingModal(){
+  document.getElementById('ratingModal').classList.remove('open');
+  _ratingRecipeId = null;
+}
+
+function setRatingStar(key, val){
+  const containerId = 'stars'+key.charAt(0).toUpperCase()+key.slice(1);
+  const container = document.getElementById(containerId);
+  if(!container) return;
+  container.dataset.val = val;
+  const stars = container.querySelectorAll('.star');
+  stars.forEach((s,i) => s.textContent = i < val ? '★' : '☆');
+}
+
+async function submitRating(){
+  if(!currentUser || !_ratingRecipeId) return;
+  const taste = parseInt(document.getElementById('starsTaste').dataset.val)||null;
+  const ease = parseInt(document.getElementById('starsEase').dataset.val)||null;
+  const accuracy = parseInt(document.getElementById('starsAccuracy').dataset.val)||null;
+  const feedback = document.getElementById('ratingFeedback').value.trim()||null;
+  if(!taste && !ease && !accuracy){ alert('Please rate at least one category.'); return; }
+  try{
+    await supaFetch('/rest/v1/recipe_ratings','POST',{
+      recipe_id:_ratingRecipeId, user_id:currentUser.id,
+      taste, ease, accuracy, feedback
+    },{'Prefer':'return=minimal'});
+    closeRatingModal();
+    loadDetail(_ratingRecipeId);
+  }catch(e){ alert('Could not save rating: '+e.message); }
+}
+
+// Close rating modal on overlay click
+document.getElementById('ratingModal').addEventListener('click', function(e){
+  if(e.target===this) closeRatingModal();
+});
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 initAuth();

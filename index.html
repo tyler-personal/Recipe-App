@@ -229,6 +229,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 .cook-btn{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;padding:8px 16px;border-radius:var(--radius-sm);border:1px solid var(--accent);color:var(--accent);background:transparent;cursor:pointer;transition:all .15s}
 .cook-btn:hover{background:var(--accent-light)}
 
+/* SWIPE FORM */
+.swipe-select{width:100%;margin-bottom:8px;padding:10px 12px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:16px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--white);appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B6760' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;cursor:pointer}
+.swipe-select:focus{outline:none;border-color:var(--accent)}
+.swipe-history-item{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color .15s}
+.swipe-history-item:hover{border-color:var(--accent)}
+.swipe-history-who{font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px}
+.swipe-history-meta{font-size:11px;color:var(--text3)}
+.swipe-history-matches{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.swipe-history-match-chip{font-size:11px;background:var(--accent-light);color:var(--accent-dark);padding:2px 8px;border-radius:20px}
+
 /* SERVING SCALER */
 .scaler-bar{display:flex;align-items:center;gap:12px;background:var(--bg2);padding:10px 14px;border-radius:var(--radius);margin-bottom:1rem}
 .scaler-label{font-size:12px;color:var(--text2);white-space:nowrap}
@@ -406,8 +416,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
   }
   .overlay { align-items: flex-end; }
 
-  /* Modal inputs — prevent iOS zoom (must be ≥16px) */
-  .modal input, .modal textarea, .modal select { font-size: 16px !important; }
+  /* All inputs — prevent iOS zoom (must be ≥16px) */
+  input, textarea, select { font-size: 16px !important; }
 
   /* Recipe chat */
   .recipe-chat-msgs { max-height: 220px; }
@@ -678,25 +688,28 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
             </div>
             <div style="width:100%;background:var(--bg2);border-radius:var(--radius);padding:14px 16px">
               <p style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:10px">Filter recipes</p>
-              <select id="swipeFilterType" style="width:100%;margin-bottom:8px" onchange="updateSwipeFilterValue()">
+              <select id="swipeFilterType" class="swipe-select" onchange="updateSwipeFilterValue()">
                 <option value="all">All Recipes</option>
                 <option value="favorites">Favorites</option>
                 <option value="category">By Category</option>
                 <option value="collection">By Collection</option>
                 <option value="course">By Course</option>
               </select>
-              <select id="swipeFilterValue" style="width:100%;display:none"></select>
+              <select id="swipeFilterValue" class="swipe-select" style="display:none"></select>
             </div>
-            <button class="btn primary" style="width:100%;justify-content:center;padding:11px" onclick="createSwipeSession()">
+            <button class="btn primary" style="width:100%;justify-content:center;padding:13px;font-size:15px;border-radius:50px" onclick="createSwipeSession()">
               <svg viewBox="0 0 24 24" style="stroke:white;fill:none;stroke-width:2;width:15px;height:15px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Create New Session
             </button>
             <div class="swipe-divider">or join one</div>
-            <div style="display:flex;gap:8px;width:100%">
-              <input type="text" id="joinCodeInput" placeholder="Enter code (e.g. AB1234)" style="flex:1;text-transform:uppercase;letter-spacing:.08em" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')joinSwipeSession()">
-              <button class="btn" onclick="joinSwipeSession()">Join</button>
+            <div class="login-field" style="width:100%">
+              <input type="text" id="joinCodeInput" placeholder="Enter join code (e.g. AB1234)" style="text-transform:uppercase;letter-spacing:.08em;font-size:16px!important" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')joinSwipeSession()">
             </div>
+            <button class="btn primary" style="width:100%;justify-content:center;padding:13px;font-size:15px;border-radius:50px" onclick="joinSwipeSession()">Join Session</button>
             <div id="swipeLobbyError" style="font-size:12px;color:var(--error);display:none"></div>
+
+            <!-- Session history -->
+            <div id="swipeHistory" style="width:100%;margin-top:1rem"></div>
           </div>
 
           <!-- WAITING ROOM -->
@@ -704,6 +717,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
             <div style="text-align:center">
               <p style="font-size:13px;color:var(--text2);margin-bottom:8px">Share this code with others</p>
               <div class="swipe-code-display" id="swipeCodeDisplay">—</div>
+              <button id="shareCodeBtn" onclick="shareSwipeCode()" style="margin-top:10px;display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:50px;border:1.5px solid var(--accent);background:transparent;color:var(--accent);font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s" onmouseover="this.style.background='var(--accent-light)'" onmouseout="this.style.background='transparent'">
+                <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                Share Code
+              </button>
             </div>
             <div style="width:100%">
               <p style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:8px">In this session</p>
@@ -1129,6 +1146,7 @@ function showTab(tab){
   const page = document.getElementById('page-'+tab);
   if(page) page.scrollTop = 0;
   window.scrollTo(0,0);
+  if(tab==='swipe') loadSwipeHistory();
 }
 
 function goHome(){
@@ -2660,7 +2678,7 @@ function closeMatchOverlay(){
 function viewMatchedRecipe(){
   const r=swipeMatchedRecipe;
   closeMatchOverlay();
-  if(r){loadDetail(r.id);showTab('home');}
+  if(r) loadDetail(r.id);
 }
 
 async function showSwipeResults(){
@@ -2687,10 +2705,74 @@ async function showSwipeResults(){
       const r=allRecipes.find(r=>r.id===id);
       if(!r) return '';
       const img=r.image_url?`<img class="recipe-card-img" src="${r.image_url}" alt="" loading="lazy">`:`<div class="recipe-card-img-placeholder">🍽</div>`;
-      return`<div class="recipe-card" onclick="loadDetail('${r.id}');showTab('home')">${img}<div class="recipe-card-body"><div class="recipe-card-name">${esc(r.name)}</div></div></div>`;
+      return`<div class="recipe-card" onclick="loadDetail('${r.id}')">${img}<div class="recipe-card-body"><div class="recipe-card-name">${esc(r.name)}</div></div></div>`;
     }).join('');
   }
   showSwipeScreen('results');
+}
+
+function shareSwipeCode(){
+  const code = document.getElementById('swipeCodeDisplay')?.textContent;
+  if(!code || code==='—') return;
+  const text = `Join my Recipe Duck swipe session! Code: ${code}`;
+  if(navigator.share){
+    navigator.share({title:'Recipe Duck', text}).catch(()=>{});
+  } else {
+    navigator.clipboard?.writeText(text).then(()=>alert('Code copied to clipboard!')).catch(()=>alert(text));
+  }
+}
+
+async function loadSwipeHistory(){
+  const el = document.getElementById('swipeHistory');
+  if(!el || !currentUser) return;
+  try{
+    // Get sessions this user participated in, completed
+    const sessions = await supaFetch(
+      '/rest/v1/swipe_sessions?status=eq.complete&order=created_at.desc&limit=10'
+    );
+    // Filter to ones user was in
+    const mySessionIds = (await supaFetch(
+      '/rest/v1/session_participants?user_id=eq.'+currentUser.id+'&select=session_id'
+    )).map(r=>r.session_id);
+    const mine = sessions.filter(s=>mySessionIds.includes(s.id));
+    if(!mine.length){ el.innerHTML=''; return; }
+
+    // For each session get participants and matched recipe ids
+    const rows = await Promise.all(mine.map(async s=>{
+      const parts = await supaFetch('/rest/v1/session_participants?session_id=eq.'+s.id+'&select=user_id,profiles(display_name)');
+      // matched = recipes everyone liked
+      const swipes = await supaFetch('/rest/v1/swipes?session_id=eq.'+s.id+'&liked=eq.true&select=recipe_id,user_id');
+      const partCount = parts.length;
+      const byCounts = {};
+      swipes.forEach(sw=>{ byCounts[sw.recipe_id]=(byCounts[sw.recipe_id]||new Set()).add(sw.user_id); });
+      const matchIds = Object.entries(byCounts).filter(([,s])=>s.size>=partCount).map(([id])=>id);
+      const otherNames = parts.filter(p=>p.user_id!==currentUser.id).map(p=>p.profiles?.display_name||'Someone').join(', ');
+      const date = new Date(s.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      const matchRecipes = matchIds.map(id=>allRecipes.find(r=>r.id===id)).filter(Boolean);
+      return{s, otherNames, date, matchRecipes};
+    }));
+
+    el.innerHTML = `<p style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:8px">Past Sessions</p>`
+      + rows.map(({s,otherNames,date,matchRecipes})=>`
+      <div class="swipe-history-item" onclick="viewSwipeHistory('${s.id}')">
+        <div class="swipe-history-who">With ${esc(otherNames||'Others')}</div>
+        <div class="swipe-history-meta">${date} · ${matchRecipes.length} match${matchRecipes.length!==1?'es':''}</div>
+        ${matchRecipes.length?`<div class="swipe-history-matches">${matchRecipes.slice(0,4).map(r=>`<span class="swipe-history-match-chip">${esc(r.name)}</span>`).join('')}${matchRecipes.length>4?`<span class="swipe-history-match-chip">+${matchRecipes.length-4} more</span>`:''}</div>`:''}
+      </div>`).join('');
+  }catch(e){ el.innerHTML=''; }
+}
+
+async function viewSwipeHistory(sessionId){
+  try{
+    const swipes = await supaFetch('/rest/v1/swipes?session_id=eq.'+sessionId+'&liked=eq.true&select=recipe_id,user_id');
+    const parts = await supaFetch('/rest/v1/session_participants?session_id=eq.'+sessionId+'&select=user_id');
+    const partCount = parts.length;
+    const byCounts = {};
+    swipes.forEach(sw=>{ byCounts[sw.recipe_id]=(byCounts[sw.recipe_id]||new Set()).add(sw.user_id); });
+    const matchIds = Object.entries(byCounts).filter(([,s])=>s.size>=partCount).map(([id])=>id);
+    swipeMatches = matchIds;
+    await showSwipeResults();
+  }catch(e){ alert('Could not load session: '+e.message); }
 }
 
 function resetSwipeState(){

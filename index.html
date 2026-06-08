@@ -430,6 +430,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
   .recipe-detail h1 { font-size: 22px; }
   .time-bar { gap: 1rem; padding: 10px 12px; }
   .actions-row { gap: 6px; }
+  .notif-dropdown { width: calc(100vw - 24px); right: -50px; }
+  .community-input-row { flex-direction: column; }
+  .community-send-btn { width: 100%; }
   .btn { font-size: 12px; padding: 7px 12px; }
   .scaler-bar { padding: 8px 12px; }
 
@@ -1256,6 +1259,16 @@ function parseDur(iso){
   if(h&&m)return h+'h '+m+'m';if(h)return h+' hr';if(m)return m+' min';return null;
 }
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function relativeTime(d){const diff=Date.now()-new Date(d),m=Math.floor(diff/60000),h=Math.floor(diff/3600000),dy=Math.floor(diff/86400000);if(m<1)return'just now';if(m<60)return m+'m ago';if(h<24)return h+'h ago';if(dy<30)return dy+'d ago';return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'});}
+function relativeTime(dateStr){
+  const diff=Date.now()-new Date(dateStr);
+  const m=Math.floor(diff/60000),h=Math.floor(diff/3600000),d=Math.floor(diff/86400000);
+  if(m<1)return'just now';
+  if(m<60)return m+'m ago';
+  if(h<24)return h+'h ago';
+  if(d<30)return d+'d ago';
+  return new Date(dateStr).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
 function formatIngredients(text){
   if(!text)return'';
   const lines=text.split('\n').map(l=>l.replace(/^\s*[\d]+[.)]\s*/,'').replace(/^\s*[-•*·~]\s*/,'').trim()).filter(Boolean);
@@ -1339,44 +1352,74 @@ async function loadDetail(id){
       return vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1) : null;
     };
     const avgTaste = avg(ratings,'taste'), avgEase = avg(ratings,'ease'), avgAcc = avg(ratings,'accuracy');
-    const ratingCount = ratings.length;
+    const cookCount = ratings.filter(x=>x.is_new_cook!==false).length;
     const myRating = ratings.find(x=>x.user_id===currentUser?.id);
-    const ratingsAggHTML = ratingCount > 0 ? `<div class="ratings-agg">
+    const ratingsAggHTML = (ratings.length > 0) ? `<div class="ratings-agg">
       ${avgTaste?`<div class="ratings-agg-item"><div class="rai-label">Taste</div><div class="rai-val">${avgTaste}</div><div class="rai-count">/ 5</div></div>`:''}
       ${avgEase?`<div class="ratings-agg-item"><div class="rai-label">Ease</div><div class="rai-val">${avgEase}</div><div class="rai-count">/ 5</div></div>`:''}
       ${avgAcc?`<div class="ratings-agg-item"><div class="rai-label">Accuracy</div><div class="rai-val">${avgAcc}</div><div class="rai-count">/ 5</div></div>`:''}
-      <div class="ratings-agg-item"><div class="rai-label">Cooks</div><div class="rai-val">${ratingCount}</div><div class="rai-count">&nbsp;</div></div>
+      <div class="ratings-agg-item"><div class="rai-label">Cooks</div><div class="rai-val">${cookCount}</div><div class="rai-count">&nbsp;</div></div>
     </div>` : '';
     const starsDisplay = n => n ? '★'.repeat(n)+'☆'.repeat(5-n) : '';
-    const logEntriesHTML = ratings.map(entry => {
-      const name = profileMap[entry.user_id] || 'Someone';
-      const date = new Date(entry.cooked_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-      const stars = [
-        entry.taste ? `<span title="Taste">${starsDisplay(entry.taste)}</span>` : '',
-        entry.ease  ? `<span title="Ease" style="opacity:.7">${starsDisplay(entry.ease)}</span>` : '',
-        entry.accuracy ? `<span title="Accuracy" style="opacity:.5">${starsDisplay(entry.accuracy)}</span>` : '',
-      ].filter(Boolean).join(' · ');
-      return `<div style="padding:10px 0;border-bottom:1px solid var(--border)">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-          <span style="font-size:13px;font-weight:500;color:var(--text)">${esc(name)}</span>
-          <span style="font-size:11px;color:var(--text3)">${date}</span>
+    // Merge ratings + comments into unified chronological feed
+    const feedEntries = [
+      ...ratings.map(x=>({...x,_type:'rating',_date:x.cooked_at})),
+      ...comments.map(x=>({...x,_type:'comment',_date:x.created_at}))
+    ].sort((a,b)=>new Date(a._date)-new Date(b._date));
+    const feedHTML = feedEntries.map(entry=>{
+      const name = profileMap[entry.user_id]||'Someone';
+      const initial = (name[0]||'?').toUpperCase();
+      const time = relativeTime(entry._date);
+      const isOwn = entry.user_id===currentUser?.id;
+      const canDel = isOwn||currentProfile?.is_admin;
+      let starsHtml='';
+      if(entry._type==='rating'){
+        const parts=[
+          entry.taste?`<span title="Taste">${starsDisplay(entry.taste)}</span>`:'',
+          entry.ease?`<span title="Ease" style="opacity:.7">${starsDisplay(entry.ease)}</span>`:'',
+          entry.accuracy?`<span title="Accuracy" style="opacity:.5">${starsDisplay(entry.accuracy)}</span>`:'',
+        ].filter(Boolean);
+        if(parts.length)starsHtml=`<div class="community-stars">${parts.join(' · ')}</div>`;
+      }
+      const bodyText = entry._type==='rating' ? entry.feedback : entry.comment;
+      const textHtml = bodyText ? `<p class="community-text">${esc(bodyText)}</p>` : '';
+      const badge = entry._type==='rating' ? `<span class="community-type-badge">cooked</span>` : '';
+      const editBtn = isOwn ? (entry._type==='comment'
+        ? `<button class="community-action-btn" onclick="editComment('${entry.id}','${id}')">Edit</button>`
+        : `<button class="community-action-btn" onclick="openRatingModal('${id}','${entry.id}',${JSON.stringify({taste:entry.taste,ease:entry.ease,accuracy:entry.accuracy,feedback:entry.feedback||''})},true)">Edit</button>`)
+        : '';
+      const delBtn = canDel ? (entry._type==='comment'
+        ? `<button class="community-action-btn danger" onclick="deleteComment('${entry.id}','${id}')">Delete</button>`
+        : `<button class="community-action-btn danger" onclick="deleteRatingEntry('${entry.id}','${id}')">Delete</button>`)
+        : '';
+      return `<div class="community-entry" id="centry-${entry.id}">
+        <div class="community-entry-header">
+          <div class="community-avatar">${initial}</div>
+          <div class="community-entry-meta">
+            <span class="community-entry-name">${esc(name)}</span>${badge}
+            <div class="community-entry-time">${time}</div>
+          </div>
+          <div class="community-entry-actions">${editBtn}${delBtn}</div>
         </div>
-        ${stars?`<div style="font-size:12px;color:var(--accent);margin-bottom:${entry.feedback?'6px':'0'}">${stars}</div>`:''}
-        ${entry.feedback?`<p style="font-size:13px;color:var(--text2);line-height:1.6;margin:0">${esc(entry.feedback)}</p>`:''}
+        ${starsHtml}${textHtml}
       </div>`;
     }).join('');
-    const ratingsHTML = `<div class="ratings-section">
-      <div class="ratings-header">
-        <h3>Cooking log</h3>
-        <button class="cook-btn" onclick="openRatingModal('${id}')">
+    const ratingsHTML = `<div class="community-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <h3 style="margin:0">Community</h3>
+        <button class="cook-btn" onclick="openRatingModal('${id}',null,null,${!!myRating})">
           <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-          ${myRating ? 'Cook again' : 'I cooked this'}
+          ${myRating ? 'Rate again' : 'I cooked this'}
         </button>
       </div>
       ${ratingsAggHTML}
-      ${ratingCount===0
-        ? '<p style="font-size:13px;color:var(--text3)">No one has logged cooking this yet. Be the first!</p>'
-        : `<div style="margin-top:8px">${logEntriesHTML}</div>`}
+      <div id="communityFeed">${feedEntries.length===0?'<p style="font-size:13px;color:var(--text3)">No activity yet. Be the first to cook or comment!</p>':feedHTML}</div>
+      <div class="community-input-row">
+        <textarea class="community-input" id="commentInput" placeholder="Leave a comment…" rows="1"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();submitComment('${id}')}"
+          oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+        <button class="community-send-btn" onclick="submitComment('${id}')">Post</button>
+      </div>
     </div>`;
     document.getElementById('recipeDetail').innerHTML=`
       <div class="recipe-detail">
@@ -2946,6 +2989,9 @@ function updateTopbarUser(){
   const isAdmin=currentProfile?.is_admin===true;
   if(settingsBtn)settingsBtn.style.display=isAdmin?'':'none';
   if(dropdownSettings)dropdownSettings.style.display=isAdmin?'block':'none';
+  const notifArea=document.getElementById('notifArea');
+  if(notifArea)notifArea.style.display=currentUser?'':'none';
+  if(currentUser)loadNotifications();
 }
 
 const LOGIN_FORM_HTML = `
@@ -3081,6 +3127,7 @@ async function toggleSave(id){
     } else {
       await supaFetch('/rest/v1/saved_recipes','POST',{user_id:currentUser.id,recipe_id:id},{'Prefer':'return=minimal'});
       savedRecipeIds.add(id);
+      createNotification('save',id);
     }
     const btn=document.getElementById('saveBtn');
     if(btn){
@@ -3090,19 +3137,43 @@ async function toggleSave(id){
   }catch(e){alert('Could not save recipe: '+e.message);}
 }
 
-// ── RATINGS ───────────────────────────────────────────────────────────────────
+// ── RATINGS & COMMENTS ────────────────────────────────────────────────────────
 let _ratingRecipeId = null;
+let _editingRatingId = null;
 
-function openRatingModal(recipeId){
+function openRatingModal(recipeId, existingId=null, prefill=null, isReRate=false){
   _ratingRecipeId = recipeId;
-  ['taste','ease','accuracy'].forEach(k=>setRatingStar(k,0));
-  document.getElementById('ratingFeedback').value='';
+  _editingRatingId = existingId;
+  ['taste','ease','accuracy'].forEach(k=>setRatingStar(k,prefill?.[k]||0));
+  document.getElementById('ratingFeedback').value = prefill?.feedback||'';
+  const title = document.getElementById('ratingModalTitle');
+  const sub = document.getElementById('ratingModalSub');
+  const cookRow = document.getElementById('cookAgainRow');
+  const delBtn = document.getElementById('ratingDeleteBtn');
+  if(existingId){
+    title.textContent = 'Edit your rating';
+    sub.textContent = 'Update how it went.';
+    cookRow.style.display='none';
+    delBtn.style.display='';
+  } else if(isReRate){
+    title.textContent = 'Rate again';
+    sub.textContent = 'How did it go this time?';
+    cookRow.style.display='';
+    document.getElementById('cookAgainCheck').checked=true;
+    delBtn.style.display='none';
+  } else {
+    title.textContent = 'I cooked this!';
+    sub.textContent = 'How did it go?';
+    cookRow.style.display='none';
+    delBtn.style.display='none';
+  }
   document.getElementById('ratingModal').classList.add('open');
 }
 
 function closeRatingModal(){
   document.getElementById('ratingModal').classList.remove('open');
   _ratingRecipeId = null;
+  _editingRatingId = null;
 }
 
 function setRatingStar(key, val){
@@ -3117,25 +3188,155 @@ function setRatingStar(key, val){
 async function submitRating(){
   if(!currentUser || !_ratingRecipeId) return;
   const recipeId = _ratingRecipeId;
+  const editingId = _editingRatingId;
   const taste = parseInt(document.getElementById('starsTaste').dataset.val)||null;
   const ease = parseInt(document.getElementById('starsEase').dataset.val)||null;
   const accuracy = parseInt(document.getElementById('starsAccuracy').dataset.val)||null;
   const feedback = document.getElementById('ratingFeedback').value.trim()||null;
   if(!taste && !ease && !accuracy){ alert('Please rate at least one category.'); return; }
+  const cookRowVisible = document.getElementById('cookAgainRow').style.display!=='none';
+  const is_new_cook = editingId ? undefined : (cookRowVisible ? document.getElementById('cookAgainCheck').checked : true);
   try{
-    await supaFetch('/rest/v1/recipe_ratings','POST',{
-      recipe_id:recipeId, user_id:currentUser.id,
-      taste, ease, accuracy, feedback
-    },{'Prefer':'return=minimal'});
+    if(editingId){
+      await supaFetch('/rest/v1/recipe_ratings?id=eq.'+editingId,'PATCH',
+        {taste,ease,accuracy,feedback},{'Prefer':'return=minimal'});
+    } else {
+      const body = {recipe_id:recipeId,user_id:currentUser.id,taste,ease,accuracy,feedback};
+      if(is_new_cook!==undefined) body.is_new_cook=is_new_cook;
+      await supaFetch('/rest/v1/recipe_ratings','POST',body,{'Prefer':'return=minimal'});
+      createNotification('rating',recipeId);
+    }
     closeRatingModal();
     loadDetail(recipeId);
   }catch(e){ alert('Could not save rating: '+e.message); }
+}
+
+async function deleteRating(){
+  if(!_editingRatingId||!_ratingRecipeId) return;
+  if(!confirm('Delete this rating?')) return;
+  const recipeId=_ratingRecipeId, id=_editingRatingId;
+  try{
+    await supaFetch('/rest/v1/recipe_ratings?id=eq.'+id,'DELETE',null,{'Prefer':'return=minimal'});
+    closeRatingModal();
+    loadDetail(recipeId);
+  }catch(e){ alert('Could not delete: '+e.message); }
+}
+
+async function deleteRatingEntry(entryId, recipeId){
+  if(!confirm('Delete this entry?')) return;
+  try{
+    await supaFetch('/rest/v1/recipe_ratings?id=eq.'+entryId,'DELETE',null,{'Prefer':'return=minimal'});
+    loadDetail(recipeId);
+  }catch(e){ alert('Could not delete: '+e.message); }
+}
+
+async function submitComment(recipeId){
+  if(!currentUser) return;
+  const input = document.getElementById('commentInput');
+  const text = input?.value.trim();
+  if(!text) return;
+  try{
+    await supaFetch('/rest/v1/recipe_comments','POST',
+      {recipe_id:recipeId,user_id:currentUser.id,comment:text},
+      {'Prefer':'return=minimal'});
+    input.value='';
+    input.style.height='auto';
+    createNotification('comment',recipeId);
+    loadDetail(recipeId);
+  }catch(e){ alert('Could not post comment: '+e.message); }
+}
+
+async function editComment(commentId, recipeId){
+  const entryEl = document.getElementById('centry-'+commentId);
+  const existingText = entryEl?.querySelector('.community-text')?.textContent||'';
+  const newText = prompt('Edit comment:', existingText);
+  if(newText===null) return;
+  const trimmed = newText.trim();
+  if(!trimmed){ alert('Comment cannot be empty.'); return; }
+  try{
+    await supaFetch('/rest/v1/recipe_comments?id=eq.'+commentId,'PATCH',
+      {comment:trimmed,updated_at:new Date().toISOString()},{'Prefer':'return=minimal'});
+    loadDetail(recipeId);
+  }catch(e){ alert('Could not edit comment: '+e.message); }
+}
+
+async function deleteComment(commentId, recipeId){
+  if(!confirm('Delete this comment?')) return;
+  try{
+    await supaFetch('/rest/v1/recipe_comments?id=eq.'+commentId,'DELETE',null,{'Prefer':'return=minimal'});
+    loadDetail(recipeId);
+  }catch(e){ alert('Could not delete: '+e.message); }
 }
 
 // Close rating modal on overlay click
 document.getElementById('ratingModal').addEventListener('click', function(e){
   if(e.target===this) closeRatingModal();
 });
+
+// ── NOTIFICATIONS ─────────────────────────────────────────────────────────────
+async function createNotification(type, recipeId){
+  if(!currentUser) return;
+  try{
+    const [recipe] = await supaFetch('/rest/v1/recipes?id=eq.'+recipeId+'&select=owner_id');
+    if(!recipe?.owner_id||recipe.owner_id===currentUser.id) return;
+    await supaFetch('/rest/v1/notifications','POST',{
+      user_id:recipe.owner_id,actor_id:currentUser.id,type,recipe_id:recipeId,read:false
+    },{'Prefer':'return=minimal'});
+  }catch(e){}
+}
+
+async function loadNotifications(){
+  if(!currentUser) return;
+  try{
+    const notifs = await supaFetch('/rest/v1/notifications?user_id=eq.'+currentUser.id+'&order=created_at.desc&limit=30&select=id,type,recipe_id,actor_id,read,created_at');
+    const unread = notifs.filter(n=>!n.read).length;
+    const badge = document.getElementById('notifBadge');
+    const btn = document.getElementById('notifBtn');
+    if(badge){badge.textContent=unread;badge.style.display=unread?'flex':'none';}
+    if(btn) btn.classList.toggle('has-unread',unread>0);
+    if(!notifs.length){document.getElementById('notifList').innerHTML='<div class="notif-empty">No notifications yet</div>';return;}
+    const actorIds=[...new Set(notifs.map(n=>n.actor_id))];
+    const recipeIds=[...new Set(notifs.map(n=>n.recipe_id))];
+    const [actors,recipes]=await Promise.all([
+      actorIds.length?supaFetch('/rest/v1/profiles?id=in.('+actorIds.join(',')+')'+'&select=id,display_name'):[],
+      recipeIds.length?supaFetch('/rest/v1/recipes?id=in.('+recipeIds.join(',')+')'+'&select=id,name'):[]
+    ]);
+    const actorMap=Object.fromEntries(actors.map(a=>[a.id,a.display_name||'Someone']));
+    const recipeMap=Object.fromEntries(recipes.map(r=>[r.id,r.name]));
+    const typeText={comment:'commented on',rating:'rated',save:'saved'};
+    document.getElementById('notifList').innerHTML=notifs.map(n=>`
+      <div class="notif-item${n.read?'':' unread'}" onclick="handleNotifClick('${n.recipe_id}','${n.id}')">
+        <div class="notif-item-text"><strong>${esc(actorMap[n.actor_id]||'Someone')}</strong> ${typeText[n.type]||'interacted with'} <strong>${esc(recipeMap[n.recipe_id]||'a recipe')}</strong></div>
+        <div class="notif-item-time">${relativeTime(n.created_at)}</div>
+      </div>`).join('');
+  }catch(e){}
+}
+
+async function handleNotifClick(recipeId, notifId){
+  toggleNotifDropdown(false);
+  supaFetch('/rest/v1/notifications?id=eq.'+notifId,'PATCH',{read:true},{'Prefer':'return=minimal'}).catch(()=>{});
+  loadDetail(recipeId);
+}
+
+function toggleNotifDropdown(forceState){
+  const dd=document.getElementById('notifDropdown');
+  const open=forceState!==undefined?forceState:!dd.classList.contains('open');
+  dd.classList.toggle('open',open);
+  if(open){
+    supaFetch('/rest/v1/notifications?user_id=eq.'+currentUser?.id+'&read=eq.false','PATCH',{read:true},{'Prefer':'return=minimal'})
+      .then(()=>loadNotifications()).catch(()=>{});
+    setTimeout(()=>document.addEventListener('click',closeNotifOutside),0);
+  } else {
+    document.removeEventListener('click',closeNotifOutside);
+  }
+}
+
+function closeNotifOutside(e){
+  if(!document.getElementById('notifArea')?.contains(e.target)){
+    toggleNotifDropdown(false);
+    document.removeEventListener('click',closeNotifOutside);
+  }
+}
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 initAuth();

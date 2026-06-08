@@ -1194,6 +1194,7 @@ function recipeCardHTML(r){
 
 // ── NAV ──────────────────────────────────────────────────────────────────────
 function showTab(tab){
+  sessionStorage.removeItem('rd_last_recipe');
   // Clean up AI panel state when leaving the AI tab
   if(tab !== 'new'){
     const panel = document.getElementById('panel-ai');
@@ -1219,6 +1220,7 @@ function showTab(tab){
 
 function goHome(){
   currentId=null;
+  sessionStorage.removeItem('rd_last_recipe');
   showTab('home');
   document.querySelectorAll('.recipe-row').forEach(el=>el.classList.remove('active'));
   document.getElementById('page-home').scrollTop = 0;
@@ -1290,6 +1292,7 @@ function formatNotes(text){
 async function loadDetail(id){
   trackRecentlyViewed(id);
   currentId=id;
+  sessionStorage.setItem('rd_last_recipe',id);
   // Show detail page
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -2976,6 +2979,9 @@ async function onSignedIn(session){
   updateTopbarUser();
   await loadRecipes();
   loadApiKey();
+  // Restore last-viewed recipe after refresh (sessionStorage persists soft refresh, clears on tab close)
+  const lastId = sessionStorage.getItem('rd_last_recipe');
+  if(lastId) loadDetail(lastId);
 }
 
 function updateTopbarUser(){
@@ -2990,7 +2996,7 @@ function updateTopbarUser(){
   if(settingsBtn)settingsBtn.style.display=isAdmin?'':'none';
   if(dropdownSettings)dropdownSettings.style.display=isAdmin?'block':'none';
   const notifArea=document.getElementById('notifArea');
-  if(notifArea)notifArea.style.display=currentUser?'':'none';
+  if(notifArea)notifArea.style.display=currentUser?'flex':'none';
   if(currentUser)loadNotifications();
 }
 

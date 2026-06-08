@@ -862,7 +862,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 
     <!-- Password -->
     <div class="login-field">
-      <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password" disabled onkeydown="if(event.key==='Enter')handleLogin()">
+      <input type="text" id="loginPassword" placeholder="Password" autocomplete="current-password" disabled onkeydown="if(event.key==='Enter')handleLogin()">
     </div>
 
     <!-- Forgot password (sign in only) -->
@@ -2811,12 +2811,14 @@ function showLoginModal(){
   document.getElementById('loginModal').classList.add('open');
   document.getElementById('app').style.display='none';
   document.querySelectorAll('#loginModal input').forEach(i=>i.removeAttribute('disabled'));
+  document.getElementById('loginPassword').type='password';
 }
 
 function hideLoginModal(){
   document.getElementById('loginModal').classList.remove('open');
   document.getElementById('app').style.display='';
   document.querySelectorAll('#loginModal input').forEach(i=>i.setAttribute('disabled',''));
+  document.getElementById('loginPassword').type='text';
 }
 
 async function handleLogin(){

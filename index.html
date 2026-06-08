@@ -94,15 +94,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 .recipe-card-meta{font-size:11px;color:var(--text3)}
 
 /* BROWSE / DETAIL */
-.browse-page{padding:2rem}
+.browse-page{padding:1.5rem 2rem}
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5rem 2rem;text-align:center;gap:8px;color:var(--text3)}
-.recipe-detail{max-width:680px}
+.recipe-detail{max-width:680px;width:100%}
 @media(min-width:960px){
-  .recipe-detail{max-width:1200px;display:grid;grid-template-columns:1fr 1fr;column-gap:2.5rem;align-items:start}
+  .recipe-detail{max-width:none;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);column-gap:2.5rem;align-items:start}
   .recipe-detail-left{min-width:0}
-  .recipe-detail-right{min-width:0;padding-top:0}
-  /* Make back button span full width above both columns */
+  .recipe-detail-right{min-width:0}
   .recipe-detail-back{grid-column:1/-1}
+  .recipe-hero{aspect-ratio:4/3}
 }
 .recipe-hero{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:var(--radius);margin-bottom:1.25rem;border:1px solid var(--border);display:block}
 .recipe-hero-placeholder{width:100%;height:180px;background:var(--bg2);border-radius:var(--radius);margin-bottom:1.25rem;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:10px}
@@ -1344,6 +1344,9 @@ async function loadDetail(id){
           ${tags?`<div class="tags-row">${tags}</div>`:''}
           ${scalerBar}
           ${timeBar}${src}
+          ${r.ingredients?`<div class="section-head">Ingredients</div><div class="content-block" id="ingredientsBlock">${formatIngredients(r.ingredients)}</div>`:''}
+        </div>
+        <div class="recipe-detail-right">
           <div class="recipe-chat-section">
             <div class="recipe-chat-header">
               <h3>Ask Claude about this recipe</h3>
@@ -1365,9 +1368,6 @@ async function loadDetail(id){
               </div>
             </div>
           </div>
-        </div>
-        <div class="recipe-detail-right">
-          ${r.ingredients?`<div class="section-head">Ingredients</div><div class="content-block" id="ingredientsBlock">${formatIngredients(r.ingredients)}</div>`:''}
           ${r.directions?`<div class="section-head">Directions</div><div class="content-block" id="directionsBlock">${formatDirections(r.directions)}</div>`:''}
           ${r.notes?`<div class="section-head">Notes</div><div id="notesBlock">${formatNotes(r.notes)}</div>`:''}
           ${nutLine}
@@ -1378,16 +1378,6 @@ async function loadDetail(id){
           </div>
           ${ratingsHTML}
         </div>
-        ${r.ingredients?`<div class="section-head">Ingredients</div><div class="content-block" id="ingredientsBlock">${formatIngredients(r.ingredients)}</div>`:''}
-        ${r.directions?`<div class="section-head">Directions</div><div class="content-block" id="directionsBlock">${formatDirections(r.directions)}</div>`:''}
-        ${r.notes?`<div class="section-head">Notes</div><div id="notesBlock">${formatNotes(r.notes)}</div>`:''}
-        ${nutLine}
-        <div class="actions-row">
-          ${canEdit?`<button class="btn" onclick="openEdit('${id}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>`:''}
-          <button class="btn primary" onclick="sharePDF()"><svg viewBox="0 0 24 24" style="stroke:white"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Share PDF</button>
-          ${canEdit?`<button class="btn danger" onclick="deleteRecipe('${id}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>`:''}
-        </div>
-        ${ratingsHTML}
       </div>`;
   }catch(e){document.getElementById('recipeDetail').innerHTML='<div class="empty-state"><p>Failed to load recipe.</p></div>';}
 }

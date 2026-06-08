@@ -2034,6 +2034,8 @@ function scaleIngredients(mult){
   // Full line pattern: optional leading qty, optional range (dash or " to "), rest of line
   const LINE_RE = new RegExp('^(' + QTY_PAT + ')((?:\\s*(?:[-\u2013]|\\bto\\b)\\s*)(' + QTY_PAT + '))?(\\s+)', 'u');
 
+  const QTY_INLINE = new RegExp(QTY_PAT, 'gu');
+
   const lines = r.ingredients.split('\n').map(line => {
     const m = line.match(LINE_RE);
     if(!m) return line;
@@ -2054,13 +2056,21 @@ function scaleIngredients(mult){
       const highVal = parseFraction(highStr);
       if(highVal !== null){
         const scaledHigh = highVal * mult;
-        // Preserve original separator style
         const sep = sepAndHigh.match(/to/) ? ' to ' : '–';
         display = formatScaled(scaledLow) + sep + formatScaled(scaledHigh);
       }
     }
 
-    return display + space + line.slice(fullMatch.length);
+    // Scale numbers inside parentheses too (e.g. "2 Costco bags")
+    const rest = line.slice(fullMatch.length).replace(/\(([^)]+)\)/g, (paren, inner) => {
+      const scaled = inner.replace(QTY_INLINE, qty => {
+        const v = parseFraction(qty);
+        return v !== null ? formatScaled(v * mult) : qty;
+      });
+      return '(' + scaled + ')';
+    });
+
+    return display + space + rest;
   });
 
   const ib = document.getElementById('ingredientsBlock');
@@ -3006,6 +3016,7 @@ function setRatingStar(key, val){
 
 async function submitRating(){
   if(!currentUser || !_ratingRecipeId) return;
+  const recipeId = _ratingRecipeId;
   const taste = parseInt(document.getElementById('starsTaste').dataset.val)||null;
   const ease = parseInt(document.getElementById('starsEase').dataset.val)||null;
   const accuracy = parseInt(document.getElementById('starsAccuracy').dataset.val)||null;
@@ -3013,11 +3024,11 @@ async function submitRating(){
   if(!taste && !ease && !accuracy){ alert('Please rate at least one category.'); return; }
   try{
     await supaFetch('/rest/v1/recipe_ratings','POST',{
-      recipe_id:_ratingRecipeId, user_id:currentUser.id,
+      recipe_id:recipeId, user_id:currentUser.id,
       taste, ease, accuracy, feedback
     },{'Prefer':'return=minimal'});
     closeRatingModal();
-    loadDetail(_ratingRecipeId);
+    loadDetail(recipeId);
   }catch(e){ alert('Could not save rating: '+e.message); }
 }
 

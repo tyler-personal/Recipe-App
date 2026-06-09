@@ -2621,11 +2621,25 @@ function openImgPreview(){
     card.id='imgcard-'+e.id;
     card.style.cssText='border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border);background:var(--surface);display:flex;flex-direction:column';
 
-    // Image container — use background-image so CSS handles sizing cleanly
+    // Image container
     const imgBox=document.createElement('div');
-    imgBox.style.cssText=`width:100%;height:150px;flex-shrink:0;background:#d0d0d0 center/cover no-repeat;position:relative;${hasImg?`background-image:url('${url.replace(/'/g,"\\'")}');`:'display:flex;align-items:center;justify-content:center;'}`;
+    imgBox.style.width='100%';
+    imgBox.style.height='150px';
+    imgBox.style.flexShrink='0';
+    imgBox.style.position='relative';
+    imgBox.style.backgroundColor='#c8c8c8';
+    imgBox.style.backgroundSize='cover';
+    imgBox.style.backgroundPosition='center';
+    imgBox.style.backgroundRepeat='no-repeat';
+    if(hasImg) imgBox.style.backgroundImage='url("'+url+'")';
     if(!hasImg){
-      imgBox.innerHTML='<span style="font-size:11px;color:#888">No image found</span>';
+      imgBox.style.display='flex';
+      imgBox.style.alignItems='center';
+      imgBox.style.justifyContent='center';
+      const noImg=document.createElement('span');
+      noImg.style.cssText='font-size:11px;color:#888';
+      noImg.textContent='No image found';
+      imgBox.appendChild(noImg);
     }
 
     // Checkbox overlay
@@ -2675,7 +2689,7 @@ function swapImg(id){
   const url=e.urls[e.currentIdx];
   const card=document.getElementById('imgcard-'+id);
   const imgBox=card.querySelector('div');
-  if(imgBox) imgBox.style.backgroundImage=`url('${url.replace(/'/g,"\\'")}')`;
+  if(imgBox) imgBox.style.backgroundImage='url("'+url+'")';
 }
 
 function closeImgPreview(){

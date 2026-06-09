@@ -2631,7 +2631,15 @@ function openImgPreview(){
     imgBox.style.backgroundSize='cover';
     imgBox.style.backgroundPosition='center';
     imgBox.style.backgroundRepeat='no-repeat';
-    if(hasImg) imgBox.style.backgroundImage='url("'+url+'")';
+    if(hasImg){
+      imgBox.style.backgroundImage='url("'+url+'")';
+      // Debug: also add an <img> child so we can see if the URL itself loads
+      const dbgImg=document.createElement('img');
+      dbgImg.src=url;
+      dbgImg.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover';
+      imgBox.appendChild(dbgImg);
+      if(entries.indexOf(e)===0) console.log('DEBUG first image URL:',url);
+    }
     if(!hasImg){
       imgBox.style.display='flex';
       imgBox.style.alignItems='center';

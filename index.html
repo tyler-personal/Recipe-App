@@ -2355,6 +2355,7 @@ If your response includes a modified or updated version of the recipe, end with 
 
 async function saveChatAsNote(){
   if(!window._lastRCResponse || !currentId) return;
+  const btn = document.querySelector('.chat-action-btn');
   const r = window._currentRecipe;
   const timestamp = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'});
   const newNote = (r.notes ? r.notes+'\n\n' : '') + `--- AI Note (${timestamp}) ---\n${window._lastRCResponse.replace(/<[^>]+>/g,'').replace(/UPDATE_AVAILABLE/g,'').trim()}`;
@@ -2363,10 +2364,7 @@ async function saveChatAsNote(){
     window._currentRecipe.notes = newNote;
     const nb = document.getElementById('notesBlock');
     if(nb) nb.innerHTML = formatNotes(newNote);
-    // Flash confirmation
-    const btn = event.target;
-    btn.textContent = '✓ Saved!';
-    setTimeout(()=>btn.textContent='💾 Save as note', 2000);
+    if(btn){ btn.textContent = '✓ Saved!'; setTimeout(()=>btn.textContent='💾 Save as note', 2000); }
   }catch(e){alert('Save failed: '+e.message);}
 }
 

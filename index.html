@@ -925,7 +925,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 
     <hr style="margin:1.25rem 0;border:none;border-top:1px solid var(--border)"/>
     <label style="margin-bottom:6px;display:block">Batch Image Fetcher</label>
-    <p style="font-size:12px;color:var(--text3);margin:0 0 10px">Fetches a Pexels image for every recipe missing one and saves it directly. Review results in the recipe cards afterwards.</p>
+    <p style="font-size:12px;color:var(--text3);margin:0 0 10px">Fetches Pexels images for every recipe missing one. Review and approve before anything is saved.</p>
     <div id="imgFetchProgress" style="display:none;font-size:12px;color:var(--text2);margin-bottom:8px;line-height:1.6"></div>
     <button class="btn" id="fetchImagesBtn" onclick="batchFetchImages()">
       <svg viewBox="0 0 24 24" style="stroke:currentColor;fill:none;stroke-width:2;width:13px;height:13px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -934,6 +934,20 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
   </div>
 </div>
 
+<!-- IMAGE PREVIEW OVERLAY -->
+<div id="imgPreviewOverlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:500;flex-direction:column;overflow:hidden">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);flex-shrink:0">
+    <div>
+      <div style="font-weight:600;font-size:16px">Review Images</div>
+      <div id="imgPreviewSubtitle" style="font-size:12px;color:var(--text3);margin-top:2px"></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn" onclick="closeImgPreview()">Cancel</button>
+      <button class="btn primary" id="imgSaveBtn" onclick="saveApprovedImages()">Save Approved</button>
+    </div>
+  </div>
+  <div id="imgPreviewGrid" style="flex:1;overflow-y:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px"></div>
+</div>
 
 </div><!-- /app -->
 
@@ -2538,11 +2552,15 @@ function showSettings(){
 
 function closeSettings(){ document.getElementById('settingsModal').classList.remove('open'); }
 
+// { id, name, urls:[], idx:0 }
+let _imgData = [];
+
 async function batchFetchImages(){
   const btn=document.getElementById('fetchImagesBtn');
   const prog=document.getElementById('imgFetchProgress');
   btn.disabled=true;
   prog.style.display='block';
+  prog.textContent='Loading recipes…';
 
   try{
     const rows=await supaFetch('/rest/v1/recipes?image_url=is.null&select=id,name&order=name');
@@ -2552,33 +2570,106 @@ async function batchFetchImages(){
       return;
     }
 
-    let saved=0, skipped=0, i=0;
-    for(const r of rows){
-      i++;
-      prog.textContent='['+i+'/'+rows.length+'] '+r.name+'…';
+    _imgData=[];
+    for(let i=0;i<rows.length;i++){
+      const r=rows[i];
+      prog.textContent='['+(i+1)+'/'+rows.length+'] '+r.name+'…';
+      let urls=[];
       try{
         const res=await fetch(SUPA_URL+'/functions/v1/image-search',{
           method:'POST',
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify({query:r.name})
         });
-        if(res.ok){
-          const d=await res.json();
-          const url=d.urls&&d.urls[0];
-          if(url){
-            await supaFetch('/rest/v1/recipes?id=eq.'+r.id,'PATCH',{image_url:url},{'Prefer':'return=minimal'});
-            saved++;
-          } else { skipped++; }
-        } else { skipped++; }
-      }catch(e){ skipped++; }
-      await new Promise(r=>setTimeout(r,300));
+        if(res.ok){ const d=await res.json(); urls=d.urls||[]; }
+      }catch(e){}
+      _imgData.push({id:r.id, name:r.name, urls, idx:0});
+      await new Promise(r=>setTimeout(r,250));
     }
 
-    prog.innerHTML='Done — <strong>'+saved+'</strong> images saved, '+skipped+' skipped.';
+    prog.style.display='none';
+    btn.disabled=false;
+    openImgPreview();
   }catch(e){
     prog.textContent='Error: '+e.message;
+    btn.disabled=false;
   }
-  btn.disabled=false;
+}
+
+function openImgPreview(){
+  const grid=document.getElementById('imgPreviewGrid');
+  const sub=document.getElementById('imgPreviewSubtitle');
+  const found=_imgData.filter(e=>e.urls.length);
+  sub.textContent=found.length+' images found · '+(_imgData.length-found.length)+' with no result · uncheck any to skip';
+
+  grid.innerHTML='';
+  _imgData.forEach(function(e){
+    const card=document.createElement('div');
+    card.style.cssText='border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;background:var(--surface)';
+
+    // image
+    const img=document.createElement('img');
+    img.src=e.urls[0]||'';
+    img.style.cssText='width:100%;height:160px;object-fit:cover;display:block;background:#ddd';
+    card.appendChild(img);
+
+    // name + checkbox row
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:flex-start;gap:8px;padding:8px';
+    const chk=document.createElement('input');
+    chk.type='checkbox'; chk.checked=!!e.urls.length; chk.disabled=!e.urls.length;
+    chk.dataset.idx=_imgData.indexOf(e);
+    chk.className='imgcheck';
+    chk.style.marginTop='2px';
+    const lbl=document.createElement('span');
+    lbl.style.cssText='font-size:12px;font-weight:500;line-height:1.3';
+    lbl.textContent=e.name;
+    row.appendChild(chk); row.appendChild(lbl);
+    card.appendChild(row);
+
+    // swap button
+    if(e.urls.length>1){
+      const sw=document.createElement('button');
+      sw.style.cssText='margin:0 8px 8px;padding:4px 0;width:calc(100% - 16px);border:1px solid var(--border);border-radius:6px;background:transparent;font-size:11px;cursor:pointer;color:var(--text2)';
+      sw.textContent='↻ Swap';
+      sw.onclick=(function(entry,imgEl){
+        return function(){
+          entry.idx=(entry.idx+1)%entry.urls.length;
+          imgEl.src=entry.urls[entry.idx];
+        };
+      })(e,img);
+      card.appendChild(sw);
+    }
+
+    grid.appendChild(card);
+  });
+
+  document.getElementById('imgPreviewOverlay').style.display='flex';
+}
+
+function closeImgPreview(){
+  document.getElementById('imgPreviewOverlay').style.display='none';
+}
+
+async function saveApprovedImages(){
+  const btn=document.getElementById('imgSaveBtn');
+  btn.disabled=true; btn.textContent='Saving…';
+  const checks=document.querySelectorAll('.imgcheck');
+  let saved=0,skipped=0;
+  for(const chk of checks){
+    const e=_imgData[+chk.dataset.idx];
+    if(!e||!chk.checked){skipped++;continue;}
+    try{
+      await supaFetch('/rest/v1/recipes?id=eq.'+e.id,'PATCH',{image_url:e.urls[e.idx]},{'Prefer':'return=minimal'});
+      saved++;
+    }catch(err){skipped++;}
+    await new Promise(r=>setTimeout(r,100));
+  }
+  closeImgPreview();
+  btn.disabled=false; btn.textContent='Save Approved';
+  const prog=document.getElementById('imgFetchProgress');
+  prog.innerHTML='Saved <strong>'+saved+'</strong> images, '+skipped+' skipped.';
+  prog.style.display='block';
 }
 
 

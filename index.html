@@ -829,9 +829,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
             <p id="swipeWaitingFilter" style="display:none;font-size:12px;color:var(--accent);font-weight:500;text-align:center"></p>
             <div style="display:flex;gap:8px;width:100%">
               <button class="btn" style="flex:1;justify-content:center" onclick="leaveSwipeSession()">Leave</button>
-              <button class="btn primary" style="flex:2;justify-content:center" id="startSwipeBtn" onclick="startSwiping()">Start Swiping →</button>
+              <button class="btn primary" style="flex:2;justify-content:center" id="startSwipeBtn" onclick="promptStartSwiping()" disabled>Start Swiping →</button>
             </div>
-            <p style="font-size:12px;color:var(--text3);text-align:center">Anyone can start when everyone has joined</p>
+            <p id="swipeWaitingHint" style="font-size:12px;color:var(--text3);text-align:center">Waiting for others to join…</p>
           </div>
 
           <!-- SWIPING -->
@@ -846,6 +846,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
               </button>
             </div>
             <div class="swipe-progress" id="swipeProgress"></div>
+            <button class="btn" style="margin-top:8px;font-size:12px;color:var(--text3);padding:6px 14px" onclick="endSwipeSession()">End session ✕</button>
           </div>
 
           <!-- RESULTS -->
@@ -2894,6 +2895,37 @@ function renderParticipants(profiles){
       <span style="font-size:13px">${esc(p.display_name||'Unknown')}${isYou?' <span style="color:var(--text3)">(you)</span>':''}</span>
     </div>`;
   }).join('');
+
+  // Enable start button only for the session creator once ≥2 people are in
+  const btn = document.getElementById('startSwipeBtn');
+  const hint = document.getElementById('swipeWaitingHint');
+  if(!btn || !swipeSession) return;
+  const isCreator = swipeSession.created_by === currentUser?.id;
+  const enoughPeople = profiles.length >= 2;
+  btn.disabled = !(isCreator && enoughPeople);
+  if(!isCreator){
+    hint.textContent = 'The session creator will start when everyone has joined';
+  } else if(!enoughPeople){
+    hint.textContent = 'Waiting for others to join…';
+  } else {
+    hint.textContent = 'Ready! Once you start, new participants cannot join.';
+  }
+}
+
+async function promptStartSwiping(){
+  if(!swipeSession) return;
+  const names = swipeParticipants.map(p=>(p.display_name||'Unknown')+(p.id===currentUser.id?' (you)':'')).join('\n• ');
+  const ok = confirm(`Start swiping with these participants?\n\n• ${names}\n\n⚠️ Once started, no new participants can join.`);
+  if(ok) await startSwiping();
+}
+
+async function endSwipeSession(){
+  if(!swipeSession) return;
+  const ok = confirm('End this swiping session? Everyone will be taken to the results screen.');
+  if(!ok) return;
+  clearInterval(swipePoller);swipePoller=null;
+  try{ await supaFetch('/rest/v1/swipe_sessions?id=eq.'+swipeSession.id,'PATCH',{status:'complete'},{'Prefer':'return=minimal'}); }catch{}
+  await showSwipeResults();
 }
 
 async function leaveSwipeSession(){
@@ -3155,14 +3187,42 @@ async function loadSwipeHistory(){
 
 async function viewSwipeHistory(sessionId){
   try{
+    const [session] = await supaFetch('/rest/v1/swipe_sessions?id=eq.'+sessionId+'&select=*');
+    const parts = await supaFetch('/rest/v1/session_participants?session_id=eq.'+sessionId+'&select=user_id,profiles(display_name)');
     const swipes = await supaFetch('/rest/v1/swipes?session_id=eq.'+sessionId+'&liked=eq.true&select=recipe_id,user_id');
-    const parts = await supaFetch('/rest/v1/session_participants?session_id=eq.'+sessionId+'&select=user_id');
     const partCount = parts.length;
     const byCounts = {};
     swipes.forEach(sw=>{ byCounts[sw.recipe_id]=(byCounts[sw.recipe_id]||new Set()).add(sw.user_id); });
     const matchIds = Object.entries(byCounts).filter(([,s])=>s.size>=partCount).map(([id])=>id);
-    swipeMatches = matchIds;
-    await showSwipeResults();
+    const matchedRecipes = matchIds.map(id=>allRecipes.find(r=>r.id===id)).filter(Boolean);
+    const date = new Date(session.created_at).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+    const filterLabel = session.filter_type && session.filter_type!=='all'
+      ? `${session.filter_type}: ${session.filter_value}` : 'All recipes';
+    const participantNames = parts.map(p=>p.profiles?.display_name||'Unknown').join(', ');
+
+    let existing = document.getElementById('swipeHistoryModal');
+    if(existing) existing.remove();
+    const modal = document.createElement('div');
+    modal.id = 'swipeHistoryModal';
+    modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:flex-end;justify-content:center';
+    modal.innerHTML=`
+      <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:24px 20px 32px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <span style="font-weight:700;font-size:17px">Session Details</span>
+          <button onclick="document.getElementById('swipeHistoryModal').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text2)">✕</button>
+        </div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:4px">📅 ${esc(date)}</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:4px">👥 ${esc(participantNames)}</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:16px">🔎 Filter: ${esc(filterLabel)}</div>
+        <div style="font-weight:600;margin-bottom:10px">${matchedRecipes.length ? matchedRecipes.length+' Match'+(matchedRecipes.length!==1?'es':'') : 'No matches'}</div>
+        ${matchedRecipes.length ? `<div style="display:flex;flex-direction:column;gap:10px">`+matchedRecipes.map(r=>`
+          <div onclick="document.getElementById('swipeHistoryModal').remove();loadDetail('${r.id}')" style="display:flex;align-items:center;gap:12px;cursor:pointer;padding:8px;border-radius:12px;background:var(--surface2)">
+            ${r.image_url?`<img src="${r.image_url}" style="width:52px;height:52px;border-radius:8px;object-fit:cover" alt="">`:`<div style="width:52px;height:52px;border-radius:8px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:22px">🍽</div>`}
+            <span style="font-weight:500;font-size:15px">${esc(r.name)}</span>
+          </div>`).join('')+`</div>` : `<p style="color:var(--text3);font-size:14px">No recipes matched this session.</p>`}
+      </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click',e=>{ if(e.target===modal) modal.remove(); });
   }catch(e){ alert('Could not load session: '+e.message); }
 }
 

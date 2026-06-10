@@ -568,6 +568,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
       <div id="userDropdown">
         <div style="font-size:12px;font-weight:500;padding:4px 10px 8px;color:var(--text2);border-bottom:1px solid var(--border);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="dropdownName">—</div>
         <button id="dropdownSettings" onclick="document.getElementById('userDropdown').style.display='none';showSettings()" style="display:none">⚙ Settings</button>
+        <button onclick="document.getElementById('userDropdown').style.display='none';shareApp()" style="display:flex;align-items:center;gap:7px;width:100%;padding:8px 12px;background:none;border:none;border-radius:6px;cursor:pointer;font-size:13px;color:var(--text1);font-family:'DM Sans',sans-serif;text-align:left" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='none'"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Invite a Friend</button>
         <button class="dropdown-signout" onclick="signOut()">Sign out</button>
       </div>
     </div>
@@ -931,6 +932,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
       <svg viewBox="0 0 24 24" style="stroke:currentColor;fill:none;stroke-width:2;width:13px;height:13px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
       Fetch Missing Images
     </button>
+  </div>
+</div>
+
+<!-- INSTALL / BOOKMARK PROMPT MODAL -->
+<div id="installModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;align-items:flex-end;justify-content:center;padding-bottom:0">
+  <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:28px 24px 32px;width:100%;max-width:480px;text-align:center">
+    <div style="font-size:36px;margin-bottom:10px">🦆</div>
+    <div style="font-weight:700;font-size:19px;margin-bottom:8px">Welcome to Recipe Duck!</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:22px;line-height:1.6" id="installModalMsg">Save Recipe Duck to your home screen for the best experience.</div>
+    <button id="installBtn" class="btn primary" style="width:100%;justify-content:center;margin-bottom:10px;font-size:15px;padding:13px" onclick="triggerInstall()">Add to Home Screen</button>
+    <div id="installInstructions" style="display:none;font-size:12px;color:var(--text3);line-height:1.7;margin-bottom:10px"></div>
+    <button onclick="closeInstallModal()" style="background:none;border:none;color:var(--text3);font-size:13px;cursor:pointer;padding:4px">Maybe later</button>
   </div>
 </div>
 
@@ -3162,6 +3175,98 @@ function resetSwipeState(){
   document.getElementById('swipeFilterValue').style.display='none';
 }
 
+// ── SHARE / REFERRAL / INSTALL ────────────────────────────────────────────────
+
+// Capture ?ref=UUID and ?ref_name=Name from URL and persist to localStorage
+(function detectReferral(){
+  const params = new URLSearchParams(window.location.search);
+  const ref = params.get('ref');
+  const refName = params.get('ref_name');
+  if(ref){
+    localStorage.setItem('rd_ref_id', ref);
+    if(refName) localStorage.setItem('rd_ref_name', decodeURIComponent(refName));
+    // Strip params from URL without reload
+    const clean = window.location.pathname + window.location.hash;
+    window.history.replaceState(null, '', clean);
+  }
+})();
+
+function shareApp(){
+  if(!currentUser) return;
+  const name = encodeURIComponent(currentProfile?.display_name || currentUser.email.split('@')[0]);
+  const url = window.location.origin + window.location.pathname + '?ref=' + currentUser.id + '&ref_name=' + name;
+  const text = `Hey! I use Recipe Duck to organize all my recipes — you should try it. Join here:`;
+  if(navigator.share){
+    navigator.share({title:'Recipe Duck', text, url}).catch(()=>{});
+  } else {
+    navigator.clipboard?.writeText(text + '\n' + url)
+      .then(()=>{ showToast('Invite link copied to clipboard!'); })
+      .catch(()=>{ prompt('Copy your invite link:', url); });
+  }
+}
+
+let _deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredInstallPrompt = e;
+});
+
+function showInstallModal(isNewUser=false){
+  const modal = document.getElementById('installModal');
+  const btn = document.getElementById('installBtn');
+  const instructions = document.getElementById('installInstructions');
+  const msg = document.getElementById('installModalMsg');
+
+  if(isNewUser){
+    msg.textContent = "You're all set! For the best experience, add Recipe Duck to your home screen.";
+  } else {
+    msg.textContent = 'Add Recipe Duck to your home screen for quick access — it works like an app!';
+  }
+
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isAndroid = /android/i.test(navigator.userAgent);
+  const isMobile = isIOS || isAndroid;
+
+  if(_deferredInstallPrompt){
+    // Chrome/Android — native install prompt available
+    btn.textContent = '📱 Add to Home Screen';
+    btn.style.display = 'block';
+    instructions.style.display = 'none';
+  } else if(isIOS){
+    btn.style.display = 'none';
+    instructions.style.display = 'block';
+    instructions.innerHTML = `On Safari: tap the <strong>Share</strong> button <span style="font-size:16px">⎦↑</span> at the bottom of your screen, then tap <strong>"Add to Home Screen"</strong>.`;
+  } else {
+    // Desktop or already installed
+    btn.textContent = isMobile ? '📱 Add to Home Screen' : '🔖 Bookmark Recipe Duck';
+    btn.style.display = 'block';
+    instructions.style.display = 'none';
+  }
+
+  modal.style.display = 'flex';
+}
+
+async function triggerInstall(){
+  if(_deferredInstallPrompt){
+    _deferredInstallPrompt.prompt();
+    const { outcome } = await _deferredInstallPrompt.userChoice;
+    _deferredInstallPrompt = null;
+    closeInstallModal();
+  } else {
+    // Desktop fallback — show bookmark shortcut hint
+    const el = document.getElementById('installInstructions');
+    const btn = document.getElementById('installBtn');
+    const isMac = /mac/i.test(navigator.platform||navigator.userAgentData?.platform||'');
+    btn.style.display = 'none';
+    el.style.display = 'block';
+    el.innerHTML = `Press <strong>${isMac?'⌘':'Ctrl'}+D</strong> to bookmark Recipe Duck in your browser.`;
+  }
+}
+
+function closeInstallModal(){
+  document.getElementById('installModal').style.display = 'none';
+}
+
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 async function initAuth(){
   const {data:{session}}=await supabaseClient.auth.getSession();
@@ -3200,7 +3305,26 @@ async function onSignedIn(session){
   updateTopbarUser();
   await loadRecipes();
   loadApiKey();
-  // Restore last-viewed recipe after refresh (sessionStorage persists soft refresh, clears on tab close)
+
+  // ── Referral attribution (runs once after new signup) ────────────────────
+  const refId = localStorage.getItem('rd_ref_id');
+  if(refId && refId !== currentUser.id){
+    try{
+      // Only insert if no row already exists for this referee
+      const existing = await supaFetch('/rest/v1/referrals?referee_id=eq.'+currentUser.id+'&select=id');
+      if(!existing.length){
+        await supaFetch('/rest/v1/referrals','POST',
+          [{referrer_id:refId, referee_id:currentUser.id, converted_at:new Date().toISOString()}],
+          {'Prefer':'return=minimal,resolution=ignore-duplicates'});
+      }
+    }catch{}
+    localStorage.removeItem('rd_ref_id');
+    localStorage.removeItem('rd_ref_name');
+    // Show install prompt for new users arriving via invite
+    setTimeout(()=>showInstallModal(true), 800);
+  }
+
+  // Restore last-viewed recipe after refresh
   const lastId = sessionStorage.getItem('rd_last_recipe');
   if(lastId) loadDetail(lastId);
 }
@@ -3249,9 +3373,28 @@ const LOGIN_FORM_HTML = `
   </p>`;
 
 function showLoginModal(){
-  document.getElementById('loginCard').innerHTML = LOGIN_FORM_HTML;
-  document.getElementById('loginModal').classList.add('open');
+  const ref = localStorage.getItem('rd_ref_name');
+  let banner = '';
+  if(ref){
+    banner = `<div style="background:var(--accent-light);border:1px solid var(--accent);border-radius:10px;padding:12px 14px;margin-bottom:16px;text-align:center;font-size:13px;line-height:1.5">
+      🎉 <strong>${esc(ref)}</strong> invited you to Recipe Duck!<br>
+      <span style="color:var(--text2)">Create a free account to get started.</span>
+    </div>`;
+  }
+  document.getElementById('loginCard').innerHTML = banner + LOGIN_FORM_HTML;
+  const modal = document.getElementById('loginModal');
+  modal.classList.add('open');
   document.getElementById('app').style.display='none';
+  // If arriving via invite, default to signup mode
+  if(ref && modal.dataset.mode !== 'signup'){
+    modal.dataset.mode = 'signup';
+    document.getElementById('loginTitle').textContent = 'Sign Up';
+    document.getElementById('loginSubmitBtn').textContent = 'Create Account';
+    document.getElementById('loginToggleText').textContent = 'Already have an account?';
+    document.getElementById('loginToggleBtn').textContent = 'Sign In';
+    document.getElementById('loginNameRow').style.display = 'grid';
+    document.getElementById('rememberRow').style.display = 'none';
+  }
 }
 
 function hideLoginModal(){

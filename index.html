@@ -3806,6 +3806,13 @@ Return ONLY a JSON array like ["vegan","gluten-free"] — no explanation. If non
 
 // ── SHARE / REFERRAL / INSTALL ────────────────────────────────────────────────
 
+// Capture ?join=CODE on page load and persist it so it survives the OAuth
+// redirect round-trip (Google sign-in returns to the bare origin URL)
+(function detectJoinCode(){
+  const joinCode = new URLSearchParams(window.location.search).get('join');
+  if(joinCode) localStorage.setItem('rd_join_code', joinCode.toUpperCase());
+})();
+
 // Capture ?ref=UUID and ?ref_name=Name from URL and persist to localStorage
 (function detectReferral(){
   const params = new URLSearchParams(window.location.search);
@@ -3952,9 +3959,11 @@ async function onSignedIn(session){
     setTimeout(()=>showInstallModal(true), 800);
   }
 
-  // Handle ?join=CODE deep link (swipe session invite)
-  const joinCode = new URLSearchParams(window.location.search).get('join');
+  // Handle ?join=CODE deep link (swipe session invite). The code is stashed
+  // in localStorage on page load so it survives the OAuth redirect.
+  const joinCode = new URLSearchParams(window.location.search).get('join') || localStorage.getItem('rd_join_code');
   if(joinCode){
+    localStorage.removeItem('rd_join_code');
     window.history.replaceState(null, '', window.location.pathname + window.location.hash);
     showTab('swipe');
     const inp = document.getElementById('joinCodeInput');
@@ -4099,6 +4108,9 @@ async function handleForgotPassword(){
 }
 
 async function signInWithGoogle(){
+  // Respect the "keep me signed in" checkbox for OAuth logins too
+  const rememberEl=document.getElementById('rememberMe');
+  localStorage.setItem('rd_remember',(rememberEl?!rememberEl.checked:false)?'0':'1');
   const{error}=await supabaseClient.auth.signInWithOAuth({
     provider:'google',
     options:{redirectTo:window.location.origin}

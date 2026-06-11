@@ -618,7 +618,7 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--text);height:10
           <button class="group-tab" onclick="setGrouping('course',this)">Course</button>
           <button class="group-tab" onclick="setGrouping('favorites',this)">Favorites</button>
           <button class="group-tab" onclick="setGrouping('recent',this)">Recent</button>
-          <button class="group-tab" id="dietTab" onclick="setGrouping('diet',this)" style="display:none">My Diet</button>
+          <button class="group-tab" id="dietTab" onclick="setGrouping('diet',this)" style="display:none">🥗 My Diet</button>
         </div>
         <div id="homeGrid"></div>
       </div>
@@ -1255,7 +1255,7 @@ function renderSidebar(recipes){
 
 function filterRecipes(q){
   const lq=q.toLowerCase();
-  const filtered=allRecipes.filter(r=>r.name.toLowerCase().includes(lq)||(r.categories||[]).some(c=>c.toLowerCase().includes(lq))||(r.collections||[]).some(c=>c.toLowerCase().includes(lq)));
+  const filtered=allRecipes.filter(r=>r.name.toLowerCase().includes(lq)||(r.categories||[]).some(c=>c.toLowerCase().includes(lq))||(r.collections||[]).some(c=>c.toLowerCase().includes(lq))||(r.dietary_tags||[]).some(c=>c.toLowerCase().includes(lq)));
   renderSidebar(filtered);
   // Sync the other search input
   const other = q === (document.getElementById('mobileSearchInput')?.value||'') ? document.getElementById('searchInput') : document.getElementById('mobileSearchInput');
@@ -1310,15 +1310,36 @@ function renderHome(recipes){
     groups={'Recently Viewed':viewedRecipes,'Recently Added':recentlyAdded};
   } else if(currentGrouping==='diet'){
     const restrictions = currentProfile?.dietary_restrictions||[];
+    // Custom render: setup CTA, matching recipes, and "everything else is adaptable" explainer
     if(!restrictions.length){
-      groups={'My Diet':[]};
-    } else {
-      const matching=recipes.filter(r=>{
-        const tags=r.dietary_tags||[];
-        return restrictions.every(res=>tags.includes(res));
-      });
-      groups={'Matches My Restrictions':matching};
+      grid.innerHTML=`
+        <div style="max-width:480px;margin:3rem auto;text-align:center">
+          <div style="font-size:40px;margin-bottom:12px">🥗</div>
+          <div style="font-family:var(--font-heading);font-size:22px;font-weight:600;margin-bottom:8px">Set up your diet profile</div>
+          <p style="font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:1.5rem">Tell us your dietary restrictions — vegan, gluten-free, allergies, and more — and we'll show you recipes that already fit, plus help you adapt any recipe with smart substitutions.</p>
+          <button class="btn primary" style="margin:0 auto" onclick="showDietModal()">Set My Restrictions</button>
+        </div>`;
+      return;
     }
+    const matching=recipes.filter(r=>{
+      const tags=r.dietary_tags||[];
+      return restrictions.every(res=>tags.includes(res));
+    });
+    grid.innerHTML=`
+      <div style="background:var(--accent-light);border-radius:var(--radius);padding:14px 18px;margin-bottom:1.5rem;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:220px">
+          <div style="font-size:13px;font-weight:600;color:var(--accent-dark)">🥗 Showing recipes that already match: ${restrictions.map(esc).join(', ')}</div>
+          <div style="font-size:12px;color:var(--accent-dark);opacity:.8;margin-top:3px">Most other recipes can work for you too — open any recipe and tap <strong>🥗 Adapt</strong> to see ingredient substitutions for your diet.</div>
+        </div>
+        <button class="btn sm" onclick="showDietModal()" style="flex-shrink:0">Edit restrictions</button>
+      </div>
+      <div class="group-section">
+        <div class="group-title">Matches My Diet <span style="font-size:11px;font-weight:400;color:var(--text3)">${matching.length}</span></div>
+        ${matching.length
+          ? `<div class="recipe-grid">${matching.map(r=>recipeCardHTML(r)).join('')}</div>`
+          : `<p style="font-size:13px;color:var(--text3)">No recipes are tagged as matching all your restrictions yet — but don't worry! Open any recipe and tap <strong>🥗 Adapt</strong> to see how to make it work for your diet.</p>`}
+      </div>`;
+    return;
   }
 
   // Grouped views support drilldown — show 2 most-recent per group with clickable header
@@ -1655,7 +1676,7 @@ async function loadDetail(id){
             </div>
             <div class="recipe-chat-body" id="recipeChatBody">
               <div class="recipe-chat-msgs" id="recipeChatMsgs">
-                <div class="rc-msg ai" style="font-size:12px;color:var(--text2)">Ask me anything about ${esc(r.name)} — substitutions, timing, scaling tips, wine pairings, technique questions...</div>
+                <div class="rc-msg ai" style="font-size:12px;color:var(--text2)">Ask me anything about ${esc(r.name)} — substitutions, making it fit your diet (vegan, gluten-free…), timing, scaling tips, wine pairings, technique questions...</div>
               </div>
               <div class="recipe-chat-input-row">
                 <textarea id="recipeChatInput" placeholder="e.g. Can I substitute the butter with olive oil?" rows="1"
@@ -1684,9 +1705,21 @@ async function loadDetail(id){
           ${ratingsHTML}
         </div>
       </div>`;
-    // Auto-adapt if user has the toggle on
-    if(currentProfile?.auto_adapt && (currentProfile?.dietary_restrictions||[]).length){
+    // Auto-adapt if user has the toggle on; otherwise show a hint if recipe doesn't match restrictions
+    const myRestrictions = currentProfile?.dietary_restrictions||[];
+    if(currentProfile?.auto_adapt && myRestrictions.length){
       setTimeout(()=>runAutoAdapt(r), 100);
+    } else if(myRestrictions.length){
+      const recipeTags = r.dietary_tags||[];
+      const missing = myRestrictions.filter(res=>!recipeTags.includes(res));
+      if(missing.length){
+        const hintEl = document.getElementById('autoAdaptSection');
+        if(hintEl) hintEl.innerHTML=`
+          <div style="background:var(--accent-light);border-radius:var(--radius-sm);padding:10px 14px;margin:8px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span style="font-size:12px;color:var(--accent-dark);flex:1;min-width:180px">This recipe isn't tagged <strong>${missing.map(esc).join(', ')}</strong> — but it can probably be adapted with substitutions.</span>
+            <button class="btn sm primary" onclick="openAdaptModal('${id}')" style="flex-shrink:0">🥗 Adapt it for me</button>
+          </div>`;
+      }
     }
   }catch(e){document.getElementById('recipeDetail').innerHTML='<div class="empty-state"><p>Failed to load recipe.</p></div>';}
 }
@@ -3347,8 +3380,8 @@ const DIET_TAGS = [
 function updateDietTab(){
   const tab = document.getElementById('dietTab');
   if(!tab) return;
-  const hasRestrictions = (currentProfile?.dietary_restrictions||[]).length > 0;
-  tab.style.display = hasRestrictions ? '' : 'none';
+  // Always visible when signed in — clicking it prompts profile setup if needed
+  tab.style.display = currentUser ? '' : 'none';
 }
 
 function showDietModal(){
@@ -3381,6 +3414,7 @@ async function saveDietProfile(){
     currentProfile.auto_adapt = autoAdapt;
     updateDietTab();
     closeDietModal();
+    if(currentGrouping==='diet') renderHome();
     showToast('Diet profile saved!');
   }catch(e){ showToast('Could not save: '+e.message); }
 }

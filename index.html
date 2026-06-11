@@ -3394,6 +3394,9 @@ function viewMatchedRecipe(){
 async function showSwipeResults(){
   clearInterval(swipePoller);swipePoller=null;
   localStorage.removeItem('rd_swipe_session');
+  // The session is over — don't bounce the user back to a matched recipe on refresh
+  sessionStorage.removeItem('rd_last_recipe');
+  currentId=null;
   try{ await supaFetch('/rest/v1/swipe_sessions?id=eq.'+swipeSession.id,'PATCH',{status:'complete'},{'Prefer':'return=minimal'}); }catch{}
   // Final match check
   await checkForMatches();
@@ -4948,8 +4951,8 @@ async function lightRefresh(){
   if(!currentUser) return;
   _homeShuffleSeeds=null; // fresh inspiration order
   await loadRecipes();
-  // Refresh whatever's on screen
-  if(currentId) loadDetail(currentId);
+  // Re-load the open recipe only if the user is actually viewing it
+  if(currentId && document.getElementById('page-detail')?.classList.contains('active')) loadDetail(currentId);
   try{ if(typeof loadSwipeHistory==='function') loadSwipeHistory(); }catch{}
   try{ if(typeof loadNotifications==='function') loadNotifications(); }catch{}
 }

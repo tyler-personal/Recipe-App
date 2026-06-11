@@ -1482,8 +1482,30 @@ function showTab(tab){
   const page = document.getElementById('page-'+tab);
   if(page) page.scrollTop = 0;
   window.scrollTo(0,0);
-  if(tab==='swipe') loadSwipeHistory();
+  if(tab==='swipe'){ loadSwipeHistory(); resumeSwipePolling(); }
+  else { pauseSwipePolling(); }
   if(tab==='list') loadShoppingList();
+}
+
+// Swipe pollers and the match overlay must not run/show while the user is
+// elsewhere in the app — pause on leaving the swipe tab, resume on return.
+function pauseSwipePolling(){
+  clearInterval(swipePoller);swipePoller=null;
+  const ov=document.getElementById('matchOverlay');
+  if(ov) ov.style.display='none';
+}
+
+function resumeSwipePolling(){
+  if(!swipeSession || swipePoller) return;
+  const activeScreen=document.querySelector('#page-swipe .swipe-screen.active')?.id||'';
+  if(activeScreen==='swipeScreen-waiting'){
+    startParticipantPoller();
+  } else if(activeScreen==='swipeScreen-doneWaiting'){
+    swipePoller=setInterval(checkAllFinished,3000);
+    checkAllFinished();
+  } else if(activeScreen==='swipeScreen-swiping'){
+    startMatchPoller();
+  }
 }
 
 function goHome(){
@@ -3344,6 +3366,8 @@ async function checkForMatches(){
 }
 
 function showMatchOverlay(recipe){
+  // Only show while the user is actually on the swipe tab
+  if(!document.getElementById('page-swipe')?.classList.contains('active')) return;
   swipeShownMatches.add(recipe.id);
   swipeMatchedRecipe=recipe;
   const overlay=document.getElementById('matchOverlay');

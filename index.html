@@ -804,6 +804,7 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--text);height:10
               <select id="swipeFilterType" class="swipe-select" onchange="updateSwipeFilterValue()">
                 <option value="all">All Recipes</option>
                 <option value="favorites">Favorites</option>
+                <option value="diet">My Diet</option>
                 <option value="category">By Category</option>
                 <option value="collection">By Collection</option>
                 <option value="course">By Course</option>
@@ -923,6 +924,15 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--text);height:10
     <h3>My Diet Profile</h3>
     <p style="font-size:13px;color:var(--text2);margin-bottom:1rem;line-height:1.5">Select any restrictions or preferences that apply to you. Recipes will be filtered and adapted accordingly.</p>
     <div id="dietTagsGrid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1.25rem"></div>
+    <div style="margin-bottom:1.25rem">
+      <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);display:block;margin-bottom:6px">Custom restrictions & allergies</label>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:8px;line-height:1.5">List specific ingredients you avoid or are allergic to (e.g. cherries, shellfish, peanuts). We'll warn you if a recipe contains them and suggest substitutes.</p>
+      <div id="customRestrictionsTags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="customRestrictionsInput" placeholder="e.g. cherries, plums, walnuts" style="flex:1;padding:8px 12px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;font-family:var(--font-ui);background:var(--white);color:var(--text)" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomRestriction();}">
+        <button class="btn sm" onclick="addCustomRestriction()">Add</button>
+      </div>
+    </div>
     <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:1rem">
       <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:500">
         <input type="checkbox" id="autoAdaptToggle" style="width:16px;height:16px;accent-color:var(--accent)">
@@ -1707,19 +1717,24 @@ async function loadDetail(id){
       </div>`;
     // Auto-adapt if user has the toggle on; otherwise show a hint if recipe doesn't match restrictions
     const myRestrictions = currentProfile?.dietary_restrictions||[];
+    const hintEl = document.getElementById('autoAdaptSection');
     if(currentProfile?.auto_adapt && myRestrictions.length){
       setTimeout(()=>runAutoAdapt(r), 100);
     } else if(myRestrictions.length){
       const recipeTags = r.dietary_tags||[];
       const missing = myRestrictions.filter(res=>!recipeTags.includes(res));
-      if(missing.length){
-        const hintEl = document.getElementById('autoAdaptSection');
-        if(hintEl) hintEl.innerHTML=`
+      if(missing.length && hintEl){
+        hintEl.innerHTML=`
           <div style="background:var(--accent-light);border-radius:var(--radius-sm);padding:10px 14px;margin:8px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <span style="font-size:12px;color:var(--accent-dark);flex:1;min-width:180px">This recipe isn't tagged <strong>${missing.map(esc).join(', ')}</strong> — but it can probably be adapted with substitutions.</span>
             <button class="btn sm primary" onclick="openAdaptModal('${id}')" style="flex-shrink:0">🥗 Adapt it for me</button>
           </div>`;
       }
+    }
+    // Check custom restrictions against ingredients
+    const customRestrictions = currentProfile?.custom_restrictions||[];
+    if(customRestrictions.length && r.ingredients){
+      checkCustomRestrictionsInRecipe(r, id, hintEl);
     }
   }catch(e){document.getElementById('recipeDetail').innerHTML='<div class="empty-state"><p>Failed to load recipe.</p></div>';}
 }
@@ -2933,7 +2948,7 @@ function genSwipeCode(){
 function updateSwipeFilterValue(){
   const type=document.getElementById('swipeFilterType').value;
   const valSel=document.getElementById('swipeFilterValue');
-  if(type==='all'||type==='favorites'){valSel.style.display='none';return;}
+  if(type==='all'||type==='favorites'||type==='diet'){valSel.style.display='none';return;}
   valSel.style.display='';
   const opts=type==='category'
     ?[...new Set(allRecipes.flatMap(r=>r.categories||[]))].sort()
@@ -2946,6 +2961,14 @@ function updateSwipeFilterValue(){
 function applySwipeFilter(recipes, filterType, filterValue){
   if(!filterType||filterType==='all') return recipes;
   if(filterType==='favorites') return recipes.filter(r=>r.is_favorite);
+  if(filterType==='diet'){
+    const myRestrictions = currentProfile?.dietary_restrictions||[];
+    if(!myRestrictions.length) return recipes;
+    return recipes.filter(r=>{
+      const tags=r.dietary_tags||[];
+      return myRestrictions.every(res=>tags.includes(res));
+    });
+  }
   if(filterType==='category') return recipes.filter(r=>(r.categories||[]).includes(filterValue));
   if(filterType==='collection') return recipes.filter(r=>(r.collections||[]).includes(filterValue));
   if(filterType==='course') return recipes.filter(r=>(r.courses||[]).includes(filterValue));
@@ -2964,7 +2987,7 @@ async function createSwipeSession(){
     swipeSession=session;
     document.getElementById('swipeCodeDisplay').textContent=code;
     // Show filter label in waiting room
-    const label=filterType==='all'?'All Recipes':filterType==='favorites'?'Favorites':`${filterType.charAt(0).toUpperCase()+filterType.slice(1)}: ${filterValue||'All'}`;
+    const label=filterType==='all'?'All Recipes':filterType==='favorites'?'Favorites':filterType==='diet'?'My Diet':`${filterType.charAt(0).toUpperCase()+filterType.slice(1)}: ${filterValue||'All'}`;
     const sub=document.getElementById('swipeWaitingFilter');
     if(sub){sub.textContent='Filter: '+label;sub.style.display='';}
     showSwipeScreen('waiting');
@@ -3392,6 +3415,9 @@ function showDietModal(){
     return `<button class="diet-chip${on?' active':''}" onclick="toggleDietChip(this,'${t}')">${esc(t)}</button>`;
   }).join('');
   document.getElementById('autoAdaptToggle').checked = !!(currentProfile?.auto_adapt);
+  // Populate custom restrictions
+  renderCustomRestrictionTags(currentProfile?.custom_restrictions || []);
+  document.getElementById('customRestrictionsInput').value = '';
   document.getElementById('dietModal').classList.add('open');
 }
 
@@ -3403,20 +3429,115 @@ function toggleDietChip(btn, tag){
   btn.classList.toggle('active');
 }
 
+function renderCustomRestrictionTags(items){
+  const container = document.getElementById('customRestrictionsTags');
+  if(!container) return;
+  container.innerHTML = items.map(item =>
+    `<span style="display:inline-flex;align-items:center;gap:5px;background:var(--paprika);color:white;border-radius:50px;padding:4px 10px;font-size:12px;font-weight:500">
+      ${esc(item)}
+      <button onclick="removeCustomRestriction('${esc(item).replace(/'/g,"\\'")}')" style="background:none;border:none;color:white;cursor:pointer;font-size:14px;line-height:1;padding:0;opacity:.8" title="Remove">×</button>
+    </span>`
+  ).join('');
+}
+
+function addCustomRestriction(){
+  const inp = document.getElementById('customRestrictionsInput');
+  const raw = inp.value.trim();
+  if(!raw) return;
+  // Support comma-separated entry
+  const newItems = raw.split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+  const existing = getCurrentCustomRestrictions();
+  const merged = [...new Set([...existing, ...newItems])];
+  renderCustomRestrictionTags(merged);
+  inp.value = '';
+  inp.focus();
+}
+
+function removeCustomRestriction(item){
+  const existing = getCurrentCustomRestrictions();
+  renderCustomRestrictionTags(existing.filter(i=>i!==item));
+}
+
+function getCurrentCustomRestrictions(){
+  return [...document.querySelectorAll('#customRestrictionsTags span')].map(s=>s.childNodes[0].textContent.trim());
+}
+
 async function saveDietProfile(){
   const selected = [...document.querySelectorAll('#dietTagsGrid .diet-chip.active')].map(b=>b.textContent);
   const autoAdapt = document.getElementById('autoAdaptToggle').checked;
+  const customRestrictions = getCurrentCustomRestrictions();
   try{
     await supaFetch('/rest/v1/profiles?id=eq.'+currentUser.id,'PATCH',
-      {dietary_restrictions:selected, auto_adapt:autoAdapt},{'Prefer':'return=minimal'});
+      {dietary_restrictions:selected, auto_adapt:autoAdapt, custom_restrictions:customRestrictions},{'Prefer':'return=minimal'});
     if(!currentProfile) currentProfile={};
     currentProfile.dietary_restrictions = selected;
     currentProfile.auto_adapt = autoAdapt;
+    currentProfile.custom_restrictions = customRestrictions;
     updateDietTab();
     closeDietModal();
     if(currentGrouping==='diet') renderHome();
     showToast('Diet profile saved!');
   }catch(e){ showToast('Could not save: '+e.message); }
+}
+
+// ─── CUSTOM RESTRICTION CHECKER ──────────────────────────────────────────────
+
+async function checkCustomRestrictionsInRecipe(r, recipeId, hintEl){
+  const customRestrictions = currentProfile?.custom_restrictions||[];
+  if(!customRestrictions.length || !r.ingredients) return;
+  const ingredientsText = r.ingredients.toLowerCase();
+  // Fast local check first — scan ingredient text for each custom restriction
+  const found = customRestrictions.filter(item => ingredientsText.includes(item.toLowerCase()));
+  if(!found.length) return;
+  if(!hintEl) return;
+  // Append a warning below any existing hint
+  const warning = document.createElement('div');
+  warning.id = 'customAllergenWarning';
+  warning.innerHTML = `
+    <div style="background:#FEF0ED;border:1.5px solid var(--paprika);border-radius:var(--radius-sm);padding:10px 14px;margin:8px 0">
+      <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
+        <div style="flex:1;min-width:180px">
+          <div style="font-size:12px;font-weight:600;color:var(--paprika);margin-bottom:4px">⚠️ Contains your restricted ingredients</div>
+          <div style="font-size:12px;color:#8B3A2A;line-height:1.5">This recipe contains: <strong>${found.map(esc).join(', ')}</strong></div>
+        </div>
+        <button class="btn sm" onclick="showCustomAllergenSubstitutes('${recipeId}','${found.map(f=>f.replace(/'/g,"\\'")).join(',')}')" style="flex-shrink:0;border-color:var(--paprika);color:var(--paprika)">Show substitutes</button>
+      </div>
+    </div>`;
+  hintEl.appendChild(warning);
+}
+
+async function showCustomAllergenSubstitutes(recipeId, foundStr){
+  const r = window._currentRecipe;
+  if(!r) return;
+  const found = foundStr.split(',').map(s=>s.trim()).filter(Boolean);
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = 'Thinking…';
+  try{
+    const result = await claude(
+      `You are a culinary expert. A recipe contains ingredients the user can't eat.
+Recipe: "${r.name}"
+Ingredients: ${r.ingredients}
+Restricted ingredients the user can't have: ${found.join(', ')}
+
+For each restricted ingredient found in this recipe, suggest the best substitute and a brief reason.
+Format each as:
+• [restricted ingredient] → [substitute]: [reason]
+
+Keep it concise.`,
+      'You are a culinary expert specializing in dietary substitutions.'
+    );
+    const warningEl = document.getElementById('customAllergenWarning');
+    if(warningEl){
+      const subDiv = document.createElement('div');
+      subDiv.style.cssText='margin-top:10px;padding-top:10px;border-top:1px solid rgba(228,87,46,0.2);font-size:12px;color:#5A3030;line-height:1.7;white-space:pre-line';
+      subDiv.textContent = result.trim();
+      warningEl.querySelector('div').appendChild(subDiv);
+    }
+    btn.style.display='none';
+  }catch(e){
+    btn.disabled=false; btn.textContent='Show substitutes';
+    showToast('Could not get substitutes: '+e.message);
+  }
 }
 
 // ─── RECIPE ADAPTATION ────────────────────────────────────────────────────────
@@ -3472,9 +3593,10 @@ ADAPTED_INGREDIENTS:
 ADAPTED_DIRECTIONS:
 [full rewritten directions, one per line or step]`;
 
+  const customRestrictions = currentProfile?.custom_restrictions||[];
   const userMsg = `Recipe: ${_adaptRecipe.name}
 Current dietary tags: ${(_adaptRecipe.dietary_tags||[]).join(', ')||'none'}
-Requested restrictions: ${selected.join(', ')}
+Requested restrictions: ${selected.join(', ')}${customRestrictions.length?`\nAlso avoid these specific ingredients: ${customRestrictions.join(', ')}`:''}
 
 INGREDIENTS:
 ${_adaptRecipe.ingredients||'(none)'}
@@ -3482,7 +3604,7 @@ ${_adaptRecipe.ingredients||'(none)'}
 DIRECTIONS:
 ${_adaptRecipe.directions||'(none)'}
 
-Please adapt this recipe to be fully compliant with: ${selected.join(', ')}.`;
+Please adapt this recipe to be fully compliant with: ${selected.join(', ')}${customRestrictions.length?` and avoid: ${customRestrictions.join(', ')}`:'.'}`;
 
   try{
     const text = await claude([{role:'user',content:userMsg}], system);
@@ -3836,7 +3958,8 @@ async function onSignedIn(session){
     window.history.replaceState(null, '', window.location.pathname + window.location.hash);
     showTab('swipe');
     const inp = document.getElementById('joinCodeInput');
-    if(inp){ inp.value = joinCode.toUpperCase(); inp.focus(); }
+    if(inp){ inp.value = joinCode.toUpperCase(); }
+    await joinSwipeSession();
     return;
   }
 

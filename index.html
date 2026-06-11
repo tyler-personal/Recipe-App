@@ -1501,7 +1501,7 @@ function resumeSwipePolling(){
   if(activeScreen==='swipeScreen-waiting'){
     startParticipantPoller();
   } else if(activeScreen==='swipeScreen-doneWaiting'){
-    swipePoller=setInterval(checkAllFinished,1500);
+    swipePoller=setInterval(checkAllFinished,600);
     checkAllFinished();
   } else if(activeScreen==='swipeScreen-swiping'){
     startMatchPoller();
@@ -3086,7 +3086,7 @@ function showSwipeLobbyError(msg){
 function startParticipantPoller(){
   clearInterval(swipePoller);
   pollParticipants();
-  swipePoller=setInterval(pollParticipants,1500);
+  swipePoller=setInterval(pollParticipants,600);
 }
 
 async function pollParticipants(){
@@ -3180,7 +3180,7 @@ async function beginSwipingLocal(){
     const [me]=await supaFetch('/rest/v1/session_participants?session_id=eq.'+swipeSession.id+'&user_id=eq.'+currentUser.id+'&select=finished_at');
     if(me?.finished_at){
       showSwipeScreen('doneWaiting');
-      swipePoller=setInterval(checkAllFinished,1500);
+      swipePoller=setInterval(checkAllFinished,600);
       checkAllFinished();
       return;
     }
@@ -3304,7 +3304,7 @@ async function markFinishedAndWait(){
   try{ await supaFetch('/rest/v1/session_participants?session_id=eq.'+swipeSession.id+'&user_id=eq.'+currentUser.id,'PATCH',{finished_at:new Date().toISOString()},{'Prefer':'return=minimal'}); }catch{}
   showSwipeScreen('doneWaiting');
   clearInterval(swipePoller);
-  swipePoller=setInterval(checkAllFinished,1500);
+  swipePoller=setInterval(checkAllFinished,600);
   checkAllFinished();
 }
 
@@ -3332,7 +3332,7 @@ function startMatchPoller(){
       const [s]=await supaFetch('/rest/v1/swipe_sessions?id=eq.'+swipeSession.id+'&select=status');
       if(s && s.status==='complete') await showSwipeResults();
     }catch{}
-  },1500);
+  },600);
 }
 
 async function checkForMatches(){

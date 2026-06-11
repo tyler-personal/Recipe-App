@@ -109,6 +109,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 .recipe-detail h1{font-family:'Lora',serif;font-size:26px;font-weight:500;line-height:1.2;margin-bottom:10px}
 .tags-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1.25rem}
 .tag{font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;border:1px solid var(--border2);color:var(--text2);background:var(--bg2)}
+.diet-chip{font-size:12px;font-weight:500;padding:5px 12px;border-radius:20px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer;transition:all .15s}
+.diet-chip:hover{background:var(--accent-light);color:var(--accent-dark);border-color:var(--accent)}
+.diet-chip.active{background:var(--accent);color:white;border-color:var(--accent)}
 .tag.course{background:var(--accent-light);color:var(--accent-dark);border-color:transparent}
 .time-bar{display:flex;gap:1.5rem;background:var(--bg2);padding:12px 16px;border-radius:var(--radius);margin-bottom:1.5rem}
 .time-item .label{font-size:11px;color:var(--text3)}
@@ -568,6 +571,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
       <div id="userDropdown">
         <div style="font-size:12px;font-weight:500;padding:4px 10px 8px;color:var(--text2);border-bottom:1px solid var(--border);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="dropdownName">—</div>
         <button id="dropdownSettings" onclick="document.getElementById('userDropdown').style.display='none';showSettings()" style="display:none">⚙ Settings</button>
+        <button onclick="document.getElementById('userDropdown').style.display='none';showDietModal()" style="display:flex;align-items:center;gap:7px;width:100%;padding:8px 12px;background:none;border:none;border-radius:6px;cursor:pointer;font-size:13px;color:var(--text1);font-family:'DM Sans',sans-serif;text-align:left" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='none'">🥗 My Diet Profile</button>
         <button onclick="document.getElementById('userDropdown').style.display='none';shareApp()" style="display:flex;align-items:center;gap:7px;width:100%;padding:8px 12px;background:none;border:none;border-radius:6px;cursor:pointer;font-size:13px;color:var(--text1);font-family:'DM Sans',sans-serif;text-align:left" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='none'"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Invite a Friend</button>
         <button class="dropdown-signout" onclick="signOut()">Sign out</button>
       </div>
@@ -606,6 +610,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
           <button class="group-tab" onclick="setGrouping('course',this)">Course</button>
           <button class="group-tab" onclick="setGrouping('favorites',this)">Favorites</button>
           <button class="group-tab" onclick="setGrouping('recent',this)">Recent</button>
+          <button class="group-tab" id="dietTab" onclick="setGrouping('diet',this)" style="display:none">My Diet</button>
         </div>
         <div id="homeGrid"></div>
       </div>
@@ -904,6 +909,60 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
   </div><!-- /body-layout -->
 
 <!-- SETTINGS MODAL -->
+<!-- DIET PROFILE MODAL -->
+<div class="overlay" id="dietModal">
+  <div class="modal" style="max-width:460px">
+    <h3>My Diet Profile</h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1rem;line-height:1.5">Select any restrictions or preferences that apply to you. Recipes will be filtered and adapted accordingly.</p>
+    <div id="dietTagsGrid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1.25rem"></div>
+    <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:1rem">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:500">
+        <input type="checkbox" id="autoAdaptToggle" style="width:16px;height:16px;accent-color:var(--accent)">
+        Always show how to adapt recipes for my restrictions
+      </label>
+      <p style="font-size:12px;color:var(--text3);margin:6px 0 0 26px;line-height:1.5">When on, every recipe detail page will automatically show an adapted version for your restrictions.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeDietModal()">Close</button>
+      <button class="btn primary" onclick="saveDietProfile()">
+        <svg viewBox="0 0 24 24" style="stroke:white;fill:none;stroke-width:2;width:13px;height:13px"><polyline points="20 6 9 17 4 12"/></svg>
+        Save Profile
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- RECIPE ADAPTATION MODAL -->
+<div class="overlay" id="adaptModal">
+  <div class="modal" style="max-width:520px;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <h3 style="margin:0">Adapt for My Diet</h3>
+      <button onclick="closeAdaptModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2)">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1rem" id="adaptRecipeName"></p>
+    <div style="margin-bottom:1rem">
+      <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);display:block;margin-bottom:8px">Apply restrictions</label>
+      <div id="adaptTagsGrid" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    </div>
+    <button class="btn primary" id="adaptRunBtn" onclick="runAdaptation()" style="width:100%;justify-content:center;margin-bottom:1rem">
+      🥗 Get Substitutions
+    </button>
+    <div id="adaptResult" style="display:none">
+      <div id="adaptSummary" style="background:var(--accent-light);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:1rem;font-size:13px;color:var(--accent-dark);line-height:1.5"></div>
+      <div id="adaptSubTable" style="margin-bottom:1rem"></div>
+      <div style="display:flex;gap:8px;margin-bottom:1rem">
+        <button class="btn sm" id="adaptViewOrigBtn" onclick="toggleAdaptView('original')" style="flex:1;justify-content:center">Show Original</button>
+        <button class="btn sm primary" id="adaptViewAdpBtn" onclick="toggleAdaptView('adapted')" style="flex:1;justify-content:center">Show Adapted</button>
+      </div>
+      <div id="adaptIngredients" style="margin-bottom:12px"></div>
+      <div id="adaptDirections"></div>
+    </div>
+    <div id="adaptFooter" style="display:none;border-top:1px solid var(--border);margin-top:1rem;padding-top:1rem;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn primary" onclick="saveAdaptedRecipe()" style="flex:1;justify-content:center">💾 Save as My Variant</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="settingsModal">
   <div class="modal" style="max-width:460px">
     <h3>Settings</h3>
@@ -932,6 +991,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
     <button class="btn" id="fetchImagesBtn" onclick="batchFetchImages()">
       <svg viewBox="0 0 24 24" style="stroke:currentColor;fill:none;stroke-width:2;width:13px;height:13px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
       Fetch Missing Images
+    </button>
+
+    <hr style="margin:1.25rem 0;border:none;border-top:1px solid var(--border)"/>
+    <label style="margin-bottom:6px;display:block">Dietary Tag Backfill</label>
+    <p style="font-size:12px;color:var(--text3);margin:0 0 10px">Uses AI to classify every recipe with dietary tags (vegan, gluten-free, etc.). Safe to run multiple times — existing tags are overwritten with improved values.</p>
+    <div id="dietBackfillProgress" style="display:none;font-size:12px;color:var(--text2);margin-bottom:8px;line-height:1.6"></div>
+    <button class="btn" id="dietBackfillBtn" onclick="backfillDietaryTags()">
+      🥗 Tag All Recipes with Dietary Info
     </button>
   </div>
 </div>
@@ -1149,7 +1216,7 @@ async function uploadImage(filename,blob){
 // ── RECIPE LOADING ────────────────────────────────────────────────────────────
 async function loadRecipes(){
   try{
-    allRecipes=await supaFetch('/rest/v1/recipes?select=id,name,categories,collections,courses,image_url,is_favorite,created_at,updated_at,owner_id&order=name.asc&limit=500');
+    allRecipes=await supaFetch('/rest/v1/recipes?select=id,name,categories,collections,courses,image_url,is_favorite,created_at,updated_at,owner_id,dietary_tags&order=name.asc&limit=500');
     if(currentUser){
       try{
         const saved=await supaFetch('/rest/v1/saved_recipes?user_id=eq.'+currentUser.id+'&select=recipe_id');
@@ -1233,6 +1300,17 @@ function renderHome(recipes){
     const recentlyAdded = [...recipes]
       .sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0)).slice(0,6);
     groups={'Recently Viewed':viewedRecipes,'Recently Added':recentlyAdded};
+  } else if(currentGrouping==='diet'){
+    const restrictions = currentProfile?.dietary_restrictions||[];
+    if(!restrictions.length){
+      groups={'My Diet':[]};
+    } else {
+      const matching=recipes.filter(r=>{
+        const tags=r.dietary_tags||[];
+        return restrictions.every(res=>tags.includes(res));
+      });
+      groups={'Matches My Restrictions':matching};
+    }
   }
 
   // Grouped views support drilldown — show 2 most-recent per group with clickable header
@@ -1586,8 +1664,11 @@ async function loadDetail(id){
           ${r.directions?`<div class="section-head">Directions</div><div class="content-block" id="directionsBlock">${formatDirections(r.directions)}</div>`:''}
           ${r.notes?`<div class="section-head">Notes</div><div id="notesBlock">${formatNotes(r.notes)}</div>`:''}
           ${nutLine}
+          ${(r.dietary_tags||[]).length?`<div class="tags-row" style="margin-top:4px">${(r.dietary_tags||[]).map(t=>`<span class="tag" style="background:var(--accent-light);color:var(--accent-dark);border-color:var(--accent-light)">${esc(t)}</span>`).join('')}</div>`:''}
+          <div id="autoAdaptSection"></div>
           <div class="actions-row">
             ${canEdit?`<button class="btn" onclick="openEdit('${id}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>`:''}
+            <button class="btn" onclick="openAdaptModal('${id}')">🥗 Adapt</button>
             <button class="btn primary" onclick="sharePDF()"><svg viewBox="0 0 24 24" style="stroke:white"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Share PDF</button>
             ${r.ingredients?`<button class="btn" id="addToListBtn" onclick="addToShoppingList('${id}')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add to List</button>`:''}
             ${canEdit?`<button class="btn danger" onclick="deleteRecipe('${id}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>`:''}
@@ -1595,6 +1676,10 @@ async function loadDetail(id){
           ${ratingsHTML}
         </div>
       </div>`;
+    // Auto-adapt if user has the toggle on
+    if(currentProfile?.auto_adapt && (currentProfile?.dietary_restrictions||[]).length){
+      setTimeout(()=>runAutoAdapt(r), 100);
+    }
   }catch(e){document.getElementById('recipeDetail').innerHTML='<div class="empty-state"><p>Failed to load recipe.</p></div>';}
 }
 
@@ -2025,6 +2110,10 @@ async function saveRecipe(){
     directions:document.getElementById('mDir').value,notes:document.getElementById('mNotes').value,
     image_url:imgUrl};
   try{
+    // Auto-tag dietary info for new recipes
+    if(!editingId && payload.ingredients){
+      try{ payload.dietary_tags = await getDietaryTagsForRecipe(payload.ingredients, payload.name); }catch{}
+    }
     if(editingId){await supaFetch('/rest/v1/recipes?id=eq.'+editingId,'PATCH',payload,{'Prefer':'return=minimal'});}
     else{await supaFetch('/rest/v1/recipes','POST',[{...payload,owner_id:currentUser?.id}],{'Prefer':'return=minimal,resolution=ignore-duplicates'});}
     const savedId = editingId;
@@ -2436,6 +2525,8 @@ Return valid JSON only, nothing else.`;
 
 document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
 document.getElementById('settingsModal').addEventListener('click',e=>{if(e.target===document.getElementById('settingsModal'))closeSettings();});
+document.getElementById('dietModal').addEventListener('click',e=>{if(e.target===document.getElementById('dietModal'))closeDietModal();});
+document.getElementById('adaptModal').addEventListener('click',e=>{if(e.target===document.getElementById('adaptModal'))closeAdaptModal();});
 
 // ── IMAGE SEARCH ──────────────────────────────────────────────────────────────
 function openImgSearch(){
@@ -3236,6 +3327,319 @@ function resetSwipeState(){
   document.getElementById('swipeFilterValue').style.display='none';
 }
 
+// ── DIETARY RESTRICTIONS ──────────────────────────────────────────────────────
+
+const DIET_TAGS = [
+  'vegan','vegetarian','pescatarian','gluten-free','dairy-free','egg-free',
+  'nut-free','peanut-free','tree-nut-free','soy-free','shellfish-free','fish-free',
+  'low-carb','keto','paleo','whole30','halal','kosher','low-fodmap','low-sodium',
+  'diabetic-friendly'
+];
+
+function updateDietTab(){
+  const tab = document.getElementById('dietTab');
+  if(!tab) return;
+  const hasRestrictions = (currentProfile?.dietary_restrictions||[]).length > 0;
+  tab.style.display = hasRestrictions ? '' : 'none';
+}
+
+function showDietModal(){
+  const saved = currentProfile?.dietary_restrictions || [];
+  const grid = document.getElementById('dietTagsGrid');
+  grid.innerHTML = DIET_TAGS.map(t => {
+    const on = saved.includes(t);
+    return `<button class="diet-chip${on?' active':''}" onclick="toggleDietChip(this,'${t}')">${esc(t)}</button>`;
+  }).join('');
+  document.getElementById('autoAdaptToggle').checked = !!(currentProfile?.auto_adapt);
+  document.getElementById('dietModal').classList.add('open');
+}
+
+function closeDietModal(){
+  document.getElementById('dietModal').classList.remove('open');
+}
+
+function toggleDietChip(btn, tag){
+  btn.classList.toggle('active');
+}
+
+async function saveDietProfile(){
+  const selected = [...document.querySelectorAll('#dietTagsGrid .diet-chip.active')].map(b=>b.textContent);
+  const autoAdapt = document.getElementById('autoAdaptToggle').checked;
+  try{
+    await supaFetch('/rest/v1/profiles?id=eq.'+currentUser.id,'PATCH',
+      {dietary_restrictions:selected, auto_adapt:autoAdapt},{'Prefer':'return=minimal'});
+    if(!currentProfile) currentProfile={};
+    currentProfile.dietary_restrictions = selected;
+    currentProfile.auto_adapt = autoAdapt;
+    updateDietTab();
+    closeDietModal();
+    showToast('Diet profile saved!');
+  }catch(e){ showToast('Could not save: '+e.message); }
+}
+
+// ─── RECIPE ADAPTATION ────────────────────────────────────────────────────────
+
+let _adaptRecipe = null;
+let _adaptedIngredients = '', _adaptedDirections = '', _adaptOrigIngredients = '', _adaptOrigDirections = '';
+let _adaptCurrentView = 'adapted';
+
+function openAdaptModal(recipeId){
+  const r = allRecipes.find(x=>x.id===recipeId) || window._currentRecipe;
+  if(!r) return;
+  _adaptRecipe = window._currentRecipe || r;
+  document.getElementById('adaptRecipeName').textContent = _adaptRecipe.name;
+
+  const saved = currentProfile?.dietary_restrictions || [];
+  const grid = document.getElementById('adaptTagsGrid');
+  grid.innerHTML = DIET_TAGS.map(t => {
+    const on = saved.includes(t);
+    return `<button class="diet-chip${on?' active':''}" onclick="this.classList.toggle('active')">${esc(t)}</button>`;
+  }).join('');
+
+  document.getElementById('adaptResult').style.display='none';
+  document.getElementById('adaptFooter').style.display='none';
+  document.getElementById('adaptRunBtn').disabled=false;
+  document.getElementById('adaptRunBtn').textContent='🥗 Get Substitutions';
+  document.getElementById('adaptModal').classList.add('open');
+}
+
+function closeAdaptModal(){
+  document.getElementById('adaptModal').classList.remove('open');
+}
+
+async function runAdaptation(){
+  const selected = [...document.querySelectorAll('#adaptTagsGrid .diet-chip.active')].map(b=>b.textContent);
+  if(!selected.length){ showToast('Select at least one restriction'); return; }
+  if(!_adaptRecipe){ showToast('No recipe loaded'); return; }
+
+  const btn = document.getElementById('adaptRunBtn');
+  btn.disabled=true; btn.textContent='Thinking…';
+
+  const system = `You are a culinary expert specializing in dietary substitutions.
+When adapting a recipe, respond EXACTLY in this format:
+
+SUMMARY: [1-2 sentence summary of changes]
+
+SUBSTITUTIONS:
+- [original ingredient] → [substitute] | [brief reason]
+(list every substitution needed, or write "None needed" if already compliant)
+
+ADAPTED_INGREDIENTS:
+[full rewritten ingredient list, one per line]
+
+ADAPTED_DIRECTIONS:
+[full rewritten directions, one per line or step]`;
+
+  const userMsg = `Recipe: ${_adaptRecipe.name}
+Current dietary tags: ${(_adaptRecipe.dietary_tags||[]).join(', ')||'none'}
+Requested restrictions: ${selected.join(', ')}
+
+INGREDIENTS:
+${_adaptRecipe.ingredients||'(none)'}
+
+DIRECTIONS:
+${_adaptRecipe.directions||'(none)'}
+
+Please adapt this recipe to be fully compliant with: ${selected.join(', ')}.`;
+
+  try{
+    const text = await claude([{role:'user',content:userMsg}], system);
+
+    const summaryM = text.match(/SUMMARY:\s*(.+?)(?=\nSUBSTITUTIONS:|$)/s);
+    const subsM = text.match(/SUBSTITUTIONS:\s*([\s\S]+?)(?=\nADAPTED_INGREDIENTS:|$)/);
+    const ingM = text.match(/ADAPTED_INGREDIENTS:\s*([\s\S]+?)(?=\nADAPTED_DIRECTIONS:|$)/);
+    const dirM = text.match(/ADAPTED_DIRECTIONS:\s*([\s\S]+?)$/s);
+
+    const summary = summaryM?summaryM[1].trim():'';
+    const subs = subsM?subsM[1].trim():'';
+    _adaptedIngredients = ingM?ingM[1].trim():_adaptRecipe.ingredients||'';
+    _adaptedDirections = dirM?dirM[1].trim():_adaptRecipe.directions||'';
+    _adaptOrigIngredients = _adaptRecipe.ingredients||'';
+    _adaptOrigDirections = _adaptRecipe.directions||'';
+
+    document.getElementById('adaptSummary').textContent = summary;
+
+    // Build substitution table
+    const subLines = subs.split('\n').map(l=>l.trim()).filter(l=>l.startsWith('-'));
+    const subRows = subLines.map(l=>{
+      const body = l.replace(/^-\s*/,'');
+      const [arrow,reason]=[body.split(' | ')[0], body.split(' | ')[1]||''];
+      const [orig,sub]=[arrow.split(' → ')[0]||'', arrow.split(' → ')[1]||''];
+      return `<tr><td style="padding:6px 8px;color:var(--text2);text-decoration:line-through;font-size:13px">${esc(orig.trim())}</td><td style="padding:6px 8px;font-weight:500;font-size:13px">${esc((sub||'').trim())}</td><td style="padding:6px 8px;font-size:12px;color:var(--text3)">${esc(reason.trim())}</td></tr>`;
+    }).join('');
+    document.getElementById('adaptSubTable').innerHTML = subLines.length && !subs.includes('None needed')
+      ? `<table style="width:100%;border-collapse:collapse;margin-bottom:4px"><thead><tr><th style="text-align:left;padding:4px 8px;font-size:11px;color:var(--text3);font-weight:500">Original</th><th style="text-align:left;padding:4px 8px;font-size:11px;color:var(--text3);font-weight:500">Substitute</th><th style="text-align:left;padding:4px 8px;font-size:11px;color:var(--text3);font-weight:500">Why</th></tr></thead><tbody>${subRows}</tbody></table>`
+      : `<p style="font-size:13px;color:var(--accent-dark);background:var(--accent-light);padding:10px 12px;border-radius:var(--radius-sm)">${esc(subs||'No substitutions needed.')}</p>`;
+
+    _adaptCurrentView = 'adapted';
+    renderAdaptedContent();
+    document.getElementById('adaptResult').style.display='block';
+    document.getElementById('adaptFooter').style.display='flex';
+    // Store selected tags for saving
+    window._adaptSelectedTags = selected;
+  }catch(e){
+    showToast('Adaptation failed: '+e.message);
+  }
+  btn.disabled=false; btn.textContent='🥗 Get Substitutions';
+}
+
+function renderAdaptedContent(){
+  const ing = _adaptCurrentView==='adapted' ? _adaptedIngredients : _adaptOrigIngredients;
+  const dir = _adaptCurrentView==='adapted' ? _adaptedDirections : _adaptOrigDirections;
+  document.getElementById('adaptIngredients').innerHTML=`<div class="section-head">Ingredients (${_adaptCurrentView})</div><div class="content-block">${formatIngredients(ing)}</div>`;
+  document.getElementById('adaptDirections').innerHTML=`<div class="section-head">Directions (${_adaptCurrentView})</div><div class="content-block">${formatDirections(dir)}</div>`;
+  document.getElementById('adaptViewOrigBtn').classList.toggle('primary',_adaptCurrentView==='original');
+  document.getElementById('adaptViewAdpBtn').classList.toggle('primary',_adaptCurrentView==='adapted');
+}
+
+function toggleAdaptView(v){
+  _adaptCurrentView=v;
+  renderAdaptedContent();
+}
+
+async function saveAdaptedRecipe(){
+  if(!_adaptRecipe) return;
+  const tags = window._adaptSelectedTags||[];
+  const newName = _adaptRecipe.name+' ('+tags.map(t=>t.split('-').map(w=>w[0].toUpperCase()+w.slice(1)).join('-')).join(', ')+')';
+  const newTags = [...new Set([...(_adaptRecipe.dietary_tags||[]),...tags])];
+  try{
+    const payload={
+      name:newName,
+      ingredients:_adaptedIngredients,
+      directions:_adaptedDirections,
+      notes:_adaptRecipe.notes||null,
+      categories:_adaptRecipe.categories||[],
+      collections:_adaptRecipe.collections||[],
+      courses:_adaptRecipe.courses||[],
+      image_url:_adaptRecipe.image_url||null,
+      is_favorite:false,
+      owner_id:currentUser.id,
+      dietary_tags:newTags
+    };
+    await supaFetch('/rest/v1/recipes','POST',[payload],{'Prefer':'return=minimal'});
+    await loadRecipes();
+    closeAdaptModal();
+    showToast('Saved as "'+newName+'"!');
+  }catch(e){ showToast('Could not save: '+e.message); }
+}
+
+async function runAutoAdapt(r){
+  const restrictions = currentProfile?.dietary_restrictions||[];
+  if(!restrictions.length) return;
+  const el = document.getElementById('autoAdaptSection');
+  if(!el) return;
+  el.innerHTML=`<div style="padding:10px 0;font-size:12px;color:var(--text3)">🥗 Loading adapted version for your diet…</div>`;
+
+  window._adaptRecipe = r;
+  window._adaptSelectedTags = restrictions;
+  _adaptRecipe = r;
+
+  const system = `You are a culinary expert specializing in dietary substitutions.
+Respond EXACTLY in this format:
+
+SUMMARY: [1-2 sentence summary of changes]
+
+SUBSTITUTIONS:
+- [original ingredient] → [substitute] | [brief reason]
+
+ADAPTED_INGREDIENTS:
+[full rewritten ingredient list, one per line]
+
+ADAPTED_DIRECTIONS:
+[full rewritten directions, one per line or step]`;
+
+  const userMsg = `Recipe: ${r.name}
+Current dietary tags: ${(r.dietary_tags||[]).join(', ')||'none'}
+Requested restrictions: ${restrictions.join(', ')}
+
+INGREDIENTS:
+${r.ingredients||'(none)'}
+
+DIRECTIONS:
+${r.directions||'(none)'}
+
+Please adapt this recipe to be fully compliant with: ${restrictions.join(', ')}.`;
+
+  try{
+    const text = await claude([{role:'user',content:userMsg}], system);
+    const summaryM = text.match(/SUMMARY:\s*(.+?)(?=\nSUBSTITUTIONS:|$)/s);
+    const ingM = text.match(/ADAPTED_INGREDIENTS:\s*([\s\S]+?)(?=\nADAPTED_DIRECTIONS:|$)/);
+    const dirM = text.match(/ADAPTED_DIRECTIONS:\s*([\s\S]+?)$/s);
+    const summary = summaryM?summaryM[1].trim():'';
+    const ing = ingM?ingM[1].trim():r.ingredients||'';
+    const dir = dirM?dirM[1].trim():r.directions||'';
+    _adaptedIngredients=ing; _adaptedDirections=dir;
+    _adaptOrigIngredients=r.ingredients||''; _adaptOrigDirections=r.directions||'';
+    el.innerHTML=`
+      <div style="background:var(--accent-light);border-radius:var(--radius-sm);padding:12px 14px;margin:8px 0">
+        <div style="font-size:12px;font-weight:600;color:var(--accent-dark);margin-bottom:4px">🥗 Adapted for your diet (${restrictions.join(', ')})</div>
+        <div style="font-size:13px;color:var(--accent-dark);line-height:1.5">${esc(summary)}</div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <button class="btn sm" onclick="showAutoAdaptDetails()">View substitutions</button>
+          <button class="btn sm primary" onclick="saveAdaptedRecipe()">Save as my variant</button>
+        </div>
+      </div>
+      <div id="autoAdaptDetails" style="display:none">
+        <div class="section-head">Adapted Ingredients</div>
+        <div class="content-block">${formatIngredients(ing)}</div>
+        <div class="section-head">Adapted Directions</div>
+        <div class="content-block">${formatDirections(dir)}</div>
+      </div>`;
+  }catch{
+    el.innerHTML='';
+  }
+}
+
+function showAutoAdaptDetails(){
+  const el=document.getElementById('autoAdaptDetails');
+  if(!el) return;
+  el.style.display = el.style.display==='none' ? 'block' : 'none';
+}
+
+// ─── DIETARY BACKFILL (admin) ─────────────────────────────────────────────────
+
+async function backfillDietaryTags(){
+  if(!currentProfile?.is_admin){ showToast('Admin only'); return; }
+  const btn = document.getElementById('dietBackfillBtn');
+  const prog = document.getElementById('dietBackfillProgress');
+  btn.disabled=true; prog.style.display='block';
+
+  try{
+    const recipes = await supaFetch('/rest/v1/recipes?select=id,name,ingredients&order=name.asc&limit=500');
+    let done=0;
+    for(const r of recipes){
+      prog.textContent=`[${++done}/${recipes.length}] ${r.name}…`;
+      try{
+        const tags = await getDietaryTagsForRecipe(r.ingredients||'', r.name);
+        if(tags.length){
+          await supaFetch('/rest/v1/recipes?id=eq.'+r.id,'PATCH',{dietary_tags:tags},{'Prefer':'return=minimal'});
+          const local = allRecipes.find(x=>x.id===r.id);
+          if(local) local.dietary_tags=tags;
+        }
+      }catch{}
+      await new Promise(r=>setTimeout(r,300));
+    }
+    prog.textContent='Done! '+recipes.length+' recipes tagged.';
+  }catch(e){
+    prog.textContent='Error: '+e.message;
+  }
+  btn.disabled=false;
+}
+
+async function getDietaryTagsForRecipe(ingredients, name){
+  const prompt = `Analyze this recipe and return ONLY a JSON array of applicable dietary tags from this list:
+${DIET_TAGS.join(', ')}
+
+Recipe: ${name}
+Ingredients: ${ingredients}
+
+Return ONLY a JSON array like ["vegan","gluten-free"] — no explanation. If none apply, return [].`;
+  const text = await claude([{role:'user',content:prompt}], 'You are a dietary classification assistant. Respond only with a JSON array.');
+  const m = text.match(/\[[\s\S]*?\]/);
+  if(!m) return [];
+  try{ return JSON.parse(m[0]).filter(t=>DIET_TAGS.includes(t)); }catch{ return []; }
+}
+
 // ── SHARE / REFERRAL / INSTALL ────────────────────────────────────────────────
 
 // Capture ?ref=UUID and ?ref_name=Name from URL and persist to localStorage
@@ -3366,6 +3770,7 @@ async function onSignedIn(session){
   updateTopbarUser();
   await loadRecipes();
   loadApiKey();
+  updateDietTab();
 
   // ── Referral attribution (runs once after new signup) ────────────────────
   const refId = localStorage.getItem('rd_ref_id');

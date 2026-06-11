@@ -1235,6 +1235,7 @@ async function uploadImage(filename,blob){
 async function loadRecipes(){
   try{
     allRecipes=await supaFetch('/rest/v1/recipes?select=id,name,categories,collections,courses,image_url,is_favorite,created_at,updated_at,owner_id,dietary_tags&order=name.asc&limit=500');
+    window._ingredientsCache=null; // refetched on demand for custom-restriction filtering
     if(currentUser){
       try{
         const saved=await supaFetch('/rest/v1/saved_recipes?user_id=eq.'+currentUser.id+'&select=recipe_id');
@@ -1329,8 +1330,9 @@ function renderHome(recipes){
     groups={'Recently Viewed':viewedRecipes,'Recently Added':recentlyAdded};
   } else if(currentGrouping==='diet'){
     const restrictions = currentProfile?.dietary_restrictions||[];
+    const customRestrictions = currentProfile?.custom_restrictions||[];
     // Custom render: setup CTA, matching recipes, and "everything else is adaptable" explainer
-    if(!restrictions.length){
+    if(!restrictions.length && !customRestrictions.length){
       grid.innerHTML=`
         <div style="max-width:480px;margin:3rem auto;text-align:center">
           <div style="font-size:40px;margin-bottom:12px">🥗</div>
@@ -1340,14 +1342,32 @@ function renderHome(recipes){
         </div>`;
       return;
     }
-    const matching=recipes.filter(r=>{
+    let matching=recipes.filter(r=>{
       const tags=r.dietary_tags||[];
       return restrictions.every(res=>tags.includes(res));
     });
+    // Exclude recipes containing custom restricted ingredients (async — re-renders when ready)
+    if(customRestrictions.length){
+      if(window._ingredientsCache){
+        matching=matching.filter(r=>{
+          const ing=(window._ingredientsCache[r.id]||'').toLowerCase();
+          return !customRestrictions.some(item=>ing.includes(item.toLowerCase()));
+        });
+      } else if(!window._ingredientsCacheLoading){
+        window._ingredientsCacheLoading=true;
+        supaFetch('/rest/v1/recipes?select=id,ingredients&limit=500').then(rows=>{
+          window._ingredientsCache={};
+          rows.forEach(r=>{window._ingredientsCache[r.id]=r.ingredients||'';});
+          window._ingredientsCacheLoading=false;
+          if(currentGrouping==='diet') renderHome();
+        }).catch(()=>{window._ingredientsCacheLoading=false;});
+      }
+    }
+    const allLabels=[...restrictions,...customRestrictions.map(c=>'no '+c)];
     grid.innerHTML=`
       <div style="background:var(--accent-light);border-radius:var(--radius);padding:14px 18px;margin-bottom:1.5rem;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         <div style="flex:1;min-width:220px">
-          <div style="font-size:13px;font-weight:600;color:var(--accent-dark)">🥗 Showing recipes that already match: ${restrictions.map(esc).join(', ')}</div>
+          <div style="font-size:13px;font-weight:600;color:var(--accent-dark)">🥗 Showing recipes that already match: ${allLabels.map(esc).join(', ')}</div>
           <div style="font-size:12px;color:var(--accent-dark);opacity:.8;margin-top:3px">Most other recipes can work for you too — open any recipe and tap <strong>🥗 Adapt</strong> to see ingredient substitutions for your diet.</div>
         </div>
         <button class="btn sm" onclick="showDietModal()" style="flex-shrink:0">Edit restrictions</button>

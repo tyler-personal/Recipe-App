@@ -70,11 +70,6 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--text);height:10
 /* PAGES */
 .pages{overflow:hidden;position:relative;height:100%}
 .page{display:none;height:100%;overflow-y:auto;overscroll-behavior-y:contain}
-/* Pull-to-refresh indicator */
-#ptrIndicator{position:fixed;top:60px;left:50%;transform:translateX(-50%) translateY(-60px);z-index:300;background:var(--white);border:1px solid var(--border2);border-radius:50px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.15);transition:transform .2s;pointer-events:none}
-#ptrIndicator svg{width:18px;height:18px;stroke:var(--accent);fill:none;stroke-width:2.5;stroke-linecap:round;transition:transform .15s}
-#ptrIndicator.spinning svg{animation:ptrSpin .8s linear infinite}
-@keyframes ptrSpin{to{transform:rotate(360deg)}}
 .page.active{display:block}
 .page::-webkit-scrollbar{width:4px}
 .page::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:4px}
@@ -4891,17 +4886,11 @@ function closeNotifOutside(e){
 // Dragging down from the top of a page does a light refresh (re-fetch data,
 // no full reload). Closing and reopening the app still does a hard load.
 (function setupPullToRefresh(){
-  const ind=document.createElement('div');
-  ind.id='ptrIndicator';
-  ind.innerHTML='<svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
-  document.body.appendChild(ind);
-
   const THRESHOLD=70;
   let startY=0, pulling=false, dist=0, refreshing=false;
 
   function activeScroller(){
-    const page=document.querySelector('.page.active')||[...document.querySelectorAll('.page')].find(p=>getComputedStyle(p).display!=='none');
-    return page;
+    return document.querySelector('.page.active')||[...document.querySelectorAll('.page')].find(p=>getComputedStyle(p).display!=='none');
   }
 
   document.addEventListener('touchstart',e=>{
@@ -4917,9 +4906,6 @@ function closeNotifOutside(e){
   document.addEventListener('touchmove',e=>{
     if(!pulling||refreshing) return;
     dist=e.touches[0].clientY-startY;
-    if(dist<=0){ ind.style.transform='translateX(-50%) translateY(-60px)'; return; }
-    const pull=Math.min(dist*.5,THRESHOLD+20);
-    ind.style.transform=`translateX(-50%) translateY(${pull-38}px)`;
   },{passive:true});
 
   document.addEventListener('touchend',async()=>{
@@ -4927,14 +4913,8 @@ function closeNotifOutside(e){
     pulling=false;
     if(dist*.5>=THRESHOLD){
       refreshing=true;
-      ind.classList.add('spinning');
-      ind.style.transform='translateX(-50%) translateY(10px)';
-      try{ await lightRefresh(); }catch{}
-      ind.classList.remove('spinning');
-      ind.style.transform='translateX(-50%) translateY(-60px)';
+      try{ await lightRefresh(); showToast('Refreshed'); }catch{}
       refreshing=false;
-    } else {
-      ind.style.transform='translateX(-50%) translateY(-60px)';
     }
     dist=0;
   },{passive:true});

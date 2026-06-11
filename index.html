@@ -1282,12 +1282,21 @@ function setGrouping(g, btn){
   renderHome();
 }
 
+// Stable per-page-load shuffle for the All Recipes view — a fresh random
+// order each refresh/open to spark inspiration, without reshuffling mid-browse
+let _homeShuffleSeeds = null;
+function shuffledForHome(recipes){
+  if(!_homeShuffleSeeds) _homeShuffleSeeds = new Map();
+  recipes.forEach(r=>{ if(!_homeShuffleSeeds.has(r.id)) _homeShuffleSeeds.set(r.id, Math.random()); });
+  return [...recipes].sort((a,b)=>_homeShuffleSeeds.get(a.id)-_homeShuffleSeeds.get(b.id));
+}
+
 function renderHome(recipes){
   if(recipes===undefined) recipes=allRecipes;
   const grid=document.getElementById('homeGrid');
   let groups={};
   if(currentGrouping==='all'){
-    groups={'All Recipes':recipes};
+    groups={'All Recipes':shuffledForHome(recipes)};
   } else if(currentGrouping==='category'){
     recipes.forEach(r=>{
       const cats=(r.categories||[]);
@@ -2990,6 +2999,7 @@ async function createSwipeSession(){
     const label=filterType==='all'?'All Recipes':filterType==='favorites'?'Favorites':filterType==='diet'?'My Diet':`${filterType.charAt(0).toUpperCase()+filterType.slice(1)}: ${filterValue||'All'}`;
     const sub=document.getElementById('swipeWaitingFilter');
     if(sub){sub.textContent='Filter: '+label;sub.style.display='';}
+    localStorage.setItem('rd_swipe_session',session.id);
     showSwipeScreen('waiting');
     startParticipantPoller();
   }catch(e){showSwipeLobbyError('Could not create session: '+e.message);}
@@ -3007,6 +3017,7 @@ async function joinSwipeSession(){
     try{ await supaFetch('/rest/v1/session_participants','POST',{session_id:swipeSession.id,user_id:currentUser.id},{'Prefer':'return=minimal,resolution=ignore-duplicates'}); }catch{}
     document.getElementById('swipeCodeDisplay').textContent=code;
     document.getElementById('joinCodeInput').value='';
+    localStorage.setItem('rd_swipe_session',swipeSession.id);
     showSwipeScreen('waiting');
     startParticipantPoller();
   }catch(e){showSwipeLobbyError('Error: '+e.message);}
@@ -3028,6 +3039,14 @@ function startParticipantPoller(){
 async function pollParticipants(){
   if(!swipeSession) return;
   try{
+    // Check session status first — when the creator starts, everyone else
+    // needs to transition to the swiping screen
+    const [s]=await supaFetch('/rest/v1/swipe_sessions?id=eq.'+swipeSession.id+'&select=*');
+    if(s){
+      swipeSession=s;
+      if(s.status==='active'){ beginSwipingLocal(); return; }
+      if(s.status==='complete'){ clearInterval(swipePoller);swipePoller=null; localStorage.removeItem('rd_swipe_session'); showSwipeScreen('lobby'); loadSwipeHistory(); return; }
+    }
     const rows=await supaFetch('/rest/v1/session_participants?session_id=eq.'+swipeSession.id+'&select=user_id,joined_at');
     const ids=rows.map(r=>r.user_id);
     // Fetch display names
@@ -3086,6 +3105,7 @@ async function endSwipeSession(){
 async function leaveSwipeSession(){
   if(!swipeSession) return;
   clearInterval(swipePoller);swipePoller=null;
+  localStorage.removeItem('rd_swipe_session');
   try{ await supaFetch('/rest/v1/session_participants?session_id=eq.'+swipeSession.id+'&user_id=eq.'+currentUser.id,'DELETE',null,{'Prefer':'return=minimal'}); }catch{}
   swipeSession=null;swipeParticipants=[];
   showSwipeScreen('lobby');
@@ -3093,13 +3113,28 @@ async function leaveSwipeSession(){
 
 async function startSwiping(){
   if(!swipeSession) return;
-  clearInterval(swipePoller);swipePoller=null;
   try{ await supaFetch('/rest/v1/swipe_sessions?id=eq.'+swipeSession.id,'PATCH',{status:'active'},{'Prefer':'return=minimal'}); }catch{}
+  await beginSwipingLocal();
+}
+
+// Transition this client into the swiping screen (creator after starting,
+// or a participant whose poller detected the session went active)
+async function beginSwipingLocal(){
+  if(!swipeSession) return;
+  clearInterval(swipePoller);swipePoller=null;
   // Re-fetch session to get filter (joiners need creator's filter)
   try{
     const [s]=await supaFetch('/rest/v1/swipe_sessions?id=eq.'+swipeSession.id+'&select=*');
     if(s) swipeSession=s;
   }catch{}
+  // Make sure participants are loaded (needed for match checking after a refresh)
+  if(swipeParticipants.length<2){
+    try{
+      const rows=await supaFetch('/rest/v1/session_participants?session_id=eq.'+swipeSession.id+'&select=user_id');
+      const ids=rows.map(r=>r.user_id);
+      if(ids.length) swipeParticipants=await supaFetch('/rest/v1/profiles?id=in.('+ids.join(',')+')'+'&select=id,display_name');
+    }catch{}
+  }
   const filtered=applySwipeFilter(allRecipes, swipeSession.filter_type, swipeSession.filter_value);
   swipeQueue=[...filtered].sort(()=>Math.random()-.5);
   swipeIndex=0;swipeMatches=[];swipeShownMatches=new Set();
@@ -3260,6 +3295,7 @@ function viewMatchedRecipe(){
 
 async function showSwipeResults(){
   clearInterval(swipePoller);swipePoller=null;
+  localStorage.removeItem('rd_swipe_session');
   try{ await supaFetch('/rest/v1/swipe_sessions?id=eq.'+swipeSession.id,'PATCH',{status:'complete'},{'Prefer':'return=minimal'}); }catch{}
   // Final match check
   await checkForMatches();
@@ -3384,6 +3420,7 @@ async function viewSwipeHistory(sessionId){
 function resetSwipeState(){
   swipeSession=null;swipeParticipants=[];swipeQueue=[];swipeIndex=0;swipeMatches=[];swipeShownMatches=new Set();swipeMatchedRecipe=null;
   clearInterval(swipePoller);swipePoller=null;
+  localStorage.removeItem('rd_swipe_session');
   document.getElementById('joinCodeInput').value='';
   document.getElementById('swipeLobbyError').style.display='none';
   document.getElementById('matchOverlay').style.display='none';
@@ -3972,9 +4009,35 @@ async function onSignedIn(session){
     return;
   }
 
+  // Restore an in-progress swipe session after refresh
+  const savedSwipeId = localStorage.getItem('rd_swipe_session');
+  if(savedSwipeId){
+    const restored = await restoreSwipeSession(savedSwipeId);
+    if(restored) return;
+  }
+
   // Restore last-viewed recipe after refresh
   const lastId = sessionStorage.getItem('rd_last_recipe');
   if(lastId) loadDetail(lastId);
+}
+
+async function restoreSwipeSession(sessionId){
+  try{
+    const [s]=await supaFetch('/rest/v1/swipe_sessions?id=eq.'+sessionId+'&select=*');
+    if(!s || s.status==='complete'){ localStorage.removeItem('rd_swipe_session'); return false; }
+    // Confirm we're still a participant; rejoin if waiting
+    try{ await supaFetch('/rest/v1/session_participants','POST',{session_id:s.id,user_id:currentUser.id},{'Prefer':'return=minimal,resolution=ignore-duplicates'}); }catch{}
+    swipeSession=s;
+    showTab('swipe');
+    document.getElementById('swipeCodeDisplay').textContent=s.code;
+    if(s.status==='active'){
+      await beginSwipingLocal();
+    } else {
+      showSwipeScreen('waiting');
+      startParticipantPoller();
+    }
+    return true;
+  }catch{ localStorage.removeItem('rd_swipe_session'); return false; }
 }
 
 function updateTopbarUser(){

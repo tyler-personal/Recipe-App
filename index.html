@@ -863,6 +863,17 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--text);height:10
             <button class="btn" style="margin-top:8px;font-size:12px;color:var(--text3);padding:6px 14px" onclick="endSwipeSession()">End session ✕</button>
           </div>
 
+          <!-- DONE, WAITING FOR OTHERS -->
+          <div class="swipe-screen" id="swipeScreen-doneWaiting">
+            <div style="text-align:center;padding:2rem 0">
+              <div style="font-size:40px;margin-bottom:12px">✅</div>
+              <p style="font-family:var(--font-heading);font-size:22px;font-weight:500;margin-bottom:6px">You're done!</p>
+              <p style="font-size:13px;color:var(--text2);margin-bottom:4px">Waiting for the others to finish swiping…</p>
+              <p style="font-size:12px;color:var(--text3)" id="doneWaitingStatus"></p>
+            </div>
+            <button class="btn" style="font-size:12px;color:var(--text3);padding:6px 14px" onclick="endSwipeSession()">End session now ✕</button>
+          </div>
+
           <!-- RESULTS -->
           <div class="swipe-screen" id="swipeScreen-results">
             <div style="text-align:center">
@@ -3142,6 +3153,16 @@ async function startSwiping(){
 async function beginSwipingLocal(){
   if(!swipeSession) return;
   clearInterval(swipePoller);swipePoller=null;
+  // If this user already finished (e.g. refreshed while waiting), go back to waiting
+  try{
+    const [me]=await supaFetch('/rest/v1/session_participants?session_id=eq.'+swipeSession.id+'&user_id=eq.'+currentUser.id+'&select=finished_at');
+    if(me?.finished_at){
+      showSwipeScreen('doneWaiting');
+      swipePoller=setInterval(checkAllFinished,3000);
+      checkAllFinished();
+      return;
+    }
+  }catch{}
   // Re-fetch session to get filter (joiners need creator's filter)
   try{
     const [s]=await supaFetch('/rest/v1/swipe_sessions?id=eq.'+swipeSession.id+'&select=*');
@@ -3247,16 +3268,49 @@ async function recordSwipe(recipe,liked){
   }catch{}
   swipeIndex++;
   if(swipeIndex>=swipeQueue.length){
-    showSwipeResults();
+    markFinishedAndWait();
   } else {
     renderCardStack();
     checkForMatches();
   }
 }
 
+// Called when this user runs out of cards. Results are only shown once ALL
+// participants have finished — otherwise matches would differ between users.
+async function markFinishedAndWait(){
+  if(!swipeSession) return;
+  try{ await supaFetch('/rest/v1/session_participants?session_id=eq.'+swipeSession.id+'&user_id=eq.'+currentUser.id,'PATCH',{finished_at:new Date().toISOString()},{'Prefer':'return=minimal'}); }catch{}
+  showSwipeScreen('doneWaiting');
+  clearInterval(swipePoller);
+  swipePoller=setInterval(checkAllFinished,3000);
+  checkAllFinished();
+}
+
+async function checkAllFinished(){
+  if(!swipeSession) return;
+  try{
+    // Still surface match celebrations while waiting
+    await checkForMatches();
+    const [s]=await supaFetch('/rest/v1/swipe_sessions?id=eq.'+swipeSession.id+'&select=status');
+    if(s && s.status==='complete'){ await showSwipeResults(); return; }
+    const parts=await supaFetch('/rest/v1/session_participants?session_id=eq.'+swipeSession.id+'&select=user_id,finished_at');
+    const done=parts.filter(p=>p.finished_at).length;
+    const statusEl=document.getElementById('doneWaitingStatus');
+    if(statusEl) statusEl.textContent=`${done} of ${parts.length} finished`;
+    if(parts.length>=2 && done>=parts.length){ await showSwipeResults(); }
+  }catch{}
+}
+
 function startMatchPoller(){
   clearInterval(swipePoller);
-  swipePoller=setInterval(checkForMatches,3000);
+  swipePoller=setInterval(async()=>{
+    await checkForMatches();
+    // If someone force-ended the session, go to results
+    try{
+      const [s]=await supaFetch('/rest/v1/swipe_sessions?id=eq.'+swipeSession.id+'&select=status');
+      if(s && s.status==='complete') await showSwipeResults();
+    }catch{}
+  },3000);
 }
 
 async function checkForMatches(){

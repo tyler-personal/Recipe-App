@@ -1032,6 +1032,23 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--text);height:10
   </div>
 </div>
 
+<!-- ONBOARDING OVERLAY -->
+<div id="onboardingOverlay" style="display:none;position:fixed;inset:0;z-index:700;background:rgba(22,36,28,.55);align-items:flex-end;justify-content:center">
+  <div style="background:var(--bg);width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:32px 28px 40px;max-height:92vh;overflow-y:auto;position:relative">
+    <!-- Progress dots -->
+    <div id="obDots" style="display:flex;justify-content:center;gap:7px;margin-bottom:28px"></div>
+    <!-- Skip -->
+    <button onclick="skipOnboarding()" style="position:absolute;top:20px;right:22px;background:none;border:none;font-size:13px;color:var(--text3);cursor:pointer;font-family:var(--font-ui)">Skip</button>
+    <!-- Step content -->
+    <div id="obContent" style="text-align:center;min-height:280px;display:flex;flex-direction:column;align-items:center"></div>
+    <!-- Nav -->
+    <div style="display:flex;gap:10px;margin-top:28px">
+      <button id="obBackBtn" onclick="obStep(-1)" class="btn" style="display:none">Back</button>
+      <button id="obNextBtn" onclick="obStep(1)" class="btn primary" style="flex:1;justify-content:center;padding:14px;font-size:15px;border-radius:50px">Next</button>
+    </div>
+  </div>
+</div>
+
 <!-- INSTALL / BOOKMARK PROMPT MODAL -->
 <div id="installModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;align-items:flex-end;justify-content:center;padding-bottom:0">
   <div style="background:var(--white);border-radius:20px 20px 0 0;padding:28px 24px 32px;width:100%;max-width:480px;text-align:center">
@@ -4117,7 +4134,10 @@ async function onSignedIn(session){
     }catch{}
     localStorage.removeItem('rd_ref_id');
     localStorage.removeItem('rd_ref_name');
-    setTimeout(()=>showInstallModal(true), 800);
+    // Onboarding handles the install prompt for new users — skip the old modal
+    if(currentProfile?.onboarding_complete){
+      setTimeout(()=>showInstallModal(true), 800);
+    }
   }
 
   // Handle ?join=CODE deep link (swipe session invite). The code is stashed
@@ -4138,6 +4158,12 @@ async function onSignedIn(session){
   if(savedSwipeId){
     const restored = await restoreSwipeSession(savedSwipeId);
     if(restored) return;
+  }
+
+  // Show onboarding for new users who haven't completed it
+  if(!currentProfile?.onboarding_complete){
+    setTimeout(()=>showOnboarding(), 600);
+    return;
   }
 
   // Restore last-viewed recipe after refresh
@@ -4931,6 +4957,166 @@ function closeNotifOutside(e){
     toggleNotifDropdown(false);
     document.removeEventListener('click',closeNotifOutside);
   }
+}
+
+// ── ONBOARDING ───────────────────────────────────────────────────────────────
+
+const OB_STEPS = [
+  {
+    icon: '🦆',
+    title: 'Welcome to Recipe Duck!',
+    body: 'Your personal recipe hub — browse recipes, cook together, and get AI-powered help in the kitchen.',
+  },
+  {
+    icon: '🍽',
+    title: 'All your recipes, one place',
+    body: 'Browse the shared library or add your own. Generate a recipe from a description, paste a URL, upload a photo, or type it in manually.',
+  },
+  {
+    icon: '🃏',
+    title: 'Swipe with friends',
+    body: 'Can\'t agree on what to make? Start a swipe session, invite friends with a link, and find a recipe everyone wants.',
+  },
+  {
+    icon: '🥗',
+    title: 'Set your diet profile',
+    body: 'Tell us your restrictions and we\'ll filter recipes for you — and help adapt any recipe with smart substitutions.',
+    interactive: 'diet',
+  },
+  {
+    icon: '📱',
+    title: 'Add to your home screen',
+    body: 'Get the full app experience — opens instantly, works offline, no app store needed.',
+    interactive: 'install',
+  },
+];
+
+let _obCurrentStep = 0;
+let _obDietSelections = [];
+
+function showOnboarding(){
+  _obCurrentStep = 0;
+  _obDietSelections = [...(currentProfile?.dietary_restrictions || [])];
+  document.getElementById('onboardingOverlay').style.display = 'flex';
+  renderObStep();
+  track('onboarding_started', {});
+}
+
+function renderObStep(){
+  const step = OB_STEPS[_obCurrentStep];
+  const total = OB_STEPS.length;
+  const isLast = _obCurrentStep === total - 1;
+
+  // Dots
+  document.getElementById('obDots').innerHTML = OB_STEPS.map((_,i) =>
+    `<div style="width:${i===_obCurrentStep?20:7}px;height:7px;border-radius:4px;background:${i===_obCurrentStep?'var(--accent)':'var(--bg3)'};transition:all .25s"></div>`
+  ).join('');
+
+  // Back button
+  document.getElementById('obBackBtn').style.display = _obCurrentStep > 0 ? '' : 'none';
+
+  // Next button label
+  const nextBtn = document.getElementById('obNextBtn');
+  nextBtn.textContent = isLast ? '✓ Done' : 'Next →';
+
+  // Content
+  const content = document.getElementById('obContent');
+
+  if(step.interactive === 'diet'){
+    const saved = _obDietSelections;
+    content.innerHTML = `
+      <div style="font-size:52px;margin-bottom:14px">${step.icon}</div>
+      <div style="font-family:var(--font-heading);font-size:24px;font-weight:600;margin-bottom:10px">${step.title}</div>
+      <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:20px">${step.body}</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:8px">
+        ${DIET_TAGS.map(t => `<button class="diet-chip${saved.includes(t)?' active':''}" onclick="obToggleDietChip(this,'${t}')">${esc(t)}</button>`).join('')}
+      </div>
+      <p style="font-size:12px;color:var(--text3);margin-top:8px">You can always change these later in My Diet Profile.</p>`;
+  } else if(step.interactive === 'install'){
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const canPrompt = !!_deferredInstallPrompt;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+    let installHTML = '';
+    if(isStandalone){
+      installHTML = `<div style="background:var(--accent-light);border-radius:var(--radius);padding:14px 16px;font-size:13px;color:var(--accent-dark);margin-top:16px">✅ Already installed — you're all set!</div>`;
+      nextBtn.textContent = '✓ Done';
+    } else if(canPrompt){
+      installHTML = `<button class="btn primary" onclick="obTriggerInstall()" style="width:100%;justify-content:center;padding:14px;font-size:15px;border-radius:50px;margin-top:16px">📱 Add to Home Screen</button>`;
+    } else if(isIOS){
+      installHTML = `
+        <div style="background:var(--bg2);border-radius:var(--radius);padding:16px;text-align:left;margin-top:16px;font-size:13px;line-height:1.8;color:var(--text2)">
+          <div style="margin-bottom:8px">In <strong>Safari</strong>:</div>
+          <div>1. Tap the <strong>Share</strong> button <span style="font-size:16px;vertical-align:middle">⎦↑</span> at the bottom</div>
+          <div>2. Scroll down and tap <strong>"Add to Home Screen"</strong></div>
+          <div>3. Tap <strong>Add</strong></div>
+        </div>`;
+    } else {
+      installHTML = `
+        <div style="background:var(--bg2);border-radius:var(--radius);padding:16px;text-align:left;margin-top:16px;font-size:13px;line-height:1.8;color:var(--text2)">
+          In <strong>Chrome</strong>: tap the menu (⋮) → <strong>"Add to Home Screen"</strong>
+        </div>`;
+    }
+    content.innerHTML = `
+      <div style="font-size:52px;margin-bottom:14px">${step.icon}</div>
+      <div style="font-family:var(--font-heading);font-size:24px;font-weight:600;margin-bottom:10px">${step.title}</div>
+      <p style="font-size:13px;color:var(--text2);line-height:1.6">${step.body}</p>
+      ${installHTML}`;
+  } else {
+    content.innerHTML = `
+      <div style="font-size:64px;margin-bottom:18px;line-height:1">${step.icon}</div>
+      <div style="font-family:var(--font-heading);font-size:24px;font-weight:600;margin-bottom:12px">${step.title}</div>
+      <p style="font-size:14px;color:var(--text2);line-height:1.7;max-width:340px">${step.body}</p>`;
+  }
+}
+
+function obToggleDietChip(btn, tag){
+  btn.classList.toggle('active');
+  if(btn.classList.contains('active')){
+    if(!_obDietSelections.includes(tag)) _obDietSelections.push(tag);
+  } else {
+    _obDietSelections = _obDietSelections.filter(t=>t!==tag);
+  }
+}
+
+async function obTriggerInstall(){
+  if(!_deferredInstallPrompt) return;
+  _deferredInstallPrompt.prompt();
+  const {outcome} = await _deferredInstallPrompt.userChoice;
+  _deferredInstallPrompt = null;
+  track('install_prompted', {outcome, source:'onboarding'});
+}
+
+async function obStep(dir){
+  // Save diet selections when leaving that step
+  if(OB_STEPS[_obCurrentStep].interactive === 'diet' && _obDietSelections.length){
+    supaFetch('/rest/v1/profiles?id=eq.'+currentUser.id,'PATCH',
+      {dietary_restrictions:_obDietSelections},{'Prefer':'return=minimal'}).catch(()=>{});
+    if(!currentProfile) currentProfile = {};
+    currentProfile.dietary_restrictions = _obDietSelections;
+    updateDietTab();
+  }
+
+  const next = _obCurrentStep + dir;
+  if(next >= OB_STEPS.length){
+    await finishOnboarding();
+    return;
+  }
+  _obCurrentStep = next;
+  renderObStep();
+}
+
+async function skipOnboarding(){
+  track('onboarding_skipped', {step: _obCurrentStep});
+  await finishOnboarding();
+}
+
+async function finishOnboarding(){
+  document.getElementById('onboardingOverlay').style.display = 'none';
+  supaFetch('/rest/v1/profiles?id=eq.'+currentUser.id,'PATCH',
+    {onboarding_complete:true},{'Prefer':'return=minimal'}).catch(()=>{});
+  if(currentProfile) currentProfile.onboarding_complete = true;
+  track('onboarding_completed', {steps_seen: _obCurrentStep + 1});
 }
 
 // ── ANALYTICS ────────────────────────────────────────────────────────────────

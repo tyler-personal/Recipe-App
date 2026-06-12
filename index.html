@@ -1275,8 +1275,17 @@ function renderSidebar(recipes){
   }).join('');
 }
 
+let _searchTrackTimer=null;
 function filterRecipes(q){
   const lq=q.toLowerCase();
+  // Track searches with a debounce — only fire after user pauses typing, skip trivial queries
+  clearTimeout(_searchTrackTimer);
+  if(q.length>=3){
+    _searchTrackTimer=setTimeout(()=>{
+      const filtered=allRecipes.filter(r=>r.name.toLowerCase().includes(lq));
+      track('search_performed',{query:q, results:filtered.length});
+    },800);
+  }
   const filtered=allRecipes.filter(r=>r.name.toLowerCase().includes(lq)||(r.categories||[]).some(c=>c.toLowerCase().includes(lq))||(r.collections||[]).some(c=>c.toLowerCase().includes(lq))||(r.dietary_tags||[]).some(c=>c.toLowerCase().includes(lq)));
   renderSidebar(filtered);
   // Sync the other search input
@@ -1581,6 +1590,7 @@ function formatNotes(text){
 
 async function loadDetail(id){
   trackRecentlyViewed(id);
+  track('recipe_viewed',{recipe_id:id});
   currentId=id;
   sessionStorage.setItem('rd_last_recipe',id);
   // Show detail page
@@ -1911,6 +1921,7 @@ async function sendAIMessage(){
   const inp = document.getElementById('aiPrompt');
   const msg = inp.value.trim();
   if(!msg) return;
+  track('ai_feature_used',{feature:'recipe_generation'});
   inp.value = '';
   inp.style.height = 'auto';
 
@@ -2232,8 +2243,15 @@ async function saveRecipe(){
     if(!editingId && payload.ingredients){
       try{ payload.dietary_tags = await getDietaryTagsForRecipe(payload.ingredients, payload.name); }catch{}
     }
-    if(editingId){await supaFetch('/rest/v1/recipes?id=eq.'+editingId,'PATCH',payload,{'Prefer':'return=minimal'});}
-    else{await supaFetch('/rest/v1/recipes','POST',[{...payload,owner_id:currentUser?.id}],{'Prefer':'return=minimal,resolution=ignore-duplicates'});}
+    if(editingId){
+      await supaFetch('/rest/v1/recipes?id=eq.'+editingId,'PATCH',payload,{'Prefer':'return=minimal'});
+      track('recipe_edited',{recipe_id:editingId});
+    } else {
+      await supaFetch('/rest/v1/recipes','POST',[{...payload,owner_id:currentUser?.id}],{'Prefer':'return=minimal,resolution=ignore-duplicates'});
+      // Detect creation method from which panel was active
+      const method=['ai','url','file','manual'].find(m=>document.getElementById('mc-'+m)?.classList.contains('active'))||'unknown';
+      track('recipe_created',{method});
+    }
     const savedId = editingId;
     closeModal();
     await loadRecipes();
@@ -2490,6 +2508,7 @@ function formatScaled(val){
 function scaleIngredients(mult){
   const r = window._currentRecipe;
   if(!r||!r.ingredients) return;
+  if(mult!==1) track('scaler_used',{recipe_id:r.id, multiplier:mult});
 
   // Matches a single quantity token: "2 1/2", "1/2", "1.5", unicode fractions, integers
   const QTY_PAT = '(\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|\\d+\\.\\d+|[\u00bc\u00bd\u00be\u2153\u2154\u215b\u215c\u215d\u215e]|\\d+[\u00bc\u00bd\u00be\u2153\u2154\u215b\u215c\u215d\u215e]?\\d*(?:\\.\\d+)?)';
@@ -2557,6 +2576,7 @@ async function sendRecipeChat(){
   const inp = document.getElementById('recipeChatInput');
   const msg = inp?.value.trim();
   if(!msg) return;
+  track('ai_feature_used',{feature:'recipe_chat', recipe_id:currentId});
   inp.value = ''; inp.style.height='auto';
   const msgs = document.getElementById('recipeChatMsgs');
   msgs.innerHTML += `<div class="rc-msg user">${esc(msg)}</div>`;
@@ -3038,6 +3058,7 @@ function applySwipeFilter(recipes, filterType, filterValue){
 }
 
 async function createSwipeSession(){
+  track('swipe_session_created',{filter_type:document.getElementById('swipeFilterType').value});
   const code=genSwipeCode();
   const filterType=document.getElementById('swipeFilterType').value;
   const filterValue=(filterType!=='all'&&filterType!=='favorites')
@@ -3611,6 +3632,7 @@ async function saveDietProfile(){
     currentProfile.dietary_restrictions = selected;
     currentProfile.auto_adapt = autoAdapt;
     currentProfile.custom_restrictions = customRestrictions;
+    track('diet_profile_saved',{restrictions:selected, custom_count:customRestrictions.length, auto_adapt:autoAdapt});
     updateDietTab();
     closeDietModal();
     if(currentGrouping==='diet') renderHome();
@@ -3715,6 +3737,7 @@ async function runAdaptation(){
 
   const btn = document.getElementById('adaptRunBtn');
   btn.disabled=true; btn.textContent='Thinking…';
+  track('ai_feature_used',{feature:'diet_adaptation', recipe_id:_adaptRecipe?.id, restrictions:selected});
 
   const system = `You are a culinary expert specializing in dietary substitutions.
 When adapting a recipe, respond EXACTLY in this format:
@@ -4722,6 +4745,7 @@ async function clearAllItems(){
 
 async function addToShoppingList(recipeId){
   if(!currentUser){ alert('Sign in to use the shopping list.'); return; }
+  track('shopping_list_used',{recipe_id:recipeId});
   const btn=document.getElementById('addToListBtn');
   if(btn){ btn.disabled=true; btn.textContent='Adding…'; }
   try{
@@ -4907,6 +4931,16 @@ function closeNotifOutside(e){
     toggleNotifDropdown(false);
     document.removeEventListener('click',closeNotifOutside);
   }
+}
+
+// ── ANALYTICS ────────────────────────────────────────────────────────────────
+// Fire-and-forget event tracking. Never blocks the UI.
+function track(eventName, metadata={}){
+  if(!currentUser) return;
+  supaFetch('/rest/v1/events','POST',
+    {user_id:currentUser.id, event_name:eventName, metadata},
+    {'Prefer':'return=minimal'}
+  ).catch(()=>{});
 }
 
 // ── PULL TO REFRESH (mobile) ─────────────────────────────────────────────────

@@ -4352,10 +4352,16 @@ async function submitPasswordReset(){
 async function handleForgotPassword(){
   const email=document.getElementById('loginEmail').value.trim();
   if(!email){alert('Enter your email address first.');return;}
-  const{error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin});
   const errEl=document.getElementById('loginError');
-  if(error){errEl.style.color='var(--error)';errEl.textContent=error.message;}
-  else{errEl.style.color='var(--success)';errEl.textContent='Password reset email sent — check your inbox!';}
+  const{error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin});
+  if(error){
+    errEl.style.color='var(--error)';errEl.textContent=error.message;
+  } else {
+    // Supabase silently succeeds even for Google OAuth accounts (sends nothing).
+    // Always show the Google sign-in hint so OAuth users aren't left confused.
+    errEl.style.color='var(--success)';
+    errEl.innerHTML='If that email has a password account, a reset link is on its way.<br><span style="color:var(--text3);font-size:11px">Signed up with Google? Use the <strong>Continue with Google</strong> button below.</span>';
+  }
 }
 
 async function signInWithGoogle(){

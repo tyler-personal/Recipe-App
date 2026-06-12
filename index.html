@@ -1032,6 +1032,18 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--text);height:10
   </div>
 </div>
 
+<!-- PASSWORD RESET MODAL -->
+<div id="passwordResetModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:800;align-items:center;justify-content:center;padding:1rem">
+  <div class="login-card" style="width:100%;max-width:400px">
+    <div style="font-family:var(--font-heading);font-size:22px;font-weight:600;margin-bottom:6px">Set a new password</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1.25rem">Choose a new password for your account.</p>
+    <div class="login-field"><input type="password" id="newPasswordInput" placeholder="New password" autocomplete="new-password" onkeydown="if(event.key==='Enter')submitPasswordReset()"></div>
+    <div class="login-field"><input type="password" id="newPasswordConfirm" placeholder="Confirm new password" autocomplete="new-password" onkeydown="if(event.key==='Enter')submitPasswordReset()"></div>
+    <div id="passwordResetError" style="font-size:12px;color:var(--error);min-height:16px;margin-bottom:8px"></div>
+    <button class="login-submit-btn" onclick="submitPasswordReset()">Update Password</button>
+  </div>
+</div>
+
 <!-- ONBOARDING OVERLAY -->
 <div id="onboardingOverlay" style="display:none;position:fixed;inset:0;z-index:700;background:rgba(22,36,28,.55);align-items:flex-end;justify-content:center">
   <div style="background:var(--bg);width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:32px 28px 40px;max-height:92vh;overflow-y:auto;position:relative">
@@ -4090,7 +4102,9 @@ async function initAuth(){
     showLoginModal();
   }
   supabaseClient.auth.onAuthStateChange(async(event,session)=>{
-    if(event==='SIGNED_IN'&&session){
+    if(event==='PASSWORD_RECOVERY'){
+      showPasswordResetForm();
+    } else if(event==='SIGNED_IN'&&session){
       await onSignedIn(session);
     } else if(event==='SIGNED_OUT'){
       currentUser=null;currentProfile=null;currentSession=null;
@@ -4309,6 +4323,30 @@ function toggleLoginMode(){
   document.getElementById('rememberMeRow').style.display=isSignUp?'none':'';
   document.getElementById('forgotRow').style.display=isSignUp?'none':'';
   document.getElementById('loginError').textContent='';
+}
+
+function showPasswordResetForm(){
+  // Hide login if open, show the reset modal
+  hideLoginModal();
+  document.getElementById('passwordResetModal').style.display='flex';
+  document.getElementById('newPasswordInput').focus();
+}
+
+async function submitPasswordReset(){
+  const pw=document.getElementById('newPasswordInput').value;
+  const confirm=document.getElementById('newPasswordConfirm').value;
+  const errEl=document.getElementById('passwordResetError');
+  errEl.textContent='';
+  if(pw.length<6){errEl.textContent='Password must be at least 6 characters.';return;}
+  if(pw!==confirm){errEl.textContent='Passwords don\'t match.';return;}
+  const btn=document.querySelector('#passwordResetModal .login-submit-btn');
+  btn.textContent='Updating…';btn.disabled=true;
+  const{error}=await supabaseClient.auth.updateUser({password:pw});
+  btn.textContent='Update Password';btn.disabled=false;
+  if(error){errEl.textContent=error.message;return;}
+  document.getElementById('passwordResetModal').style.display='none';
+  showToast('Password updated! You\'re now signed in.');
+  // onAuthStateChange SIGNED_IN fires after updateUser, which calls onSignedIn
 }
 
 async function handleForgotPassword(){

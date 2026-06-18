@@ -1357,6 +1357,7 @@ async function loadDetail(id){
   document.getElementById('tab-home').classList.add('active');
   document.getElementById('page-detail').classList.add('active');
   document.getElementById('bodyLayout').classList.remove('no-sidebar');
+  document.getElementById('sidebar').style.display = 'flex';
   // On mobile, scroll to top of detail
   document.getElementById('page-detail').scrollTop = 0;
   document.querySelectorAll('.recipe-row').forEach(el=>el.classList.remove('active'));

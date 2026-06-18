@@ -1932,10 +1932,12 @@ function addAIThreadMsg(role, html){
   thread.style.display = 'flex';
   const panel = document.getElementById('panel-ai');
   panel.classList.add('ai-active','ai-has-thread');
-  attachAIPanel();
-  document.getElementById('aiBackdrop').style.display = 'block';
-  document.getElementById('aiPanelHeader').style.display = 'flex';
-  document.body.classList.add('ai-panel-open');lockBodyScroll();
+  if(window.innerWidth<=680){
+    attachAIPanel();
+    document.getElementById('aiBackdrop').style.display = 'block';
+    document.getElementById('aiPanelHeader').style.display = 'flex';
+    lockBodyScroll();
+  }
   const div = document.createElement('div');
   div.style.cssText = role === 'user'
     ? 'align-self:flex-end;background:var(--accent);color:white;padding:8px 12px;border-radius:12px 12px 2px 12px;max-width:85%;font-size:13px;line-height:1.6'

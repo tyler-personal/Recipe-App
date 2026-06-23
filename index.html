@@ -105,6 +105,8 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--text);height:10
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5rem 2rem;text-align:center;gap:8px;color:var(--text3)}
 .recipe-detail{max-width:680px;width:100%}
 @media(min-width:960px){
+  #onboardingOverlay{align-items:center!important}
+  #onboardingCard{border-radius:20px!important;max-width:560px!important;max-height:85vh!important;padding:40px 44px 44px!important}
   .recipe-detail{max-width:none;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);column-gap:2.5rem;align-items:start}
   .recipe-detail-left{min-width:0}
   .recipe-detail-right{min-width:0}
@@ -581,6 +583,7 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--text);height:10
         <button id="dropdownSettings" onclick="document.getElementById('userDropdown').style.display='none';showSettings()" style="display:none">⚙ Settings</button>
         <button onclick="document.getElementById('userDropdown').style.display='none';showDietModal()" style="display:flex;align-items:center;gap:7px;width:100%;padding:8px 12px;background:none;border:none;border-radius:6px;cursor:pointer;font-size:13px;color:var(--text1);font-family:var(--font-ui);text-align:left" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='none'">🥗 My Diet Profile</button>
         <button onclick="document.getElementById('userDropdown').style.display='none';shareApp()" style="display:flex;align-items:center;gap:7px;width:100%;padding:8px 12px;background:none;border:none;border-radius:6px;cursor:pointer;font-size:13px;color:var(--text1);font-family:var(--font-ui);text-align:left" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='none'"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Invite a Friend</button>
+        <button onclick="document.getElementById('userDropdown').style.display='none';showOnboarding(true)" style="display:flex;align-items:center;gap:7px;width:100%;padding:8px 12px;background:none;border:none;border-radius:6px;cursor:pointer;font-size:13px;color:var(--text1);font-family:var(--font-ui);text-align:left" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='none'">📖 View Tutorial</button>
         <button class="dropdown-signout" onclick="signOut()">Sign out</button>
       </div>
     </div>
@@ -1046,7 +1049,7 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--text);height:10
 
 <!-- ONBOARDING OVERLAY -->
 <div id="onboardingOverlay" style="display:none;position:fixed;inset:0;z-index:700;background:rgba(22,36,28,.55);align-items:flex-end;justify-content:center">
-  <div style="background:var(--bg);width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:32px 28px 40px;max-height:92vh;overflow-y:auto;position:relative">
+  <div id="onboardingCard" style="background:var(--bg);width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:32px 28px 40px;max-height:92vh;overflow-y:auto;position:relative">
     <!-- Progress dots -->
     <div id="obDots" style="display:flex;justify-content:center;gap:7px;margin-bottom:28px"></div>
     <!-- Skip -->
@@ -5059,9 +5062,9 @@ const OB_STEPS = [
 let _obCurrentStep = 0;
 let _obDietSelections = [];
 
-function showOnboarding(){
+function showOnboarding(forceRestart=false){
   // Restore step if the app was backgrounded and reloaded mid-onboarding
-  const saved = sessionStorage.getItem('rd_ob_step');
+  const saved = forceRestart ? null : sessionStorage.getItem('rd_ob_step');
   _obCurrentStep = saved ? parseInt(saved, 10) : 0;
   _obDietSelections = [...(currentProfile?.dietary_restrictions || [])];
   document.getElementById('onboardingOverlay').style.display = 'flex';

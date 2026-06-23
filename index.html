@@ -1592,7 +1592,6 @@ function parseDur(iso){
   if(h&&m)return h+'h '+m+'m';if(h)return h+' hr';if(m)return m+' min';return null;
 }
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function relativeTime(d){const diff=Date.now()-new Date(d),m=Math.floor(diff/60000),h=Math.floor(diff/3600000),dy=Math.floor(diff/86400000);if(m<1)return'just now';if(m<60)return m+'m ago';if(h<24)return h+'h ago';if(dy<30)return dy+'d ago';return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'});}
 function relativeTime(dateStr){
   const diff=Date.now()-new Date(dateStr);
   const m=Math.floor(diff/60000),h=Math.floor(diff/3600000),d=Math.floor(diff/86400000);
@@ -4914,6 +4913,7 @@ async function shareShoppingList(){
   showToast('List copied to clipboard');
 }
 
+function printShoppingList(){
   const items=window._slItems||[];
   if(!items.length){ alert('Your shopping list is empty.'); return; }
   const groups=slBuildConsolidatedGroups(items);

@@ -1093,6 +1093,23 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--text);height:10
 
 </div><!-- /app -->
 
+<!-- SHARE RECIPE MODAL -->
+<div id="shareRecipeModal" onclick="if(event.target===this)closeShareModal()" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--white);border-radius:20px;padding:28px 24px;width:100%;max-width:400px;position:relative">
+    <button onclick="closeShareModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--text3);line-height:1">×</button>
+    <div style="font-weight:700;font-size:17px;margin-bottom:4px;font-family:var(--font-ui)">Share Recipe</div>
+    <div id="shareRecipeName" style="font-size:13px;color:var(--text2);margin-bottom:20px;font-family:var(--font-ui)"></div>
+    <div style="text-align:center;margin-bottom:20px">
+      <img id="shareQRCode" src="" alt="QR Code" style="width:180px;height:180px;border-radius:12px;border:1px solid var(--border)"/>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px;font-family:var(--font-ui)">Scan to open this recipe</div>
+    </div>
+    <button id="shareRecipeLinkBtn" class="btn primary" style="width:100%;justify-content:center;font-size:14px;padding:12px">
+      <svg viewBox="0 0 24 24" style="stroke:white"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      Share Link
+    </button>
+  </div>
+</div>
+
 <!-- MATCH OVERLAY -->
 <div id="matchOverlay" style="display:none;position:fixed;inset:0;background:var(--accent);z-index:400;flex-direction:column;align-items:center;justify-content:center;gap:1.25rem;padding:2rem;text-align:center">
   <div style="font-size:56px;line-height:1;animation:matchPop .4s ease">❤️</div>
@@ -1813,6 +1830,7 @@ async function loadDetail(id){
           <div class="actions-row">
             ${canEdit?`<button class="btn" onclick="openEdit('${id}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>`:''}
             <button class="btn" onclick="openAdaptModal('${id}')">🥗 Adapt</button>
+            <button class="btn" onclick="openShareModal('${id}','${esc(r.name)}')"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share</button>
             <button class="btn primary" onclick="sharePDF()"><svg viewBox="0 0 24 24" style="stroke:white"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Share PDF</button>
             ${r.ingredients?`<button class="btn" id="addToListBtn" onclick="addToShoppingList('${id}')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add to List</button>`:''}
             ${canEdit?`<button class="btn danger" onclick="deleteRecipe('${id}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>`:''}
@@ -4002,6 +4020,12 @@ Return ONLY a JSON array like ["vegan","gluten-free"] — no explanation. If non
 
 // ── SHARE / REFERRAL / INSTALL ────────────────────────────────────────────────
 
+// Capture ?recipe=ID on page load so it survives OAuth redirect
+(function detectRecipeDeepLink(){
+  const recipeId = new URLSearchParams(window.location.search).get('recipe');
+  if(recipeId) localStorage.setItem('rd_deep_recipe', recipeId);
+})();
+
 // Capture ?join=CODE on page load and persist it so it survives the OAuth
 // redirect round-trip (Google sign-in returns to the bare origin URL)
 (function detectJoinCode(){
@@ -4022,6 +4046,28 @@ Return ONLY a JSON array like ["vegan","gluten-free"] — no explanation. If non
     window.history.replaceState(null, '', clean);
   }
 })();
+
+function openShareModal(recipeId, recipeName){
+  const url = window.location.origin + window.location.pathname + '?recipe=' + recipeId;
+  document.getElementById('shareRecipeName').textContent = recipeName;
+  document.getElementById('shareQRCode').src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(url);
+  const btn = document.getElementById('shareRecipeLinkBtn');
+  btn.onclick = () => {
+    if(navigator.share){
+      navigator.share({title: recipeName + ' — Recipe Duck', url}).catch(()=>{});
+    } else {
+      navigator.clipboard?.writeText(url)
+        .then(()=>{ showToast('Link copied to clipboard!'); closeShareModal(); })
+        .catch(()=>{ prompt('Copy recipe link:', url); });
+    }
+    track('recipe_shared', {recipe_id: recipeId, method: navigator.share ? 'native' : 'clipboard'});
+  };
+  document.getElementById('shareRecipeModal').style.display = 'flex';
+}
+
+function closeShareModal(){
+  document.getElementById('shareRecipeModal').style.display = 'none';
+}
 
 function shareApp(){
   if(!currentUser) return;
@@ -4158,6 +4204,15 @@ async function onSignedIn(session){
     if(currentProfile?.onboarding_complete){
       setTimeout(()=>showInstallModal(true), 800);
     }
+  }
+
+  // Handle ?recipe=ID deep link
+  const deepRecipe = new URLSearchParams(window.location.search).get('recipe') || localStorage.getItem('rd_deep_recipe');
+  if(deepRecipe){
+    localStorage.removeItem('rd_deep_recipe');
+    window.history.replaceState(null, '', window.location.pathname + window.location.hash);
+    loadDetail(deepRecipe);
+    return;
   }
 
   // Handle ?join=CODE deep link (swipe session invite). The code is stashed

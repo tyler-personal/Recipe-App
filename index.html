@@ -9,27 +9,34 @@
 <link rel="apple-touch-icon" sizes="192x192" href="/apple-touch-icon.png">
 <link rel="shortcut icon" href="/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Oswald:wght@400;500;600&family=Roboto:wght@400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --accent:#154733;--accent-light:#E8F0EC;--accent-dark:#0D2E21;--yellow:#FEE123;
-  --bg:#FAFAF8;--bg2:#F3F2EF;--bg3:#ECEAE5;
-  --text:#1C1A17;--text2:#6B6760;--text3:#9B9893;
-  --border:rgba(28,26,23,0.1);--border2:rgba(28,26,23,0.18);
-  --white:#FFFFFF;--success:#2D6A3F;--error:#A32D2D;
-  --radius:10px;--radius-sm:6px;
+  /* Fresh Pond palette */
+  --accent:#154733;--accent-light:#E2EDE6;--accent-dark:#16241C;--yellow:#FEE123;
+  --paprika:#E4572E;--pond:#9CC2AC;
+  --bg:#F7F3E8;--bg2:#EDE9DB;--bg3:#DDD8CA;
+  --text:#16241C;--text2:#5A6056;--text3:#8E9489;
+  --border:rgba(22,36,28,0.1);--border2:rgba(22,36,28,0.18);
+  --white:#FFFFFF;--success:#2D6A3F;--error:#C0392B;
+  --radius:14px;--radius-sm:8px;
+  /* Typography */
+  --font-logo:'DM Serif Display',Georgia,serif;
+  --font-heading:'Oswald','DM Sans',sans-serif;
+  --font-ui:'Roboto','DM Sans',sans-serif;
+  --font-mono:'Space Mono',monospace;
 }
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;font-size:14px}
+body{font-family:var(--font-ui);background:var(--bg);color:var(--text);height:100vh;overflow:hidden;font-size:14px}
 .app{display:grid;grid-template-rows:52px 1fr;height:100vh}
 
 /* TOPBAR */
 .topbar{background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1.25rem;gap:12px;z-index:10}
-.logo{font-family:'Lora',serif;font-size:17px;font-weight:500;display:flex;align-items:center;gap:8px;margin-right:auto;cursor:pointer}
+.logo{font-family:var(--font-logo);font-size:18px;font-weight:400;display:flex;align-items:center;gap:9px;margin-right:auto;cursor:pointer}
 .logo:hover .logo-text{text-decoration:underline;text-decoration-color:var(--accent)}.tabs{display:flex;gap:2px}
-.tab-btn{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:6px 14px;border-radius:var(--radius-sm);border:none;background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
+.tab-btn{font-family:var(--font-ui);font-size:13px;font-weight:500;padding:6px 14px;border-radius:var(--radius-sm);border:none;background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
 .tab-btn:hover{background:var(--bg2);color:var(--text)}
 .tab-btn.active{background:var(--accent-light);color:var(--accent)}
 .tab-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -41,7 +48,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 /* SIDEBAR */
 .sidebar{background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
 .search-wrap{padding:10px 12px;border-bottom:1px solid var(--border)}
-.search-wrap input{width:100%;background:var(--bg2);border:1px solid transparent;border-radius:var(--radius-sm);padding:7px 10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;transition:border-color .15s}
+.search-wrap input{width:100%;background:var(--bg2);border:1px solid transparent;border-radius:var(--radius-sm);padding:7px 10px;font-size:13px;font-family:var(--font-ui);color:var(--text);outline:none;transition:border-color .15s}
 .search-wrap input:focus{border-color:var(--accent);background:var(--white)}
 .search-wrap input::placeholder{color:var(--text3)}
 .sidebar-list{flex:1;overflow-y:auto}
@@ -62,7 +69,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 
 /* PAGES */
 .pages{overflow:hidden;position:relative;height:100%}
-.page{display:none;height:100%;overflow-y:auto}
+.page{display:none;height:100%;overflow-y:auto;overscroll-behavior-y:contain}
 .page.active{display:block}
 .page::-webkit-scrollbar{width:4px}
 .page::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:4px}
@@ -75,9 +82,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 .group-tab:hover{background:var(--bg2);color:var(--text)}
 .group-tab.active{background:var(--accent);color:white;border-color:var(--accent)}
 .group-section{margin-bottom:2rem}
-.group-title{font-family:'Lora',serif;font-size:16px;font-weight:500;margin-bottom:1rem;color:var(--text2);display:flex;align-items:center;gap:8px}
+.group-title{font-family:var(--font-heading);font-size:13px;font-weight:600;margin-bottom:1rem;color:var(--text2);display:flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:.06em}
 .group-title::after{content:'';flex:1;height:1px;background:var(--border)}
-.group-title-btn{font-family:'Lora',serif;font-size:18px;font-weight:600;margin-bottom:1rem;color:var(--accent-dark);display:flex;align-items:center;gap:10px;background:none;border:none;padding:10px 14px;cursor:pointer;width:100%;text-align:left;border-radius:var(--radius-sm);transition:background .15s}
+.group-title-btn{font-family:var(--font-heading);font-size:20px;font-weight:600;margin-bottom:1rem;color:var(--accent-dark);display:flex;align-items:center;gap:10px;background:none;border:none;padding:10px 14px;cursor:pointer;width:100%;text-align:left;border-radius:var(--radius-sm);transition:background .15s}
 .group-title-btn:hover{background:var(--accent-light)}
 .group-title-btn .group-title-label{display:flex;align-items:center;gap:8px;white-space:nowrap;flex:1}
 .group-title-btn .group-title-count{font-size:13px;font-weight:500;color:var(--accent);background:var(--accent-light);padding:2px 8px;border-radius:20px}
@@ -85,8 +92,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 .group-back-btn{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--accent);background:none;border:none;cursor:pointer;padding:0;margin-bottom:1.25rem}
 .group-back-btn:hover{text-decoration:underline}
 .recipe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
-.recipe-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all .15s}
-.recipe-card:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 4px 12px rgba(21,71,51,0.12)}
+.recipe-card{background:var(--white);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:all .2s;box-shadow:0 1px 3px rgba(22,36,28,0.07)}
+.recipe-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 6px 16px rgba(21,71,51,0.14)}
 .recipe-card-img{width:100%;aspect-ratio:1/1;object-fit:cover;background:var(--bg3);display:block}
 .recipe-card-img-placeholder{width:100%;aspect-ratio:1/1;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:32px}
 .recipe-card-body{padding:10px 12px}
@@ -106,14 +113,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 }
 .recipe-hero{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:var(--radius);margin-bottom:1.25rem;border:1px solid var(--border);display:block}
 .recipe-hero-placeholder{width:100%;height:180px;background:var(--bg2);border-radius:var(--radius);margin-bottom:1.25rem;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:10px}
-.recipe-detail h1{font-family:'Lora',serif;font-size:26px;font-weight:500;line-height:1.2;margin-bottom:10px}
+.recipe-detail h1{font-family:var(--font-heading);font-size:28px;font-weight:600;line-height:1.1;margin-bottom:10px;letter-spacing:-.01em}
 .tags-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1.25rem}
 .tag{font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;border:1px solid var(--border2);color:var(--text2);background:var(--bg2)}
+.diet-chip{font-size:12px;font-weight:500;padding:5px 12px;border-radius:20px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer;transition:all .15s}
+.diet-chip:hover{background:var(--accent-light);color:var(--accent-dark);border-color:var(--accent)}
+.diet-chip.active{background:var(--accent);color:white;border-color:var(--accent)}
 .tag.course{background:var(--accent-light);color:var(--accent-dark);border-color:transparent}
 .time-bar{display:flex;gap:1.5rem;background:var(--bg2);padding:12px 16px;border-radius:var(--radius);margin-bottom:1.5rem}
-.time-item .label{font-size:11px;color:var(--text3)}
+.time-item .label{font-size:10px;color:var(--text3);font-family:var(--font-mono);letter-spacing:.04em;text-transform:uppercase}
 .time-item .val{font-size:14px;font-weight:500;color:var(--text)}
-.section-head{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin:1.5rem 0 8px}
+.section-head{font-size:10px;font-weight:400;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin:1.5rem 0 8px;font-family:var(--font-mono)}
 .content-block{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
 .ing-list{list-style:none;padding:0;margin:0}
 .ing-list li{padding:4px 0 4px 20px;position:relative;line-height:1.6;border-bottom:1px solid var(--border);font-size:14px}
@@ -156,14 +166,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 .community-entry-name{font-size:13px;font-weight:500;color:var(--text)}
 .community-entry-time{font-size:11px;color:var(--text3);margin-top:1px}
 .community-entry-actions{display:flex;gap:2px;flex-shrink:0}
-.community-action-btn{background:none;border:none;cursor:pointer;font-size:11px;color:var(--text3);padding:2px 7px;border-radius:4px;transition:all .1s;font-family:'DM Sans',sans-serif}
+.community-action-btn{background:none;border:none;cursor:pointer;font-size:11px;color:var(--text3);padding:2px 7px;border-radius:4px;transition:all .1s;font-family:var(--font-ui)}
 .community-action-btn:hover{background:var(--bg2);color:var(--text)}
 .community-action-btn.danger:hover{background:#fee;color:#c00}
 .community-stars{font-size:12px;color:var(--accent);margin-bottom:4px}
 .community-text{font-size:13px;color:var(--text2);line-height:1.6;margin:0}
 .community-type-badge{font-size:10px;font-weight:500;padding:1px 6px;border-radius:10px;margin-left:5px;vertical-align:middle;background:var(--accent-light);color:var(--accent-dark)}
 .community-input-row{display:flex;gap:8px;margin-top:14px;align-items:flex-end}
-.community-input{flex:1;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;font-size:14px;font-family:'DM Sans',sans-serif;resize:none;outline:none;background:var(--bg2);transition:border-color .15s;line-height:1.5;min-height:38px;max-height:100px}
+.community-input{flex:1;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;font-size:14px;font-family:var(--font-ui);resize:none;outline:none;background:var(--bg2);transition:border-color .15s;line-height:1.5;min-height:38px;max-height:100px}
 .community-input:focus{border-color:var(--accent);background:var(--white)}
 .community-send-btn{background:var(--accent);color:white;border:none;border-radius:var(--radius-sm);padding:8px 16px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;flex-shrink:0;height:38px}
 .community-send-btn:hover{opacity:.9}
@@ -198,34 +208,34 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 .user-avatar-btn{width:30px;height:30px;border-radius:50%;background:var(--accent);color:white;border:none;cursor:pointer;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .15s}
 .user-avatar-btn:hover{opacity:.85}
 #userDropdown{display:none;position:absolute;top:40px;right:0;background:var(--white);border:1px solid var(--border2);border-radius:var(--radius);padding:6px;min-width:180px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:100}
-#userDropdown button{display:block;width:100%;text-align:left;padding:7px 10px;font-size:13px;font-family:'DM Sans',sans-serif;background:none;border:none;cursor:pointer;border-radius:var(--radius-sm);color:var(--text)}
+#userDropdown button{display:block;width:100%;text-align:left;padding:7px 10px;font-size:13px;font-family:var(--font-ui);background:none;border:none;cursor:pointer;border-radius:var(--radius-sm);color:var(--text)}
 #userDropdown button:hover{background:var(--bg2)}
 #userDropdown .dropdown-signout{color:var(--error)!important}
 #userDropdown .dropdown-divider{border:none;border-top:1px solid var(--border);margin:4px 0}
 .login-overlay{position:fixed;inset:0;background:var(--accent);display:flex;align-items:center;justify-content:center;z-index:500;opacity:0;pointer-events:none;transition:opacity .2s}
 .login-overlay.open{opacity:1;pointer-events:all}
 .login-card{background:var(--white);border-radius:20px;padding:2.5rem 2rem;max-width:420px;width:calc(100% - 2rem);box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:90vh;overflow-y:auto}
-.login-card h2{font-family:'DM Sans',sans-serif;font-size:28px;font-weight:700;text-align:center;margin-bottom:2rem;color:var(--text)}
+.login-card h2{font-family:var(--font-ui);font-size:28px;font-weight:700;text-align:center;margin-bottom:2rem;color:var(--text)}
 .login-field{margin-bottom:1.25rem;border-bottom:1.5px solid var(--border2);padding-bottom:4px;transition:border-color .2s}
 .login-field:focus-within{border-color:var(--accent)}
-.login-field input{width:100%;border:none;outline:none;font-size:16px!important;font-family:'DM Sans',sans-serif;color:var(--text);background:transparent;padding:4px 0}
+.login-field input{width:100%;border:none;outline:none;font-size:16px!important;font-family:var(--font-ui);color:var(--text);background:transparent;padding:4px 0}
 .login-field input::placeholder{color:var(--text3)}
-.login-submit-btn{width:100%;padding:14px;border-radius:50px;border:none;background:var(--accent);color:white;font-size:16px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:opacity .15s;margin-top:.5rem}
+.login-submit-btn{width:100%;padding:14px;border-radius:50px;border:none;background:var(--accent);color:white;font-size:16px;font-weight:600;font-family:var(--font-ui);cursor:pointer;transition:opacity .15s;margin-top:.5rem}
 .login-submit-btn:hover{opacity:.88}
 .login-divider{display:flex;align-items:center;gap:10px;margin:1.25rem 0;color:var(--text3);font-size:13px}
 .login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:var(--border2)}
-.login-google-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px 16px;border-radius:50px;border:1.5px solid var(--border2);background:white;cursor:pointer;font-size:14px;font-weight:500;color:var(--text);font-family:'DM Sans',sans-serif;transition:background .15s}
+.login-google-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px 16px;border-radius:50px;border:1.5px solid var(--border2);background:white;cursor:pointer;font-size:14px;font-weight:500;color:var(--text);font-family:var(--font-ui);transition:background .15s}
 .login-google-btn:hover{background:var(--bg2)}
 .login-name-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:.25rem}
 /* SWIPE */
 .swipe-page{display:flex;flex-direction:column;align-items:center;padding:2rem 1rem;min-height:100%;gap:0}
 .swipe-screen{display:none;flex-direction:column;align-items:center;width:100%;max-width:420px;gap:1.25rem}
 .swipe-screen.active{display:flex}
-.swipe-lobby-title{font-family:'Lora',serif;font-size:22px;font-weight:500;color:var(--text);text-align:center;margin-bottom:.5rem}
+.swipe-lobby-title{font-family:var(--font-heading);font-size:22px;font-weight:500;color:var(--text);text-align:center;margin-bottom:.5rem}
 .swipe-lobby-sub{font-size:13px;color:var(--text2);text-align:center;line-height:1.6}
 .swipe-divider{display:flex;align-items:center;gap:10px;width:100%;color:var(--text3);font-size:12px}
 .swipe-divider::before,.swipe-divider::after{content:'';flex:1;height:1px;background:var(--border)}
-.swipe-code-display{font-family:'Lora',serif;font-size:2.8rem;font-weight:600;letter-spacing:.18em;color:var(--accent);background:var(--accent-light);padding:1rem 2.5rem;border-radius:var(--radius);text-align:center;line-height:1}
+.swipe-code-display{font-family:var(--font-heading);font-size:2.8rem;font-weight:600;letter-spacing:.18em;color:var(--accent);background:var(--accent-light);padding:1rem 2.5rem;border-radius:var(--radius);text-align:center;line-height:1}
 .swipe-participants{width:100%;background:var(--bg2);border-radius:var(--radius);padding:10px 14px;font-size:13px;min-height:44px}
 .swipe-participant{display:flex;align-items:center;gap:8px;padding:4px 0}
 .swipe-participant-avatar{width:24px;height:24px;border-radius:50%;background:var(--accent);color:white;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -235,10 +245,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 .swipe-card-img{width:100%;height:280px;object-fit:cover;background:var(--bg3);display:block;pointer-events:none}
 .swipe-card-img-ph{width:100%;height:280px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:72px}
 .swipe-card-body{padding:14px 16px}
-.swipe-card-name{font-family:'Lora',serif;font-size:17px;font-weight:500;margin-bottom:3px;line-height:1.3}
+.swipe-card-name{font-family:var(--font-heading);font-size:17px;font-weight:500;margin-bottom:3px;line-height:1.3}
 .swipe-card-meta{font-size:12px;color:var(--text3)}
-.swipe-card-like{position:absolute;top:20px;left:20px;font-family:'DM Sans',sans-serif;font-size:20px;font-weight:700;color:#2D6A3F;background:rgba(255,255,255,.9);padding:4px 12px;border-radius:6px;border:2px solid #2D6A3F;transform:rotate(-15deg);opacity:0;pointer-events:none;transition:opacity .1s}
-.swipe-card-nope{position:absolute;top:20px;right:20px;font-family:'DM Sans',sans-serif;font-size:20px;font-weight:700;color:#A32D2D;background:rgba(255,255,255,.9);padding:4px 12px;border-radius:6px;border:2px solid #A32D2D;transform:rotate(15deg);opacity:0;pointer-events:none;transition:opacity .1s}
+.swipe-card-like{position:absolute;top:20px;left:20px;font-family:var(--font-ui);font-size:20px;font-weight:700;color:#2D6A3F;background:rgba(255,255,255,.9);padding:4px 12px;border-radius:6px;border:2px solid #2D6A3F;transform:rotate(-15deg);opacity:0;pointer-events:none;transition:opacity .1s}
+.swipe-card-nope{position:absolute;top:20px;right:20px;font-family:var(--font-ui);font-size:20px;font-weight:700;color:#A32D2D;background:rgba(255,255,255,.9);padding:4px 12px;border-radius:6px;border:2px solid #A32D2D;transform:rotate(15deg);opacity:0;pointer-events:none;transition:opacity .1s}
 .swipe-btns{display:flex;gap:2rem;align-items:center;margin-top:.5rem}
 .swipe-btn{width:60px;height:60px;border-radius:50%;border:2px solid;cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--white);transition:all .15s;box-shadow:0 2px 8px rgba(0,0,0,.1);flex-shrink:0}
 .swipe-btn-nope{border-color:#e55;color:#e55}.swipe-btn-nope:hover{background:#e55;color:white}
@@ -253,7 +263,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 /* RATINGS */
 .ratings-section{margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border)}
 .ratings-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
-.ratings-header h3{font-family:'Lora',serif;font-size:16px;font-weight:500}
+.ratings-header h3{font-family:var(--font-heading);font-size:16px;font-weight:500}
 .ratings-agg{display:flex;gap:1.5rem;background:var(--bg2);padding:12px 16px;border-radius:var(--radius);margin-bottom:1rem}
 .ratings-agg-item{text-align:center;flex:1}
 .ratings-agg-item .rai-label{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:4px}
@@ -266,17 +276,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 .rating-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:400;opacity:0;pointer-events:none;transition:opacity .2s}
 .rating-modal-overlay.open{opacity:1;pointer-events:all}
 .rating-modal{background:var(--white);border-radius:var(--radius);padding:1.75rem;max-width:380px;width:calc(100% - 2rem);max-height:90vh;overflow-y:auto}
-.rating-modal h2{font-family:'Lora',serif;font-size:20px;font-weight:500;margin-bottom:.25rem}
+.rating-modal h2{font-family:var(--font-heading);font-size:20px;font-weight:500;margin-bottom:.25rem}
 .rating-modal .modal-sub{font-size:13px;color:var(--text2);margin-bottom:1.5rem}
 .rating-row{margin-bottom:1.25rem}
 .rating-row label{font-size:13px;font-weight:500;display:block;margin-bottom:6px;color:var(--text)}
-.rating-feedback{width:100%;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px;font-size:13px;font-family:'DM Sans',sans-serif;resize:vertical;min-height:80px;outline:none;transition:border-color .15s}
+.rating-feedback{width:100%;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px;font-size:13px;font-family:var(--font-ui);resize:vertical;min-height:80px;outline:none;transition:border-color .15s}
 .rating-feedback:focus{border-color:var(--accent)}
 .cook-btn{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;padding:8px 16px;border-radius:var(--radius-sm);border:1px solid var(--accent);color:var(--accent);background:transparent;cursor:pointer;transition:all .15s}
 .cook-btn:hover{background:var(--accent-light)}
 
 /* SWIPE FORM */
-.swipe-select{width:100%;margin-bottom:8px;padding:10px 12px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:16px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--white);appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B6760' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;cursor:pointer}
+.swipe-select{width:100%;margin-bottom:8px;padding:10px 12px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:16px;font-family:var(--font-ui);color:var(--text);background:var(--white);appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B6760' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;cursor:pointer}
 .swipe-select:focus{outline:none;border-color:var(--accent)}
 .swipe-history-item{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color .15s}
 .swipe-history-item:hover{border-color:var(--accent)}
@@ -297,7 +307,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 /* RECIPE CHAT */
 .recipe-chat-section{margin-top:2rem;border-top:1px solid var(--border);padding-top:1.5rem}
 .recipe-chat-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
-.recipe-chat-header h3{font-family:'Lora',serif;font-size:16px;font-weight:500}
+.recipe-chat-header h3{font-family:var(--font-heading);font-size:16px;font-weight:500}
 .chat-toggle-btn{font-size:12px;padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--white);color:var(--text2);cursor:pointer;transition:all .15s}
 .chat-toggle-btn:hover{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
 .recipe-chat-body{display:none}
@@ -309,29 +319,31 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 .rc-msg.ai{align-self:flex-start;background:var(--white);border:1px solid var(--border);border-radius:2px 12px 12px 12px;max-width:90%}
 .rc-msg.thinking{color:var(--text3);font-style:italic;align-self:flex-start;font-size:12px}
 .recipe-chat-input-row{display:flex;gap:8px;align-items:flex-end}
-.recipe-chat-input-row textarea{flex:1;font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 11px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);resize:none;min-height:38px;max-height:100px;outline:none;transition:border-color .15s;line-height:1.5}
+.recipe-chat-input-row textarea{flex:1;font-family:var(--font-ui);font-size:13px;padding:8px 11px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);resize:none;min-height:38px;max-height:100px;outline:none;transition:border-color .15s;line-height:1.5}
 .recipe-chat-input-row textarea:focus{border-color:var(--accent)}
 .recipe-chat-input-row textarea::placeholder{color:var(--text3)}
 .rc-send-btn{width:36px;height:36px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
 .rc-send-btn:hover{background:var(--accent-dark)}
 .rc-send-btn svg{width:14px;height:14px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .chat-action-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
-.chat-action-btn{font-size:12px;padding:5px 10px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--white);color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.chat-action-btn{font-size:12px;padding:5px 10px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--white);color:var(--text2);cursor:pointer;font-family:var(--font-ui);transition:all .15s}
 .chat-action-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
 
 .actions-row{display:flex;gap:8px;margin-top:1.75rem;padding-top:1.25rem;border-top:1px solid var(--border);flex-wrap:wrap}
-.btn{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:8px 16px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--white);color:var(--text);cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s}
+.btn{font-family:var(--font-ui);font-size:13px;font-weight:500;padding:8px 18px;border-radius:999px;border:1.5px solid var(--border2);background:var(--white);color:var(--text);cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s}
 .btn:hover{background:var(--bg2)}
 .btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .btn.primary{background:var(--accent);color:white;border-color:var(--accent)}
-.btn.primary:hover{background:var(--accent-dark);border-color:var(--accent-dark)}
-.btn.danger{color:var(--error);border-color:rgba(163,45,45,0.3)}
+.btn.primary:hover{opacity:.88}
+.btn.yellow{background:var(--yellow);color:var(--accent-dark);border-color:var(--yellow)}
+.btn.yellow:hover{opacity:.88}
+.btn.danger{color:var(--error);border-color:rgba(192,57,43,0.3)}
 .btn.danger:hover{background:#FCEBEB}
-.btn.sm{font-size:12px;padding:5px 10px}
+.btn.sm{font-size:12px;padding:5px 12px}
 
 /* NEW RECIPE PAGE */
 .new-recipe-page{padding:2rem;max-width:700px}
-.new-recipe-page h2{font-family:'Lora',serif;font-size:22px;font-weight:500;margin-bottom:6px}
+.new-recipe-page h2{font-family:var(--font-heading);font-size:22px;font-weight:500;margin-bottom:6px}
 .new-recipe-page .sub{font-size:14px;color:var(--text2);line-height:1.65;margin-bottom:2rem}
 .method-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:2rem}
 .method-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:1.25rem;cursor:pointer;transition:all .15s;text-align:left}
@@ -343,7 +355,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 .method-panel{display:none;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1.5rem}
 .method-panel.active{display:block}
 .method-panel label{display:block;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:6px}
-.method-panel input[type=text],.method-panel textarea{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);outline:none;transition:border-color .15s;margin-bottom:10px}
+.method-panel input[type=text],.method-panel textarea{width:100%;font-family:var(--font-ui);font-size:14px;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);outline:none;transition:border-color .15s;margin-bottom:10px}
 .method-panel input[type=text]:focus,.method-panel textarea:focus{border-color:var(--accent)}
 .drop-zone{border:2px dashed var(--border2);border-radius:var(--radius);padding:2.5rem;text-align:center;cursor:pointer;transition:all .15s;background:var(--bg)}
 .drop-zone:hover,.drop-zone.over{border-color:var(--accent);background:var(--accent-light)}
@@ -355,9 +367,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 /* MODEL SELECT */
 .model-row{display:flex;align-items:center;gap:8px;margin-bottom:1rem}
 .model-row label{font-size:12px;color:var(--text2);white-space:nowrap}
-.model-select{font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg);color:var(--text);outline:none;cursor:pointer}
+.model-select{font-family:var(--font-ui);font-size:13px;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg);color:var(--text);outline:none;cursor:pointer}
 .model-select:focus{border-color:var(--accent)}
-.save-btn{display:inline-flex;align-items:center;gap:6px;margin-top:12px;font-size:13px;font-weight:500;padding:8px 16px;background:var(--accent);color:white;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s}
+.save-btn{display:inline-flex;align-items:center;gap:6px;margin-top:12px;font-size:13px;font-weight:500;padding:8px 16px;background:var(--accent);color:white;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:var(--font-ui);transition:background .15s}
 .save-btn:hover{background:var(--accent-dark)}
 .save-btn svg{width:14px;height:14px;stroke:white;fill:none;stroke-width:2}
 .generated-image-preview{width:100%;max-width:320px;border-radius:var(--radius);margin-top:10px;border:1px solid var(--border)}
@@ -365,7 +377,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 /* IMPORT PAGE */
 .import-page{padding:2rem}
 .import-inner{max-width:580px}
-.import-page h2{font-family:'Lora',serif;font-size:22px;font-weight:500;margin-bottom:6px}
+.import-page h2{font-family:var(--font-heading);font-size:22px;font-weight:500;margin-bottom:6px}
 .import-page .sub{font-size:14px;color:var(--text2);line-height:1.65;margin-bottom:1.75rem}
 .progress-wrap{height:5px;background:var(--bg3);border-radius:3px;margin:14px 0;display:none;overflow:hidden}
 .progress-bar{height:100%;background:var(--accent);border-radius:3px;transition:width .3s;width:0%}
@@ -377,15 +389,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:center;justify-content:center}
 .overlay.open{display:flex}
 .modal{background:var(--white);border-radius:var(--radius);border:1px solid var(--border);padding:1.5rem;width:540px;max-height:88vh;overflow-y:auto}
-.modal h3{font-family:'Lora',serif;font-size:17px;margin-bottom:1rem}
+.modal h3{font-family:var(--font-heading);font-size:17px;margin-bottom:1rem}
 .modal label{display:block;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin:14px 0 5px}
-.modal input,.modal textarea,.modal select{width:100%;font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 11px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);outline:none;transition:border-color .15s}
+.modal input,.modal textarea,.modal select{width:100%;font-family:var(--font-ui);font-size:13px;padding:8px 11px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);outline:none;transition:border-color .15s}
 .modal input:focus,.modal textarea:focus{border-color:var(--accent)}
 .modal textarea{min-height:90px;resize:vertical}
 .modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--border)}
 .img-preview{width:100%;max-height:160px;object-fit:cover;border-radius:var(--radius-sm);margin-top:8px;border:1px solid var(--border)}
 .img-options{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
-.img-option-btn{font-size:12px;padding:5px 10px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg);color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.img-option-btn{font-size:12px;padding:5px 10px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg);color:var(--text2);cursor:pointer;font-family:var(--font-ui);transition:all .15s}
 .img-option-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
 
 /* ── SHOPPING LIST ───────────────────────────────────────────────────────────*/
@@ -393,20 +405,32 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 .sl-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:1.75rem;flex-wrap:wrap}
 .sl-header-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .sl-view-toggle{display:flex;border:1px solid var(--border2);border-radius:var(--radius-sm);overflow:hidden}
-.sl-view-btn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;padding:5px 12px;border:none;background:var(--white);color:var(--text2);cursor:pointer;transition:all .15s}
+.sl-view-btn{font-family:var(--font-ui);font-size:12px;font-weight:500;padding:5px 12px;border:none;background:var(--white);color:var(--text2);cursor:pointer;transition:all .15s}
 .sl-view-btn.active{background:var(--accent-light);color:var(--accent)}
 .sl-group{margin-bottom:1.5rem}
 .sl-group-title{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
-.sl-item{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;transition:opacity .2s}
+.sl-item-group{margin-bottom:6px}
+.sl-item{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-sm);transition:opacity .2s}
+.sl-item-group:has(.sl-subitems) .sl-item{border-radius:var(--radius-sm) var(--radius-sm) 0 0;border-bottom-color:transparent}
 .sl-item.checked{opacity:.45}
 .sl-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
 .sl-item-text{flex:1;font-size:14px}
 .sl-item.checked .sl-item-text{text-decoration:line-through;color:var(--text3)}
 .sl-item-recipe{font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
+.sl-subitems{border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);overflow:hidden}
+.sl-subitem{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 38px;background:var(--bg2);border-top:1px solid var(--border);font-size:12px;color:var(--text2)}
+.sl-subitem-qty{color:var(--text3);flex-shrink:0;min-width:50px}
+.sl-subitem-recipe{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sl-subitem-del{background:none;border:none;cursor:pointer;padding:2px 4px;color:var(--text3);flex-shrink:0;display:flex;align-items:center;opacity:.6}
+.sl-subitem-del:hover{opacity:1}
 .sl-empty{text-align:center;padding:4rem 2rem;color:var(--text3)}
 .sl-empty p{margin-bottom:8px;font-size:15px}
 .sl-empty small{font-size:12px}
-.sl-add-btn{display:inline-flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:9px 18px;border-radius:50px;border:none;background:var(--accent);color:white;cursor:pointer;transition:background .15s;margin-top:1rem}
+.sl-add-row{display:flex;gap:8px;margin-bottom:1.25rem}
+.sl-add-input{flex:1;background:var(--white);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:9px 12px;font-size:14px;font-family:var(--font-ui);color:var(--text);outline:none;transition:border-color .15s}
+.sl-add-input:focus{border-color:var(--accent)}
+.sl-add-input::placeholder{color:var(--text3)}
+.sl-add-btn{display:flex;align-items:center;gap:6px;font-family:var(--font-ui);font-size:13px;font-weight:500;padding:9px 16px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:white;cursor:pointer;white-space:nowrap;transition:background .15s;flex-shrink:0}
 .sl-add-btn:hover{background:var(--accent-dark)}
 /* ── MOBILE RESPONSIVE ───────────────────────────────────────────────────────*/
 @media (max-width: 680px) {
@@ -434,7 +458,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
   /* Home page */
   .home-page { padding: 12px; }
   .mobile-search-wrap { display: block; margin-bottom: 10px; }
-  .mobile-search-wrap input { width: 100%; background: var(--bg2); border: 1px solid transparent; border-radius: var(--radius-sm); padding: 9px 12px; font-size: 16px; font-family: 'DM Sans', sans-serif; color: var(--text); outline: none; transition: border-color .15s; }
+  .mobile-search-wrap input { width: 100%; background: var(--bg2); border: 1px solid transparent; border-radius: var(--radius-sm); padding: 9px 12px; font-size: 16px; font-family: var(--font-ui); color: var(--text); outline: none; transition: border-color .15s; }
   .mobile-search-wrap input:focus { border-color: var(--accent); background: var(--white); }
   .mobile-search-wrap input::placeholder { color: var(--text3); }
   .group-tabs { gap: 4px; margin-bottom: 12px; }
@@ -510,12 +534,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 <div class="app" id="app">
   <div class="topbar">
     <div class="logo" onclick="goHome()">
-      <svg width="28" height="28" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
-        <rect width="64" height="64" rx="12" fill="#154733"/>
-        <path d="M 5 52 C 6 40 10 30 18 22 C 24 16 32 12 44 10 C 52 8 60 12 60 18 C 56 14 48 13 40 16 C 28 21 20 30 16 44 C 14 48 12 52 10 56 Z" fill="#FEE123"/>
-        <path d="M 9 54 C 12 42 18 32 28 24 C 34 19 42 16 50 15 L 48 19 C 40 20 32 24 26 30 C 18 38 14 48 11 57 Z" fill="#0D2E21" opacity=".35"/>
-        <path d="M 13 54 C 17 42 24 32 36 25 C 42 21 50 19 57 19 L 56 23 C 48 23 40 26 34 31 C 24 39 18 49 15 57 Z" fill="#0D2E21" opacity=".35"/>
-        <text x="36" y="50" font-family="Georgia,serif" font-size="34" font-weight="900" fill="white" text-anchor="middle">R</text>
+      <!-- Duck head mark: circle body + eye + bill -->
+      <svg width="30" height="24" viewBox="0 0 52 40" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+        <circle cx="20" cy="20" r="18" fill="#154733"/>
+        <circle cx="16" cy="15" r="2.8" fill="#FEE123"/>
+        <rect x="36" y="15" width="16" height="10" rx="5" fill="#154733"/>
       </svg>
       <span class="logo-text">Recipe Duck</span>
     </div>
@@ -556,6 +579,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
       <div id="userDropdown">
         <div style="font-size:12px;font-weight:500;padding:4px 10px 8px;color:var(--text2);border-bottom:1px solid var(--border);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="dropdownName">—</div>
         <button id="dropdownSettings" onclick="document.getElementById('userDropdown').style.display='none';showSettings()" style="display:none">⚙ Settings</button>
+        <button onclick="document.getElementById('userDropdown').style.display='none';showDietModal()" style="display:flex;align-items:center;gap:7px;width:100%;padding:8px 12px;background:none;border:none;border-radius:6px;cursor:pointer;font-size:13px;color:var(--text1);font-family:var(--font-ui);text-align:left" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='none'">🥗 My Diet Profile</button>
+        <button onclick="document.getElementById('userDropdown').style.display='none';shareApp()" style="display:flex;align-items:center;gap:7px;width:100%;padding:8px 12px;background:none;border:none;border-radius:6px;cursor:pointer;font-size:13px;color:var(--text1);font-family:var(--font-ui);text-align:left" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='none'"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Invite a Friend</button>
         <button class="dropdown-signout" onclick="signOut()">Sign out</button>
       </div>
     </div>
@@ -593,6 +618,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
           <button class="group-tab" onclick="setGrouping('course',this)">Course</button>
           <button class="group-tab" onclick="setGrouping('favorites',this)">Favorites</button>
           <button class="group-tab" onclick="setGrouping('recent',this)">Recent</button>
+          <button class="group-tab" id="dietTab" onclick="setGrouping('diet',this)" style="display:none">🥗 My Diet</button>
         </div>
         <div id="homeGrid"></div>
       </div>
@@ -640,7 +666,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
           <!-- AI PANEL -->
           <div class="method-panel active" id="panel-ai">
             <div id="aiPanelHeader" style="display:none;align-items:center;justify-content:space-between;margin-bottom:10px;flex-shrink:0">
-              <span style="font-family:'Lora',serif;font-size:16px;font-weight:500">AI Recipe Generator</span>
+              <span style="font-family:var(--font-heading);font-size:16px;font-weight:500">AI Recipe Generator</span>
               <button onclick="resetAIChat()" style="font-size:13px;color:var(--text2);background:none;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:5px 12px;cursor:pointer">✕ Close</button>
             </div>
             <div class="model-row">
@@ -677,7 +703,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
             <!-- Input row -->
             <div class="ai-input-row" style="display:flex;position:relative">
               <textarea id="aiPrompt" placeholder="e.g. A smoky chipotle salmon with mango salsa, easy enough for a weeknight..."
-                style="flex:1;min-height:70px;font-family:'DM Sans',sans-serif;font-size:16px;padding:9px 52px 9px 12px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);resize:none;outline:none;transition:border-color .15s;line-height:1.5"
+                style="flex:1;min-height:70px;font-family:var(--font-ui);font-size:16px;padding:9px 52px 9px 12px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);resize:none;outline:none;transition:border-color .15s;line-height:1.5"
                 onfocus="this.style.borderColor='var(--accent)';if(window.innerWidth<=680){attachAIPanel();document.getElementById('panel-ai').classList.add('ai-active');document.getElementById('aiBackdrop').style.display='block';document.getElementById('aiPanelHeader').style.display='flex';document.body.classList.add('ai-panel-open');lockBodyScroll();}"
                 onblur="this.style.borderColor='var(--border2)';setTimeout(()=>{if(!document.getElementById('panel-ai').classList.contains('ai-has-thread')){document.getElementById('panel-ai').classList.remove('ai-active');detachAIPanel();document.getElementById('aiBackdrop').style.display='none';document.getElementById('aiPanelHeader').style.display='none';document.body.classList.remove('ai-panel-open');unlockBodyScroll();}},200);"
                 onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIMessage()}"></textarea>
@@ -778,6 +804,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
               <select id="swipeFilterType" class="swipe-select" onchange="updateSwipeFilterValue()">
                 <option value="all">All Recipes</option>
                 <option value="favorites">Favorites</option>
+                <option value="diet">My Diet</option>
                 <option value="category">By Category</option>
                 <option value="collection">By Collection</option>
                 <option value="course">By Course</option>
@@ -804,7 +831,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
             <div style="text-align:center">
               <p style="font-size:13px;color:var(--text2);margin-bottom:8px">Share this code with others</p>
               <div class="swipe-code-display" id="swipeCodeDisplay">—</div>
-              <button id="shareCodeBtn" onclick="shareSwipeCode()" style="margin-top:10px;display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:50px;border:1.5px solid var(--accent);background:transparent;color:var(--accent);font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s" onmouseover="this.style.background='var(--accent-light)'" onmouseout="this.style.background='transparent'">
+              <button id="shareCodeBtn" onclick="shareSwipeCode()" style="margin-top:10px;display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:50px;border:1.5px solid var(--accent);background:transparent;color:var(--accent);font-size:13px;font-weight:600;font-family:var(--font-ui);cursor:pointer;transition:all .15s" onmouseover="this.style.background='var(--accent-light)'" onmouseout="this.style.background='transparent'">
                 <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
                 Share Code
               </button>
@@ -836,12 +863,24 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
               </button>
             </div>
             <div class="swipe-progress" id="swipeProgress"></div>
+            <button class="btn" style="margin-top:8px;font-size:12px;color:var(--text3);padding:6px 14px" onclick="endSwipeSession()">End session ✕</button>
+          </div>
+
+          <!-- DONE, WAITING FOR OTHERS -->
+          <div class="swipe-screen" id="swipeScreen-doneWaiting">
+            <div style="text-align:center;padding:2rem 0">
+              <div style="font-size:40px;margin-bottom:12px">✅</div>
+              <p style="font-family:var(--font-heading);font-size:22px;font-weight:500;margin-bottom:6px">You're done!</p>
+              <p style="font-size:13px;color:var(--text2);margin-bottom:4px">Waiting for the others to finish swiping…</p>
+              <p style="font-size:12px;color:var(--text3)" id="doneWaitingStatus"></p>
+            </div>
+            <button class="btn" style="font-size:12px;color:var(--text3);padding:6px 14px" onclick="endSwipeSession()">End session now ✕</button>
           </div>
 
           <!-- RESULTS -->
           <div class="swipe-screen" id="swipeScreen-results">
             <div style="text-align:center">
-              <p style="font-family:'Lora',serif;font-size:22px;font-weight:500;margin-bottom:4px">Round Over</p>
+              <p style="font-family:var(--font-heading);font-size:22px;font-weight:500;margin-bottom:4px">Round Over</p>
               <p style="font-size:13px;color:var(--text2)" id="swipeMatchSub">Everyone agreed on these recipes.</p>
             </div>
             <div class="match-results-grid" id="swipeMatchGrid"></div>
@@ -861,7 +900,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
       <div class="page" id="page-list">
         <div class="shopping-list-page">
           <div class="sl-header">
-            <h2 style="font-family:'Lora',serif;font-size:22px;font-weight:500">Shopping List</h2>
+            <h2 style="font-family:var(--font-heading);font-size:22px;font-weight:500">Shopping List</h2>
             <div class="sl-header-actions">
               <div class="sl-view-toggle">
                 <button class="sl-view-btn active" id="slViewAisle" onclick="setSlView('aisle')">By Aisle</button>
@@ -877,6 +916,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
               <button class="btn sm danger" onclick="clearAllItems()" title="Clear entire list">Clear all</button>
             </div>
           </div>
+          <div class="sl-add-row">
+            <input type="text" id="slAddInput" class="sl-add-input" placeholder="Add an item (e.g. olive oil, paper towels…)" onkeydown="if(event.key==='Enter')addSlManualItem()">
+            <button class="sl-add-btn" onclick="addSlManualItem()">
+              <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add
+            </button>
+          </div>
           <div id="slContent">
             <div style="padding:3rem;text-align:center;color:var(--text3);font-size:14px">Loading...</div>
           </div>
@@ -887,6 +932,69 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
   </div><!-- /body-layout -->
 
 <!-- SETTINGS MODAL -->
+<!-- DIET PROFILE MODAL -->
+<div class="overlay" id="dietModal">
+  <div class="modal" style="max-width:460px">
+    <h3>My Diet Profile</h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1rem;line-height:1.5">Select any restrictions or preferences that apply to you. Recipes will be filtered and adapted accordingly.</p>
+    <div id="dietTagsGrid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1.25rem"></div>
+    <div style="margin-bottom:1.25rem">
+      <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);display:block;margin-bottom:6px">Custom restrictions & allergies</label>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:8px;line-height:1.5">List specific ingredients you avoid or are allergic to (e.g. cherries, shellfish, peanuts). We'll warn you if a recipe contains them and suggest substitutes.</p>
+      <div id="customRestrictionsTags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="customRestrictionsInput" placeholder="e.g. cherries, plums, walnuts" style="flex:1;padding:8px 12px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;font-family:var(--font-ui);background:var(--white);color:var(--text)" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomRestriction();}">
+        <button class="btn sm" onclick="addCustomRestriction()">Add</button>
+      </div>
+    </div>
+    <div style="background:var(--bg2);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:1rem">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:500">
+        <input type="checkbox" id="autoAdaptToggle" style="width:16px;height:16px;accent-color:var(--accent)">
+        Always show how to adapt recipes for my restrictions
+      </label>
+      <p style="font-size:12px;color:var(--text3);margin:6px 0 0 26px;line-height:1.5">When on, every recipe detail page will automatically show an adapted version for your restrictions.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeDietModal()">Close</button>
+      <button class="btn primary" onclick="saveDietProfile()">
+        <svg viewBox="0 0 24 24" style="stroke:white;fill:none;stroke-width:2;width:13px;height:13px"><polyline points="20 6 9 17 4 12"/></svg>
+        Save Profile
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- RECIPE ADAPTATION MODAL -->
+<div class="overlay" id="adaptModal">
+  <div class="modal" style="max-width:520px;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <h3 style="margin:0">Adapt for My Diet</h3>
+      <button onclick="closeAdaptModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2)">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1rem" id="adaptRecipeName"></p>
+    <div style="margin-bottom:1rem">
+      <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);display:block;margin-bottom:8px">Apply restrictions</label>
+      <div id="adaptTagsGrid" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    </div>
+    <button class="btn primary" id="adaptRunBtn" onclick="runAdaptation()" style="width:100%;justify-content:center;margin-bottom:1rem">
+      🥗 Get Substitutions
+    </button>
+    <div id="adaptResult" style="display:none">
+      <div id="adaptSummary" style="background:var(--accent-light);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:1rem;font-size:13px;color:var(--accent-dark);line-height:1.5"></div>
+      <div id="adaptSubTable" style="margin-bottom:1rem"></div>
+      <div style="display:flex;gap:8px;margin-bottom:1rem">
+        <button class="btn sm" id="adaptViewOrigBtn" onclick="toggleAdaptView('original')" style="flex:1;justify-content:center">Show Original</button>
+        <button class="btn sm primary" id="adaptViewAdpBtn" onclick="toggleAdaptView('adapted')" style="flex:1;justify-content:center">Show Adapted</button>
+      </div>
+      <div id="adaptIngredients" style="margin-bottom:12px"></div>
+      <div id="adaptDirections"></div>
+    </div>
+    <div id="adaptFooter" style="display:none;border-top:1px solid var(--border);margin-top:1rem;padding-top:1rem;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn primary" onclick="saveAdaptedRecipe()" style="flex:1;justify-content:center">💾 Save as My Variant</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="settingsModal">
   <div class="modal" style="max-width:460px">
     <h3>Settings</h3>
@@ -907,7 +1015,80 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
         Save Key
       </button>
     </div>
+
+    <hr style="margin:1.25rem 0;border:none;border-top:1px solid var(--border)"/>
+    <label style="margin-bottom:6px;display:block">Batch Image Fetcher</label>
+    <p style="font-size:12px;color:var(--text3);margin:0 0 10px">Fetches Pexels images for every recipe missing one. Review and approve before anything is saved.</p>
+    <div id="imgFetchProgress" style="display:none;font-size:12px;color:var(--text2);margin-bottom:8px;line-height:1.6"></div>
+    <button class="btn" id="fetchImagesBtn" onclick="batchFetchImages()">
+      <svg viewBox="0 0 24 24" style="stroke:currentColor;fill:none;stroke-width:2;width:13px;height:13px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      Fetch Missing Images
+    </button>
+
+    <hr style="margin:1.25rem 0;border:none;border-top:1px solid var(--border)"/>
+    <label style="margin-bottom:6px;display:block">Dietary Tag Backfill</label>
+    <p style="font-size:12px;color:var(--text3);margin:0 0 10px">Uses AI to classify every recipe with dietary tags (vegan, gluten-free, etc.). Safe to run multiple times — existing tags are overwritten with improved values.</p>
+    <div id="dietBackfillProgress" style="display:none;font-size:12px;color:var(--text2);margin-bottom:8px;line-height:1.6"></div>
+    <button class="btn" id="dietBackfillBtn" onclick="backfillDietaryTags()">
+      🥗 Tag All Recipes with Dietary Info
+    </button>
   </div>
+</div>
+
+<!-- PASSWORD RESET MODAL -->
+<div id="passwordResetModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:800;align-items:center;justify-content:center;padding:1rem">
+  <div class="login-card" style="width:100%;max-width:400px">
+    <div style="font-family:var(--font-heading);font-size:22px;font-weight:600;margin-bottom:6px">Set a new password</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1.25rem">Choose a new password for your account.</p>
+    <div class="login-field"><input type="password" id="newPasswordInput" placeholder="New password" autocomplete="new-password" onkeydown="if(event.key==='Enter')submitPasswordReset()"></div>
+    <div class="login-field"><input type="password" id="newPasswordConfirm" placeholder="Confirm new password" autocomplete="new-password" onkeydown="if(event.key==='Enter')submitPasswordReset()"></div>
+    <div id="passwordResetError" style="font-size:12px;color:var(--error);min-height:16px;margin-bottom:8px"></div>
+    <button class="login-submit-btn" onclick="submitPasswordReset()">Update Password</button>
+  </div>
+</div>
+
+<!-- ONBOARDING OVERLAY -->
+<div id="onboardingOverlay" style="display:none;position:fixed;inset:0;z-index:700;background:rgba(22,36,28,.55);align-items:flex-end;justify-content:center">
+  <div style="background:var(--bg);width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:32px 28px 40px;max-height:92vh;overflow-y:auto;position:relative">
+    <!-- Progress dots -->
+    <div id="obDots" style="display:flex;justify-content:center;gap:7px;margin-bottom:28px"></div>
+    <!-- Skip -->
+    <button onclick="skipOnboarding()" style="position:absolute;top:20px;right:22px;background:none;border:none;font-size:13px;color:var(--text3);cursor:pointer;font-family:var(--font-ui)">Skip</button>
+    <!-- Step content -->
+    <div id="obContent" style="text-align:center;min-height:280px;display:flex;flex-direction:column;align-items:center"></div>
+    <!-- Nav -->
+    <div style="display:flex;gap:10px;margin-top:28px">
+      <button id="obBackBtn" onclick="obStep(-1)" class="btn" style="display:none">Back</button>
+      <button id="obNextBtn" onclick="obStep(1)" class="btn primary" style="flex:1;justify-content:center;padding:14px;font-size:15px;border-radius:50px">Next</button>
+    </div>
+  </div>
+</div>
+
+<!-- INSTALL / BOOKMARK PROMPT MODAL -->
+<div id="installModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;align-items:flex-end;justify-content:center;padding-bottom:0">
+  <div style="background:var(--white);border-radius:20px 20px 0 0;padding:28px 24px 32px;width:100%;max-width:480px;text-align:center">
+    <div style="font-size:36px;margin-bottom:10px">🦆</div>
+    <div style="font-weight:700;font-size:19px;margin-bottom:8px">Welcome to Recipe Duck!</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:22px;line-height:1.6" id="installModalMsg">Save Recipe Duck to your home screen for the best experience.</div>
+    <button id="installBtn" class="btn primary" style="width:100%;justify-content:center;margin-bottom:10px;font-size:15px;padding:13px" onclick="triggerInstall()">Add to Home Screen</button>
+    <div id="installInstructions" style="display:none;font-size:12px;color:var(--text3);line-height:1.7;margin-bottom:10px"></div>
+    <button onclick="closeInstallModal()" style="background:none;border:none;color:var(--text3);font-size:13px;cursor:pointer;padding:4px">Maybe later</button>
+  </div>
+</div>
+
+<!-- IMAGE PREVIEW OVERLAY -->
+<div id="imgPreviewOverlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:500;flex-direction:column;overflow:hidden">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);flex-shrink:0">
+    <div>
+      <div style="font-weight:600;font-size:16px">Review Images</div>
+      <div id="imgPreviewSubtitle" style="font-size:12px;color:var(--text3);margin-top:2px"></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn" onclick="closeImgPreview()">Cancel</button>
+      <button class="btn primary" id="imgSaveBtn" onclick="saveApprovedImages()">Save Approved</button>
+    </div>
+  </div>
+  <div id="imgPreviewGrid" style="flex:1;overflow-y:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px"></div>
 </div>
 
 </div><!-- /app -->
@@ -916,14 +1097,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
 <div id="matchOverlay" style="display:none;position:fixed;inset:0;background:var(--accent);z-index:400;flex-direction:column;align-items:center;justify-content:center;gap:1.25rem;padding:2rem;text-align:center">
   <div style="font-size:56px;line-height:1;animation:matchPop .4s ease">❤️</div>
   <div>
-    <p style="font-family:'Lora',serif;font-size:28px;font-weight:500;color:white;margin-bottom:4px">It's a Match!</p>
+    <p style="font-family:var(--font-heading);font-size:28px;font-weight:500;color:white;margin-bottom:4px">It's a Match!</p>
     <p style="font-size:14px;color:rgba(255,255,255,.75)">Everyone wants to make this</p>
   </div>
   <div id="matchOverlayImg" style="width:200px;height:200px;border-radius:16px;overflow:hidden;border:3px solid rgba(255,255,255,.3);background:var(--accent-dark);display:flex;align-items:center;justify-content:center;font-size:72px;flex-shrink:0"></div>
-  <p style="font-family:'Lora',serif;font-size:20px;font-weight:500;color:white;max-width:280px;line-height:1.3" id="matchOverlayName"></p>
+  <p style="font-family:var(--font-heading);font-size:20px;font-weight:500;color:white;max-width:280px;line-height:1.3" id="matchOverlayName"></p>
   <div style="display:flex;gap:12px;margin-top:.5rem">
-    <button onclick="closeMatchOverlay()" style="padding:11px 24px;border-radius:var(--radius);border:2px solid rgba(255,255,255,.5);background:transparent;color:white;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">Keep Swiping</button>
-    <button onclick="viewMatchedRecipe()" style="padding:11px 24px;border-radius:var(--radius);border:none;background:white;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">View Recipe →</button>
+    <button onclick="closeMatchOverlay()" style="padding:11px 24px;border-radius:var(--radius);border:2px solid rgba(255,255,255,.5);background:transparent;color:white;font-size:14px;font-weight:500;cursor:pointer;font-family:var(--font-ui)">Keep Swiping</button>
+    <button onclick="viewMatchedRecipe()" style="padding:11px 24px;border-radius:var(--radius);border:none;background:white;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font-ui)">View Recipe →</button>
   </div>
 </div>
 
@@ -1022,7 +1203,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);hei
     <div id="imgPickerWrap" style="display:none;margin-top:10px">
       <div style="display:flex;gap:6px;margin-bottom:10px">
         <input type="text" id="imgSearchInput" placeholder="Search for a photo..."
-          style="flex:1;font-size:16px;padding:7px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);outline:none;font-family:'DM Sans',sans-serif"
+          style="flex:1;font-size:16px;padding:7px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);outline:none;font-family:var(--font-ui)"
           onkeydown="if(event.key==='Enter'){event.preventDefault();runImageSearch();}"
           onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
         <button class="btn sm primary" onclick="runImageSearch()">Search</button>
@@ -1096,7 +1277,8 @@ async function uploadImage(filename,blob){
 // ── RECIPE LOADING ────────────────────────────────────────────────────────────
 async function loadRecipes(){
   try{
-    allRecipes=await supaFetch('/rest/v1/recipes?select=id,name,categories,collections,courses,image_url,is_favorite,created_at,updated_at,owner_id&order=name.asc&limit=500');
+    allRecipes=await supaFetch('/rest/v1/recipes?select=id,name,categories,collections,courses,image_url,is_favorite,created_at,updated_at,owner_id,dietary_tags&order=name.asc&limit=500');
+    window._ingredientsCache=null; // refetched on demand for custom-restriction filtering
     if(currentUser){
       try{
         const saved=await supaFetch('/rest/v1/saved_recipes?user_id=eq.'+currentUser.id+'&select=recipe_id');
@@ -1125,9 +1307,18 @@ function renderSidebar(recipes){
   }).join('');
 }
 
+let _searchTrackTimer=null;
 function filterRecipes(q){
   const lq=q.toLowerCase();
-  const filtered=allRecipes.filter(r=>r.name.toLowerCase().includes(lq)||(r.categories||[]).some(c=>c.toLowerCase().includes(lq))||(r.collections||[]).some(c=>c.toLowerCase().includes(lq)));
+  // Track searches with a debounce — only fire after user pauses typing, skip trivial queries
+  clearTimeout(_searchTrackTimer);
+  if(q.length>=3){
+    _searchTrackTimer=setTimeout(()=>{
+      const filtered=allRecipes.filter(r=>r.name.toLowerCase().includes(lq));
+      track('search_performed',{query:q, results:filtered.length});
+    },800);
+  }
+  const filtered=allRecipes.filter(r=>r.name.toLowerCase().includes(lq)||(r.categories||[]).some(c=>c.toLowerCase().includes(lq))||(r.collections||[]).some(c=>c.toLowerCase().includes(lq))||(r.dietary_tags||[]).some(c=>c.toLowerCase().includes(lq)));
   renderSidebar(filtered);
   // Sync the other search input
   const other = q === (document.getElementById('mobileSearchInput')?.value||'') ? document.getElementById('searchInput') : document.getElementById('mobileSearchInput');
@@ -1144,12 +1335,21 @@ function setGrouping(g, btn){
   renderHome();
 }
 
+// Stable per-page-load shuffle for the All Recipes view — a fresh random
+// order each refresh/open to spark inspiration, without reshuffling mid-browse
+let _homeShuffleSeeds = null;
+function shuffledForHome(recipes){
+  if(!_homeShuffleSeeds) _homeShuffleSeeds = new Map();
+  recipes.forEach(r=>{ if(!_homeShuffleSeeds.has(r.id)) _homeShuffleSeeds.set(r.id, Math.random()); });
+  return [...recipes].sort((a,b)=>_homeShuffleSeeds.get(a.id)-_homeShuffleSeeds.get(b.id));
+}
+
 function renderHome(recipes){
   if(recipes===undefined) recipes=allRecipes;
   const grid=document.getElementById('homeGrid');
   let groups={};
   if(currentGrouping==='all'){
-    groups={'All Recipes':recipes};
+    groups={'All Recipes':shuffledForHome(recipes)};
   } else if(currentGrouping==='category'){
     recipes.forEach(r=>{
       const cats=(r.categories||[]);
@@ -1180,6 +1380,57 @@ function renderHome(recipes){
     const recentlyAdded = [...recipes]
       .sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0)).slice(0,6);
     groups={'Recently Viewed':viewedRecipes,'Recently Added':recentlyAdded};
+  } else if(currentGrouping==='diet'){
+    const restrictions = currentProfile?.dietary_restrictions||[];
+    const customRestrictions = currentProfile?.custom_restrictions||[];
+    // Custom render: setup CTA, matching recipes, and "everything else is adaptable" explainer
+    if(!restrictions.length && !customRestrictions.length){
+      grid.innerHTML=`
+        <div style="max-width:480px;margin:3rem auto;text-align:center">
+          <div style="font-size:40px;margin-bottom:12px">🥗</div>
+          <div style="font-family:var(--font-heading);font-size:22px;font-weight:600;margin-bottom:8px">Set up your diet profile</div>
+          <p style="font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:1.5rem">Tell us your dietary restrictions — vegan, gluten-free, allergies, and more — and we'll show you recipes that already fit, plus help you adapt any recipe with smart substitutions.</p>
+          <button class="btn primary" style="margin:0 auto" onclick="showDietModal()">Set My Restrictions</button>
+        </div>`;
+      return;
+    }
+    let matching=recipes.filter(r=>{
+      const tags=r.dietary_tags||[];
+      return restrictions.every(res=>tags.includes(res));
+    });
+    // Exclude recipes containing custom restricted ingredients (async — re-renders when ready)
+    if(customRestrictions.length){
+      if(window._ingredientsCache){
+        matching=matching.filter(r=>{
+          const ing=(window._ingredientsCache[r.id]||'').toLowerCase();
+          return !customRestrictions.some(item=>ing.includes(item.toLowerCase()));
+        });
+      } else if(!window._ingredientsCacheLoading){
+        window._ingredientsCacheLoading=true;
+        supaFetch('/rest/v1/recipes?select=id,ingredients&limit=500').then(rows=>{
+          window._ingredientsCache={};
+          rows.forEach(r=>{window._ingredientsCache[r.id]=r.ingredients||'';});
+          window._ingredientsCacheLoading=false;
+          if(currentGrouping==='diet') renderHome();
+        }).catch(()=>{window._ingredientsCacheLoading=false;});
+      }
+    }
+    const allLabels=[...restrictions,...customRestrictions.map(c=>'no '+c)];
+    grid.innerHTML=`
+      <div style="background:var(--accent-light);border-radius:var(--radius);padding:14px 18px;margin-bottom:1.5rem;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:220px">
+          <div style="font-size:13px;font-weight:600;color:var(--accent-dark)">🥗 Showing recipes that already match: ${allLabels.map(esc).join(', ')}</div>
+          <div style="font-size:12px;color:var(--accent-dark);opacity:.8;margin-top:3px">Most other recipes can work for you too — open any recipe and tap <strong>🥗 Adapt</strong> to see ingredient substitutions for your diet.</div>
+        </div>
+        <button class="btn sm" onclick="showDietModal()" style="flex-shrink:0">Edit restrictions</button>
+      </div>
+      <div class="group-section">
+        <div class="group-title">Matches My Diet <span style="font-size:11px;font-weight:400;color:var(--text3)">${matching.length}</span></div>
+        ${matching.length
+          ? `<div class="recipe-grid">${matching.map(r=>recipeCardHTML(r)).join('')}</div>`
+          : `<p style="font-size:13px;color:var(--text3)">No recipes are tagged as matching all your restrictions yet — but don't worry! Open any recipe and tap <strong>🥗 Adapt</strong> to see how to make it work for your diet.</p>`}
+      </div>`;
+    return;
   }
 
   // Grouped views support drilldown — show 2 most-recent per group with clickable header
@@ -1272,8 +1523,30 @@ function showTab(tab){
   const page = document.getElementById('page-'+tab);
   if(page) page.scrollTop = 0;
   window.scrollTo(0,0);
-  if(tab==='swipe') loadSwipeHistory();
+  if(tab==='swipe'){ loadSwipeHistory(); resumeSwipePolling(); }
+  else { pauseSwipePolling(); }
   if(tab==='list') loadShoppingList();
+}
+
+// Swipe pollers and the match overlay must not run/show while the user is
+// elsewhere in the app — pause on leaving the swipe tab, resume on return.
+function pauseSwipePolling(){
+  clearInterval(swipePoller);swipePoller=null;
+  const ov=document.getElementById('matchOverlay');
+  if(ov) ov.style.display='none';
+}
+
+function resumeSwipePolling(){
+  if(!swipeSession || swipePoller) return;
+  const activeScreen=document.querySelector('#page-swipe .swipe-screen.active')?.id||'';
+  if(activeScreen==='swipeScreen-waiting'){
+    startParticipantPoller();
+  } else if(activeScreen==='swipeScreen-doneWaiting'){
+    swipePoller=setInterval(checkAllFinished,300);
+    checkAllFinished();
+  } else if(activeScreen==='swipeScreen-swiping'){
+    startMatchPoller();
+  }
 }
 
 function goHome(){
@@ -1349,6 +1622,7 @@ function formatNotes(text){
 
 async function loadDetail(id){
   trackRecentlyViewed(id);
+  track('recipe_viewed',{recipe_id:id});
   currentId=id;
   sessionStorage.setItem('rd_last_recipe',id);
   // Show detail page
@@ -1486,7 +1760,7 @@ async function loadDetail(id){
     document.getElementById('recipeDetail').innerHTML=`
       <div class="recipe-detail">
         <div class="recipe-detail-back">
-          <button onclick="goHome()" style="display:inline-flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text2);background:none;border:none;cursor:pointer;padding:0;margin-bottom:1rem;transition:color .15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text2)'">
+          <button onclick="goHome()" style="display:inline-flex;align-items:center;gap:6px;font-family:var(--font-ui);font-size:13px;color:var(--text2);background:none;border:none;cursor:pointer;padding:0;margin-bottom:1rem;transition:color .15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text2)'">
             <svg style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
             All recipes
           </button>
@@ -1517,7 +1791,7 @@ async function loadDetail(id){
             </div>
             <div class="recipe-chat-body" id="recipeChatBody">
               <div class="recipe-chat-msgs" id="recipeChatMsgs">
-                <div class="rc-msg ai" style="font-size:12px;color:var(--text2)">Ask me anything about ${esc(r.name)} — substitutions, timing, scaling tips, wine pairings, technique questions...</div>
+                <div class="rc-msg ai" style="font-size:12px;color:var(--text2)">Ask me anything about ${esc(r.name)} — substitutions, making it fit your diet (vegan, gluten-free…), timing, scaling tips, wine pairings, technique questions...</div>
               </div>
               <div class="recipe-chat-input-row">
                 <textarea id="recipeChatInput" placeholder="e.g. Can I substitute the butter with olive oil?" rows="1"
@@ -1534,15 +1808,39 @@ async function loadDetail(id){
           ${r.directions?`<div class="section-head">Directions</div><div class="content-block" id="directionsBlock">${formatDirections(r.directions)}</div>`:''}
           ${r.notes?`<div class="section-head">Notes</div><div id="notesBlock">${formatNotes(r.notes)}</div>`:''}
           ${nutLine}
+          ${(r.dietary_tags||[]).length?`<div class="tags-row" style="margin-top:4px">${(r.dietary_tags||[]).map(t=>`<span class="tag" style="background:var(--accent-light);color:var(--accent-dark);border-color:var(--accent-light)">${esc(t)}</span>`).join('')}</div>`:''}
+          <div id="autoAdaptSection"></div>
           <div class="actions-row">
             ${canEdit?`<button class="btn" onclick="openEdit('${id}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>`:''}
+            <button class="btn" onclick="openAdaptModal('${id}')">🥗 Adapt</button>
             <button class="btn primary" onclick="sharePDF()"><svg viewBox="0 0 24 24" style="stroke:white"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Share PDF</button>
-            ${r.ingredients?`<button class="btn" id="addToListBtn" onclick="addToShoppingList('${id}','${esc(r.name).replace(/'/g,"\\'")}',${JSON.stringify(r.ingredients)})"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add to List</button>`:''}
+            ${r.ingredients?`<button class="btn" id="addToListBtn" onclick="addToShoppingList('${id}')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add to List</button>`:''}
             ${canEdit?`<button class="btn danger" onclick="deleteRecipe('${id}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>`:''}
           </div>
           ${ratingsHTML}
         </div>
       </div>`;
+    // Auto-adapt if user has the toggle on; otherwise show a hint if recipe doesn't match restrictions
+    const myRestrictions = currentProfile?.dietary_restrictions||[];
+    const hintEl = document.getElementById('autoAdaptSection');
+    if(currentProfile?.auto_adapt && myRestrictions.length){
+      setTimeout(()=>runAutoAdapt(r), 100);
+    } else if(myRestrictions.length){
+      const recipeTags = r.dietary_tags||[];
+      const missing = myRestrictions.filter(res=>!recipeTags.includes(res));
+      if(missing.length && hintEl){
+        hintEl.innerHTML=`
+          <div style="background:var(--accent-light);border-radius:var(--radius-sm);padding:10px 14px;margin:8px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span style="font-size:12px;color:var(--accent-dark);flex:1;min-width:180px">This recipe isn't tagged <strong>${missing.map(esc).join(', ')}</strong> — but it can probably be adapted with substitutions.</span>
+            <button class="btn sm primary" onclick="openAdaptModal('${id}')" style="flex-shrink:0">🥗 Adapt it for me</button>
+          </div>`;
+      }
+    }
+    // Check custom restrictions against ingredients
+    const customRestrictions = currentProfile?.custom_restrictions||[];
+    if(customRestrictions.length && r.ingredients){
+      checkCustomRestrictionsInRecipe(r, id, hintEl);
+    }
   }catch(e){document.getElementById('recipeDetail').innerHTML='<div class="empty-state"><p>Failed to load recipe.</p></div>';}
 }
 
@@ -1638,10 +1936,12 @@ function addAIThreadMsg(role, html){
   thread.style.display = 'flex';
   const panel = document.getElementById('panel-ai');
   panel.classList.add('ai-active','ai-has-thread');
-  attachAIPanel();
-  document.getElementById('aiBackdrop').style.display = 'block';
-  document.getElementById('aiPanelHeader').style.display = 'flex';
-  document.body.classList.add('ai-panel-open');lockBodyScroll();
+  if(window.innerWidth<=680){
+    attachAIPanel();
+    document.getElementById('aiBackdrop').style.display = 'block';
+    document.getElementById('aiPanelHeader').style.display = 'flex';
+    lockBodyScroll();
+  }
   const div = document.createElement('div');
   div.style.cssText = role === 'user'
     ? 'align-self:flex-end;background:var(--accent);color:white;padding:8px 12px;border-radius:12px 12px 2px 12px;max-width:85%;font-size:13px;line-height:1.6'
@@ -1656,6 +1956,7 @@ async function sendAIMessage(){
   const inp = document.getElementById('aiPrompt');
   const msg = inp.value.trim();
   if(!msg) return;
+  track('ai_feature_used',{feature:'recipe_generation'});
   inp.value = '';
   inp.style.height = 'auto';
 
@@ -1973,8 +2274,19 @@ async function saveRecipe(){
     directions:document.getElementById('mDir').value,notes:document.getElementById('mNotes').value,
     image_url:imgUrl};
   try{
-    if(editingId){await supaFetch('/rest/v1/recipes?id=eq.'+editingId,'PATCH',payload,{'Prefer':'return=minimal'});}
-    else{await supaFetch('/rest/v1/recipes','POST',[{...payload,owner_id:currentUser?.id}],{'Prefer':'return=minimal,resolution=ignore-duplicates'});}
+    // Auto-tag dietary info for new recipes
+    if(!editingId && payload.ingredients){
+      try{ payload.dietary_tags = await getDietaryTagsForRecipe(payload.ingredients, payload.name); }catch{}
+    }
+    if(editingId){
+      await supaFetch('/rest/v1/recipes?id=eq.'+editingId,'PATCH',payload,{'Prefer':'return=minimal'});
+      track('recipe_edited',{recipe_id:editingId});
+    } else {
+      await supaFetch('/rest/v1/recipes','POST',[{...payload,owner_id:currentUser?.id}],{'Prefer':'return=minimal,resolution=ignore-duplicates'});
+      // Detect creation method from which panel was active
+      const method=['ai','url','file','manual'].find(m=>document.getElementById('mc-'+m)?.classList.contains('active'))||'unknown';
+      track('recipe_created',{method});
+    }
     const savedId = editingId;
     closeModal();
     await loadRecipes();
@@ -2010,11 +2322,11 @@ function sharePDF(){
   const win=window.open('','_blank','width=700,height=900');
   win.document.write(`<!DOCTYPE html><html><head><title>${name}</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
-<style>body{font-family:'DM Sans',sans-serif;max-width:560px;margin:40px auto;padding:24px;color:#1C1A17;line-height:1.7}
-h1{font-family:'Lora',serif;font-size:26px;font-weight:500;margin-bottom:6px}
+<style>body{font-family:var(--font-ui);max-width:560px;margin:40px auto;padding:24px;color:#1C1A17;line-height:1.7}
+h1{font-family:var(--font-heading);font-size:26px;font-weight:500;margin-bottom:6px}
 .meta{font-size:12px;color:#888;margin-bottom:4px}.times{font-size:13px;color:#555;margin-bottom:20px}
 h2{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:#999;margin:20px 0 6px}
-pre{white-space:pre-wrap;font-family:'DM Sans',sans-serif;font-size:14px;margin:0}
+pre{white-space:pre-wrap;font-family:var(--font-ui);font-size:14px;margin:0}
 img{width:100%;border-radius:8px;margin-bottom:20px}
 hr{border:none;border-top:1px solid #eee;margin:28px 0}
 @media print{body{margin:0 auto}}</style></head><body>
@@ -2231,6 +2543,7 @@ function formatScaled(val){
 function scaleIngredients(mult){
   const r = window._currentRecipe;
   if(!r||!r.ingredients) return;
+  if(mult!==1) track('scaler_used',{recipe_id:r.id, multiplier:mult});
 
   // Matches a single quantity token: "2 1/2", "1/2", "1.5", unicode fractions, integers
   const QTY_PAT = '(\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|\\d+\\.\\d+|[\u00bc\u00bd\u00be\u2153\u2154\u215b\u215c\u215d\u215e]|\\d+[\u00bc\u00bd\u00be\u2153\u2154\u215b\u215c\u215d\u215e]?\\d*(?:\\.\\d+)?)';
@@ -2298,6 +2611,7 @@ async function sendRecipeChat(){
   const inp = document.getElementById('recipeChatInput');
   const msg = inp?.value.trim();
   if(!msg) return;
+  track('ai_feature_used',{feature:'recipe_chat', recipe_id:currentId});
   inp.value = ''; inp.style.height='auto';
   const msgs = document.getElementById('recipeChatMsgs');
   msgs.innerHTML += `<div class="rc-msg user">${esc(msg)}</div>`;
@@ -2341,6 +2655,7 @@ If your response includes a modified or updated version of the recipe, end with 
 
 async function saveChatAsNote(){
   if(!window._lastRCResponse || !currentId) return;
+  const btn = document.querySelector('.chat-action-btn');
   const r = window._currentRecipe;
   const timestamp = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'});
   const newNote = (r.notes ? r.notes+'\n\n' : '') + `--- AI Note (${timestamp}) ---\n${window._lastRCResponse.replace(/<[^>]+>/g,'').replace(/UPDATE_AVAILABLE/g,'').trim()}`;
@@ -2349,10 +2664,7 @@ async function saveChatAsNote(){
     window._currentRecipe.notes = newNote;
     const nb = document.getElementById('notesBlock');
     if(nb) nb.innerHTML = formatNotes(newNote);
-    // Flash confirmation
-    const btn = event.target;
-    btn.textContent = '✓ Saved!';
-    setTimeout(()=>btn.textContent='💾 Save as note', 2000);
+    if(btn){ btn.textContent = '✓ Saved!'; setTimeout(()=>btn.textContent='💾 Save as note', 2000); }
   }catch(e){alert('Save failed: '+e.message);}
 }
 
@@ -2386,6 +2698,8 @@ Return valid JSON only, nothing else.`;
 
 document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
 document.getElementById('settingsModal').addEventListener('click',e=>{if(e.target===document.getElementById('settingsModal'))closeSettings();});
+document.getElementById('dietModal').addEventListener('click',e=>{if(e.target===document.getElementById('dietModal'))closeDietModal();});
+document.getElementById('adaptModal').addEventListener('click',e=>{if(e.target===document.getElementById('adaptModal'))closeAdaptModal();});
 
 // ── IMAGE SEARCH ──────────────────────────────────────────────────────────────
 function openImgSearch(){
@@ -2516,6 +2830,131 @@ function showSettings(){
 
 function closeSettings(){ document.getElementById('settingsModal').classList.remove('open'); }
 
+// { id, name, urls:[], idx:0 }
+let _imgData = [];
+
+async function batchFetchImages(){
+  const btn=document.getElementById('fetchImagesBtn');
+  const prog=document.getElementById('imgFetchProgress');
+  btn.disabled=true;
+  prog.style.display='block';
+  prog.textContent='Loading recipes…';
+
+  try{
+    const rows=await supaFetch('/rest/v1/recipes?image_url=is.null&select=id,name&order=name');
+    if(!rows||!rows.length){
+      prog.textContent='All recipes already have images!';
+      btn.disabled=false;
+      return;
+    }
+
+    _imgData=[];
+    for(let i=0;i<rows.length;i++){
+      const r=rows[i];
+      prog.textContent='['+(i+1)+'/'+rows.length+'] '+r.name+'…';
+      let urls=[];
+      try{
+        const res=await fetch(SUPA_URL+'/functions/v1/image-search',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({query:r.name})
+        });
+        if(res.ok){ const d=await res.json(); urls=d.urls||[]; }
+      }catch(e){}
+      _imgData.push({id:r.id, name:r.name, urls, idx:0});
+      await new Promise(r=>setTimeout(r,250));
+    }
+
+    prog.style.display='none';
+    btn.disabled=false;
+    openImgPreview();
+  }catch(e){
+    prog.textContent='Error: '+e.message;
+    btn.disabled=false;
+  }
+}
+
+function openImgPreview(){
+  const grid=document.getElementById('imgPreviewGrid');
+  const sub=document.getElementById('imgPreviewSubtitle');
+  const found=_imgData.filter(e=>e.urls.length);
+  sub.textContent=found.length+' images found · '+(_imgData.length-found.length)+' with no result · uncheck any to skip';
+
+  grid.innerHTML='';
+  _imgData.forEach(function(e){
+    const card=document.createElement('div');
+    card.style.cssText='border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;background:var(--white)';
+
+    // image
+    const img=document.createElement('img');
+    img.src=e.urls[0]||'';
+    img.style.cssText='width:100%;height:160px;object-fit:cover;display:block;background:#ddd';
+    card.appendChild(img);
+
+    // recipe name
+    const nameEl=document.createElement('div');
+    nameEl.style.cssText='padding:7px 10px 4px;font-size:13px;font-weight:600;line-height:1.3;color:var(--text1)';
+    nameEl.textContent=e.name;
+    card.appendChild(nameEl);
+
+    // checkbox row
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:6px;padding:0 10px 8px';
+    const chk=document.createElement('input');
+    chk.type='checkbox'; chk.checked=!!e.urls.length; chk.disabled=!e.urls.length;
+    chk.dataset.idx=_imgData.indexOf(e);
+    chk.className='imgcheck';
+    const chkLbl=document.createElement('label');
+    chkLbl.style.cssText='font-size:11px;color:var(--text3);cursor:pointer';
+    chkLbl.textContent=e.urls.length?'Include':'No image found';
+    row.appendChild(chk); row.appendChild(chkLbl);
+    card.appendChild(row);
+
+    // swap button
+    if(e.urls.length>1){
+      const sw=document.createElement('button');
+      sw.style.cssText='margin:0 8px 8px;padding:4px 0;width:calc(100% - 16px);border:1px solid var(--border);border-radius:6px;background:transparent;font-size:11px;cursor:pointer;color:var(--text2)';
+      sw.textContent='↻ Swap';
+      sw.onclick=(function(entry,imgEl){
+        return function(){
+          entry.idx=(entry.idx+1)%entry.urls.length;
+          imgEl.src=entry.urls[entry.idx];
+        };
+      })(e,img);
+      card.appendChild(sw);
+    }
+
+    grid.appendChild(card);
+  });
+
+  document.getElementById('imgPreviewOverlay').style.display='flex';
+}
+
+function closeImgPreview(){
+  document.getElementById('imgPreviewOverlay').style.display='none';
+}
+
+async function saveApprovedImages(){
+  const btn=document.getElementById('imgSaveBtn');
+  btn.disabled=true; btn.textContent='Saving…';
+  const checks=document.querySelectorAll('.imgcheck');
+  let saved=0,skipped=0;
+  for(const chk of checks){
+    const e=_imgData[+chk.dataset.idx];
+    if(!e||!chk.checked){skipped++;continue;}
+    try{
+      await supaFetch('/rest/v1/recipes?id=eq.'+e.id,'PATCH',{image_url:e.urls[e.idx]},{'Prefer':'return=minimal'});
+      saved++;
+    }catch(err){skipped++;}
+    await new Promise(r=>setTimeout(r,100));
+  }
+  closeImgPreview();
+  btn.disabled=false; btn.textContent='Save Approved';
+  const prog=document.getElementById('imgFetchProgress');
+  prog.innerHTML='Saved <strong>'+saved+'</strong> images, '+skipped+' skipped.';
+  prog.style.display='block';
+}
+
 
 async function saveSettings(){
   const key=document.getElementById('settingsApiKey').value.trim();
@@ -2626,7 +3065,7 @@ function genSwipeCode(){
 function updateSwipeFilterValue(){
   const type=document.getElementById('swipeFilterType').value;
   const valSel=document.getElementById('swipeFilterValue');
-  if(type==='all'||type==='favorites'){valSel.style.display='none';return;}
+  if(type==='all'||type==='favorites'||type==='diet'){valSel.style.display='none';return;}
   valSel.style.display='';
   const opts=type==='category'
     ?[...new Set(allRecipes.flatMap(r=>r.categories||[]))].sort()
@@ -2639,6 +3078,14 @@ function updateSwipeFilterValue(){
 function applySwipeFilter(recipes, filterType, filterValue){
   if(!filterType||filterType==='all') return recipes;
   if(filterType==='favorites') return recipes.filter(r=>r.is_favorite);
+  if(filterType==='diet'){
+    const myRestrictions = currentProfile?.dietary_restrictions||[];
+    if(!myRestrictions.length) return recipes;
+    return recipes.filter(r=>{
+      const tags=r.dietary_tags||[];
+      return myRestrictions.every(res=>tags.includes(res));
+    });
+  }
   if(filterType==='category') return recipes.filter(r=>(r.categories||[]).includes(filterValue));
   if(filterType==='collection') return recipes.filter(r=>(r.collections||[]).includes(filterValue));
   if(filterType==='course') return recipes.filter(r=>(r.courses||[]).includes(filterValue));
@@ -2646,6 +3093,7 @@ function applySwipeFilter(recipes, filterType, filterValue){
 }
 
 async function createSwipeSession(){
+  track('swipe_session_created',{filter_type:document.getElementById('swipeFilterType').value});
   const code=genSwipeCode();
   const filterType=document.getElementById('swipeFilterType').value;
   const filterValue=(filterType!=='all'&&filterType!=='favorites')
@@ -2657,9 +3105,10 @@ async function createSwipeSession(){
     swipeSession=session;
     document.getElementById('swipeCodeDisplay').textContent=code;
     // Show filter label in waiting room
-    const label=filterType==='all'?'All Recipes':filterType==='favorites'?'Favorites':`${filterType.charAt(0).toUpperCase()+filterType.slice(1)}: ${filterValue||'All'}`;
+    const label=filterType==='all'?'All Recipes':filterType==='favorites'?'Favorites':filterType==='diet'?'My Diet':`${filterType.charAt(0).toUpperCase()+filterType.slice(1)}: ${filterValue||'All'}`;
     const sub=document.getElementById('swipeWaitingFilter');
     if(sub){sub.textContent='Filter: '+label;sub.style.display='';}
+    localStorage.setItem('rd_swipe_session',session.id);
     showSwipeScreen('waiting');
     startParticipantPoller();
   }catch(e){showSwipeLobbyError('Could not create session: '+e.message);}
@@ -2677,6 +3126,7 @@ async function joinSwipeSession(){
     try{ await supaFetch('/rest/v1/session_participants','POST',{session_id:swipeSession.id,user_id:currentUser.id},{'Prefer':'return=minimal,resolution=ignore-duplicates'}); }catch{}
     document.getElementById('swipeCodeDisplay').textContent=code;
     document.getElementById('joinCodeInput').value='';
+    localStorage.setItem('rd_swipe_session',swipeSession.id);
     showSwipeScreen('waiting');
     startParticipantPoller();
   }catch(e){showSwipeLobbyError('Error: '+e.message);}
@@ -2692,12 +3142,20 @@ function showSwipeLobbyError(msg){
 function startParticipantPoller(){
   clearInterval(swipePoller);
   pollParticipants();
-  swipePoller=setInterval(pollParticipants,3000);
+  swipePoller=setInterval(pollParticipants,300);
 }
 
 async function pollParticipants(){
   if(!swipeSession) return;
   try{
+    // Check session status first — when the creator starts, everyone else
+    // needs to transition to the swiping screen
+    const [s]=await supaFetch('/rest/v1/swipe_sessions?id=eq.'+swipeSession.id+'&select=*');
+    if(s){
+      swipeSession=s;
+      if(s.status==='active'){ beginSwipingLocal(); return; }
+      if(s.status==='complete'){ clearInterval(swipePoller);swipePoller=null; localStorage.removeItem('rd_swipe_session'); showSwipeScreen('lobby'); loadSwipeHistory(); return; }
+    }
     const rows=await supaFetch('/rest/v1/session_participants?session_id=eq.'+swipeSession.id+'&select=user_id,joined_at');
     const ids=rows.map(r=>r.user_id);
     // Fetch display names
@@ -2770,6 +3228,7 @@ async function endSwipeSession(){
 async function leaveSwipeSession(){
   if(!swipeSession) return;
   clearInterval(swipePoller);swipePoller=null;
+  localStorage.removeItem('rd_swipe_session');
   try{ await supaFetch('/rest/v1/session_participants?session_id=eq.'+swipeSession.id+'&user_id=eq.'+currentUser.id,'DELETE',null,{'Prefer':'return=minimal'}); }catch{}
   swipeSession=null;swipeParticipants=[];
   showSwipeScreen('lobby');
@@ -2777,13 +3236,38 @@ async function leaveSwipeSession(){
 
 async function startSwiping(){
   if(!swipeSession) return;
-  clearInterval(swipePoller);swipePoller=null;
   try{ await supaFetch('/rest/v1/swipe_sessions?id=eq.'+swipeSession.id,'PATCH',{status:'active'},{'Prefer':'return=minimal'}); }catch{}
+  await beginSwipingLocal();
+}
+
+// Transition this client into the swiping screen (creator after starting,
+// or a participant whose poller detected the session went active)
+async function beginSwipingLocal(){
+  if(!swipeSession) return;
+  clearInterval(swipePoller);swipePoller=null;
+  // If this user already finished (e.g. refreshed while waiting), go back to waiting
+  try{
+    const [me]=await supaFetch('/rest/v1/session_participants?session_id=eq.'+swipeSession.id+'&user_id=eq.'+currentUser.id+'&select=finished_at');
+    if(me?.finished_at){
+      showSwipeScreen('doneWaiting');
+      swipePoller=setInterval(checkAllFinished,300);
+      checkAllFinished();
+      return;
+    }
+  }catch{}
   // Re-fetch session to get filter (joiners need creator's filter)
   try{
     const [s]=await supaFetch('/rest/v1/swipe_sessions?id=eq.'+swipeSession.id+'&select=*');
     if(s) swipeSession=s;
   }catch{}
+  // Make sure participants are loaded (needed for match checking after a refresh)
+  if(swipeParticipants.length<2){
+    try{
+      const rows=await supaFetch('/rest/v1/session_participants?session_id=eq.'+swipeSession.id+'&select=user_id');
+      const ids=rows.map(r=>r.user_id);
+      if(ids.length) swipeParticipants=await supaFetch('/rest/v1/profiles?id=in.('+ids.join(',')+')'+'&select=id,display_name');
+    }catch{}
+  }
   const filtered=applySwipeFilter(allRecipes, swipeSession.filter_type, swipeSession.filter_value);
   swipeQueue=[...filtered].sort(()=>Math.random()-.5);
   swipeIndex=0;swipeMatches=[];swipeShownMatches=new Set();
@@ -2876,16 +3360,49 @@ async function recordSwipe(recipe,liked){
   }catch{}
   swipeIndex++;
   if(swipeIndex>=swipeQueue.length){
-    showSwipeResults();
+    markFinishedAndWait();
   } else {
     renderCardStack();
     checkForMatches();
   }
 }
 
+// Called when this user runs out of cards. Results are only shown once ALL
+// participants have finished — otherwise matches would differ between users.
+async function markFinishedAndWait(){
+  if(!swipeSession) return;
+  try{ await supaFetch('/rest/v1/session_participants?session_id=eq.'+swipeSession.id+'&user_id=eq.'+currentUser.id,'PATCH',{finished_at:new Date().toISOString()},{'Prefer':'return=minimal'}); }catch{}
+  showSwipeScreen('doneWaiting');
+  clearInterval(swipePoller);
+  swipePoller=setInterval(checkAllFinished,300);
+  checkAllFinished();
+}
+
+async function checkAllFinished(){
+  if(!swipeSession) return;
+  try{
+    // Still surface match celebrations while waiting
+    await checkForMatches();
+    const [s]=await supaFetch('/rest/v1/swipe_sessions?id=eq.'+swipeSession.id+'&select=status');
+    if(s && s.status==='complete'){ await showSwipeResults(); return; }
+    const parts=await supaFetch('/rest/v1/session_participants?session_id=eq.'+swipeSession.id+'&select=user_id,finished_at');
+    const done=parts.filter(p=>p.finished_at).length;
+    const statusEl=document.getElementById('doneWaitingStatus');
+    if(statusEl) statusEl.textContent=`${done} of ${parts.length} finished`;
+    if(parts.length>=2 && done>=parts.length){ await showSwipeResults(); }
+  }catch{}
+}
+
 function startMatchPoller(){
   clearInterval(swipePoller);
-  swipePoller=setInterval(checkForMatches,3000);
+  swipePoller=setInterval(async()=>{
+    await checkForMatches();
+    // If someone force-ended the session, go to results
+    try{
+      const [s]=await supaFetch('/rest/v1/swipe_sessions?id=eq.'+swipeSession.id+'&select=status');
+      if(s && s.status==='complete') await showSwipeResults();
+    }catch{}
+  },300);
 }
 
 async function checkForMatches(){
@@ -2919,6 +3436,8 @@ async function checkForMatches(){
 }
 
 function showMatchOverlay(recipe){
+  // Only show while the user is actually on the swipe tab
+  if(!document.getElementById('page-swipe')?.classList.contains('active')) return;
   swipeShownMatches.add(recipe.id);
   swipeMatchedRecipe=recipe;
   const overlay=document.getElementById('matchOverlay');
@@ -2944,6 +3463,10 @@ function viewMatchedRecipe(){
 
 async function showSwipeResults(){
   clearInterval(swipePoller);swipePoller=null;
+  localStorage.removeItem('rd_swipe_session');
+  // The session is over — don't bounce the user back to a matched recipe on refresh
+  sessionStorage.removeItem('rd_last_recipe');
+  currentId=null;
   try{ await supaFetch('/rest/v1/swipe_sessions?id=eq.'+swipeSession.id,'PATCH',{status:'complete'},{'Prefer':'return=minimal'}); }catch{}
   // Final match check
   await checkForMatches();
@@ -2980,7 +3503,7 @@ function shareSwipeCode(){
   if(navigator.share){
     navigator.share({title:'Recipe Duck', text, url}).catch(()=>{});
   } else {
-    navigator.clipboard?.writeText(text).then(()=>alert('Link copied to clipboard!')).catch(()=>alert(text));
+    navigator.clipboard?.writeText(url).then(()=>showToast('Join link copied!')).catch(()=>prompt('Copy join link:', url));
   }
 }
 
@@ -3078,11 +3601,526 @@ async function viewSwipeHistory(sessionId){
 function resetSwipeState(){
   swipeSession=null;swipeParticipants=[];swipeQueue=[];swipeIndex=0;swipeMatches=[];swipeShownMatches=new Set();swipeMatchedRecipe=null;
   clearInterval(swipePoller);swipePoller=null;
+  localStorage.removeItem('rd_swipe_session');
   document.getElementById('joinCodeInput').value='';
   document.getElementById('swipeLobbyError').style.display='none';
   document.getElementById('matchOverlay').style.display='none';
   document.getElementById('swipeFilterType').value='all';
   document.getElementById('swipeFilterValue').style.display='none';
+}
+
+// ── DIETARY RESTRICTIONS ──────────────────────────────────────────────────────
+
+const DIET_TAGS = [
+  'vegan','vegetarian','pescatarian','gluten-free','dairy-free','egg-free',
+  'nut-free','peanut-free','tree-nut-free','soy-free','shellfish-free','fish-free',
+  'low-carb','keto','paleo','whole30','halal','kosher','low-fodmap','low-sodium',
+  'diabetic-friendly'
+];
+
+function updateDietTab(){
+  const tab = document.getElementById('dietTab');
+  if(!tab) return;
+  // Always visible when signed in — clicking it prompts profile setup if needed
+  tab.style.display = currentUser ? '' : 'none';
+}
+
+function showDietModal(){
+  const saved = currentProfile?.dietary_restrictions || [];
+  const grid = document.getElementById('dietTagsGrid');
+  grid.innerHTML = DIET_TAGS.map(t => {
+    const on = saved.includes(t);
+    return `<button class="diet-chip${on?' active':''}" onclick="toggleDietChip(this,'${t}')">${esc(t)}</button>`;
+  }).join('');
+  document.getElementById('autoAdaptToggle').checked = !!(currentProfile?.auto_adapt);
+  // Populate custom restrictions
+  renderCustomRestrictionTags(currentProfile?.custom_restrictions || []);
+  document.getElementById('customRestrictionsInput').value = '';
+  document.getElementById('dietModal').classList.add('open');
+}
+
+function closeDietModal(){
+  document.getElementById('dietModal').classList.remove('open');
+}
+
+function toggleDietChip(btn, tag){
+  btn.classList.toggle('active');
+}
+
+function renderCustomRestrictionTags(items){
+  const container = document.getElementById('customRestrictionsTags');
+  if(!container) return;
+  container.innerHTML = items.map(item =>
+    `<span style="display:inline-flex;align-items:center;gap:5px;background:var(--paprika);color:white;border-radius:50px;padding:4px 10px;font-size:12px;font-weight:500">
+      ${esc(item)}
+      <button onclick="removeCustomRestriction('${esc(item).replace(/'/g,"\\'")}')" style="background:none;border:none;color:white;cursor:pointer;font-size:14px;line-height:1;padding:0;opacity:.8" title="Remove">×</button>
+    </span>`
+  ).join('');
+}
+
+function addCustomRestriction(){
+  const inp = document.getElementById('customRestrictionsInput');
+  const raw = inp.value.trim();
+  if(!raw) return;
+  // Support comma-separated entry
+  const newItems = raw.split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+  const existing = getCurrentCustomRestrictions();
+  const merged = [...new Set([...existing, ...newItems])];
+  renderCustomRestrictionTags(merged);
+  inp.value = '';
+  inp.focus();
+}
+
+function removeCustomRestriction(item){
+  const existing = getCurrentCustomRestrictions();
+  renderCustomRestrictionTags(existing.filter(i=>i!==item));
+}
+
+function getCurrentCustomRestrictions(){
+  return [...document.querySelectorAll('#customRestrictionsTags span')].map(s=>s.childNodes[0].textContent.trim());
+}
+
+async function saveDietProfile(){
+  const selected = [...document.querySelectorAll('#dietTagsGrid .diet-chip.active')].map(b=>b.textContent);
+  const autoAdapt = document.getElementById('autoAdaptToggle').checked;
+  const customRestrictions = getCurrentCustomRestrictions();
+  try{
+    await supaFetch('/rest/v1/profiles?id=eq.'+currentUser.id,'PATCH',
+      {dietary_restrictions:selected, auto_adapt:autoAdapt, custom_restrictions:customRestrictions},{'Prefer':'return=minimal'});
+    if(!currentProfile) currentProfile={};
+    currentProfile.dietary_restrictions = selected;
+    currentProfile.auto_adapt = autoAdapt;
+    currentProfile.custom_restrictions = customRestrictions;
+    track('diet_profile_saved',{restrictions:selected, custom_count:customRestrictions.length, auto_adapt:autoAdapt});
+    updateDietTab();
+    closeDietModal();
+    if(currentGrouping==='diet') renderHome();
+    showToast('Diet profile saved!');
+  }catch(e){ showToast('Could not save: '+e.message); }
+}
+
+// ─── CUSTOM RESTRICTION CHECKER ──────────────────────────────────────────────
+
+async function checkCustomRestrictionsInRecipe(r, recipeId, hintEl){
+  const customRestrictions = currentProfile?.custom_restrictions||[];
+  if(!customRestrictions.length || !r.ingredients) return;
+  const ingredientsText = r.ingredients.toLowerCase();
+  // Fast local check first — scan ingredient text for each custom restriction
+  const found = customRestrictions.filter(item => ingredientsText.includes(item.toLowerCase()));
+  if(!found.length) return;
+  if(!hintEl) return;
+  // Append a warning below any existing hint
+  const warning = document.createElement('div');
+  warning.id = 'customAllergenWarning';
+  warning.innerHTML = `
+    <div style="background:#FEF0ED;border:1.5px solid var(--paprika);border-radius:var(--radius-sm);padding:10px 14px;margin:8px 0">
+      <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
+        <div style="flex:1;min-width:180px">
+          <div style="font-size:12px;font-weight:600;color:var(--paprika);margin-bottom:4px">⚠️ Contains your restricted ingredients</div>
+          <div style="font-size:12px;color:#8B3A2A;line-height:1.5">This recipe contains: <strong>${found.map(esc).join(', ')}</strong></div>
+        </div>
+        <button class="btn sm" onclick="showCustomAllergenSubstitutes('${recipeId}','${found.map(f=>f.replace(/'/g,"\\'")).join(',')}')" style="flex-shrink:0;border-color:var(--paprika);color:var(--paprika)">Show substitutes</button>
+      </div>
+    </div>`;
+  hintEl.appendChild(warning);
+}
+
+async function showCustomAllergenSubstitutes(recipeId, foundStr){
+  const r = window._currentRecipe;
+  if(!r) return;
+  const found = foundStr.split(',').map(s=>s.trim()).filter(Boolean);
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = 'Thinking…';
+  try{
+    const result = await claude(
+      `You are a culinary expert. A recipe contains ingredients the user can't eat.
+Recipe: "${r.name}"
+Ingredients: ${r.ingredients}
+Restricted ingredients the user can't have: ${found.join(', ')}
+
+For each restricted ingredient found in this recipe, suggest the best substitute and a brief reason.
+Format each as:
+• [restricted ingredient] → [substitute]: [reason]
+
+Keep it concise.`,
+      'You are a culinary expert specializing in dietary substitutions.'
+    );
+    const warningEl = document.getElementById('customAllergenWarning');
+    if(warningEl){
+      const subDiv = document.createElement('div');
+      subDiv.style.cssText='margin-top:10px;padding-top:10px;border-top:1px solid rgba(228,87,46,0.2);font-size:12px;color:#5A3030;line-height:1.7;white-space:pre-line';
+      subDiv.textContent = result.trim();
+      warningEl.querySelector('div').appendChild(subDiv);
+    }
+    btn.style.display='none';
+  }catch(e){
+    btn.disabled=false; btn.textContent='Show substitutes';
+    showToast('Could not get substitutes: '+e.message);
+  }
+}
+
+// ─── RECIPE ADAPTATION ────────────────────────────────────────────────────────
+
+let _adaptRecipe = null;
+let _adaptedIngredients = '', _adaptedDirections = '', _adaptOrigIngredients = '', _adaptOrigDirections = '';
+let _adaptCurrentView = 'adapted';
+
+function openAdaptModal(recipeId){
+  const r = allRecipes.find(x=>x.id===recipeId) || window._currentRecipe;
+  if(!r) return;
+  _adaptRecipe = window._currentRecipe || r;
+  document.getElementById('adaptRecipeName').textContent = _adaptRecipe.name;
+
+  const saved = currentProfile?.dietary_restrictions || [];
+  const grid = document.getElementById('adaptTagsGrid');
+  grid.innerHTML = DIET_TAGS.map(t => {
+    const on = saved.includes(t);
+    return `<button class="diet-chip${on?' active':''}" onclick="this.classList.toggle('active')">${esc(t)}</button>`;
+  }).join('');
+
+  document.getElementById('adaptResult').style.display='none';
+  document.getElementById('adaptFooter').style.display='none';
+  document.getElementById('adaptRunBtn').disabled=false;
+  document.getElementById('adaptRunBtn').textContent='🥗 Get Substitutions';
+  document.getElementById('adaptModal').classList.add('open');
+}
+
+function closeAdaptModal(){
+  document.getElementById('adaptModal').classList.remove('open');
+}
+
+async function runAdaptation(){
+  const selected = [...document.querySelectorAll('#adaptTagsGrid .diet-chip.active')].map(b=>b.textContent);
+  if(!selected.length){ showToast('Select at least one restriction'); return; }
+  if(!_adaptRecipe){ showToast('No recipe loaded'); return; }
+
+  const btn = document.getElementById('adaptRunBtn');
+  btn.disabled=true; btn.textContent='Thinking…';
+  track('ai_feature_used',{feature:'diet_adaptation', recipe_id:_adaptRecipe?.id, restrictions:selected});
+
+  const system = `You are a culinary expert specializing in dietary substitutions.
+When adapting a recipe, respond EXACTLY in this format:
+
+SUMMARY: [1-2 sentence summary of changes]
+
+SUBSTITUTIONS:
+- [original ingredient] → [substitute] | [brief reason]
+(list every substitution needed, or write "None needed" if already compliant)
+
+ADAPTED_INGREDIENTS:
+[full rewritten ingredient list, one per line]
+
+ADAPTED_DIRECTIONS:
+[full rewritten directions, one per line or step]`;
+
+  const customRestrictions = currentProfile?.custom_restrictions||[];
+  const userMsg = `Recipe: ${_adaptRecipe.name}
+Current dietary tags: ${(_adaptRecipe.dietary_tags||[]).join(', ')||'none'}
+Requested restrictions: ${selected.join(', ')}${customRestrictions.length?`\nAlso avoid these specific ingredients: ${customRestrictions.join(', ')}`:''}
+
+INGREDIENTS:
+${_adaptRecipe.ingredients||'(none)'}
+
+DIRECTIONS:
+${_adaptRecipe.directions||'(none)'}
+
+Please adapt this recipe to be fully compliant with: ${selected.join(', ')}${customRestrictions.length?` and avoid: ${customRestrictions.join(', ')}`:'.'}`;
+
+  try{
+    const text = await claude([{role:'user',content:userMsg}], system);
+
+    const summaryM = text.match(/SUMMARY:\s*(.+?)(?=\nSUBSTITUTIONS:|$)/s);
+    const subsM = text.match(/SUBSTITUTIONS:\s*([\s\S]+?)(?=\nADAPTED_INGREDIENTS:|$)/);
+    const ingM = text.match(/ADAPTED_INGREDIENTS:\s*([\s\S]+?)(?=\nADAPTED_DIRECTIONS:|$)/);
+    const dirM = text.match(/ADAPTED_DIRECTIONS:\s*([\s\S]+?)$/s);
+
+    const summary = summaryM?summaryM[1].trim():'';
+    const subs = subsM?subsM[1].trim():'';
+    _adaptedIngredients = ingM?ingM[1].trim():_adaptRecipe.ingredients||'';
+    _adaptedDirections = dirM?dirM[1].trim():_adaptRecipe.directions||'';
+    _adaptOrigIngredients = _adaptRecipe.ingredients||'';
+    _adaptOrigDirections = _adaptRecipe.directions||'';
+
+    document.getElementById('adaptSummary').textContent = summary;
+
+    // Build substitution table
+    const subLines = subs.split('\n').map(l=>l.trim()).filter(l=>l.startsWith('-'));
+    const subRows = subLines.map(l=>{
+      const body = l.replace(/^-\s*/,'');
+      const [arrow,reason]=[body.split(' | ')[0], body.split(' | ')[1]||''];
+      const [orig,sub]=[arrow.split(' → ')[0]||'', arrow.split(' → ')[1]||''];
+      return `<tr><td style="padding:6px 8px;color:var(--text2);text-decoration:line-through;font-size:13px">${esc(orig.trim())}</td><td style="padding:6px 8px;font-weight:500;font-size:13px">${esc((sub||'').trim())}</td><td style="padding:6px 8px;font-size:12px;color:var(--text3)">${esc(reason.trim())}</td></tr>`;
+    }).join('');
+    document.getElementById('adaptSubTable').innerHTML = subLines.length && !subs.includes('None needed')
+      ? `<table style="width:100%;border-collapse:collapse;margin-bottom:4px"><thead><tr><th style="text-align:left;padding:4px 8px;font-size:11px;color:var(--text3);font-weight:500">Original</th><th style="text-align:left;padding:4px 8px;font-size:11px;color:var(--text3);font-weight:500">Substitute</th><th style="text-align:left;padding:4px 8px;font-size:11px;color:var(--text3);font-weight:500">Why</th></tr></thead><tbody>${subRows}</tbody></table>`
+      : `<p style="font-size:13px;color:var(--accent-dark);background:var(--accent-light);padding:10px 12px;border-radius:var(--radius-sm)">${esc(subs||'No substitutions needed.')}</p>`;
+
+    _adaptCurrentView = 'adapted';
+    renderAdaptedContent();
+    document.getElementById('adaptResult').style.display='block';
+    document.getElementById('adaptFooter').style.display='flex';
+    // Store selected tags for saving
+    window._adaptSelectedTags = selected;
+  }catch(e){
+    showToast('Adaptation failed: '+e.message);
+  }
+  btn.disabled=false; btn.textContent='🥗 Get Substitutions';
+}
+
+function renderAdaptedContent(){
+  const ing = _adaptCurrentView==='adapted' ? _adaptedIngredients : _adaptOrigIngredients;
+  const dir = _adaptCurrentView==='adapted' ? _adaptedDirections : _adaptOrigDirections;
+  document.getElementById('adaptIngredients').innerHTML=`<div class="section-head">Ingredients (${_adaptCurrentView})</div><div class="content-block">${formatIngredients(ing)}</div>`;
+  document.getElementById('adaptDirections').innerHTML=`<div class="section-head">Directions (${_adaptCurrentView})</div><div class="content-block">${formatDirections(dir)}</div>`;
+  document.getElementById('adaptViewOrigBtn').classList.toggle('primary',_adaptCurrentView==='original');
+  document.getElementById('adaptViewAdpBtn').classList.toggle('primary',_adaptCurrentView==='adapted');
+}
+
+function toggleAdaptView(v){
+  _adaptCurrentView=v;
+  renderAdaptedContent();
+}
+
+async function saveAdaptedRecipe(){
+  if(!_adaptRecipe) return;
+  const tags = window._adaptSelectedTags||[];
+  const newName = _adaptRecipe.name+' ('+tags.map(t=>t.split('-').map(w=>w[0].toUpperCase()+w.slice(1)).join('-')).join(', ')+')';
+  const newTags = [...new Set([...(_adaptRecipe.dietary_tags||[]),...tags])];
+  try{
+    const payload={
+      name:newName,
+      ingredients:_adaptedIngredients,
+      directions:_adaptedDirections,
+      notes:_adaptRecipe.notes||null,
+      categories:_adaptRecipe.categories||[],
+      collections:_adaptRecipe.collections||[],
+      courses:_adaptRecipe.courses||[],
+      image_url:_adaptRecipe.image_url||null,
+      is_favorite:false,
+      owner_id:currentUser.id,
+      dietary_tags:newTags
+    };
+    await supaFetch('/rest/v1/recipes','POST',[payload],{'Prefer':'return=minimal'});
+    await loadRecipes();
+    closeAdaptModal();
+    showToast('Saved as "'+newName+'"!');
+  }catch(e){ showToast('Could not save: '+e.message); }
+}
+
+async function runAutoAdapt(r){
+  const restrictions = currentProfile?.dietary_restrictions||[];
+  if(!restrictions.length) return;
+  const el = document.getElementById('autoAdaptSection');
+  if(!el) return;
+  el.innerHTML=`<div style="padding:10px 0;font-size:12px;color:var(--text3)">🥗 Loading adapted version for your diet…</div>`;
+
+  window._adaptRecipe = r;
+  window._adaptSelectedTags = restrictions;
+  _adaptRecipe = r;
+
+  const system = `You are a culinary expert specializing in dietary substitutions.
+Respond EXACTLY in this format:
+
+SUMMARY: [1-2 sentence summary of changes]
+
+SUBSTITUTIONS:
+- [original ingredient] → [substitute] | [brief reason]
+
+ADAPTED_INGREDIENTS:
+[full rewritten ingredient list, one per line]
+
+ADAPTED_DIRECTIONS:
+[full rewritten directions, one per line or step]`;
+
+  const userMsg = `Recipe: ${r.name}
+Current dietary tags: ${(r.dietary_tags||[]).join(', ')||'none'}
+Requested restrictions: ${restrictions.join(', ')}
+
+INGREDIENTS:
+${r.ingredients||'(none)'}
+
+DIRECTIONS:
+${r.directions||'(none)'}
+
+Please adapt this recipe to be fully compliant with: ${restrictions.join(', ')}.`;
+
+  try{
+    const text = await claude([{role:'user',content:userMsg}], system);
+    const summaryM = text.match(/SUMMARY:\s*(.+?)(?=\nSUBSTITUTIONS:|$)/s);
+    const ingM = text.match(/ADAPTED_INGREDIENTS:\s*([\s\S]+?)(?=\nADAPTED_DIRECTIONS:|$)/);
+    const dirM = text.match(/ADAPTED_DIRECTIONS:\s*([\s\S]+?)$/s);
+    const summary = summaryM?summaryM[1].trim():'';
+    const ing = ingM?ingM[1].trim():r.ingredients||'';
+    const dir = dirM?dirM[1].trim():r.directions||'';
+    _adaptedIngredients=ing; _adaptedDirections=dir;
+    _adaptOrigIngredients=r.ingredients||''; _adaptOrigDirections=r.directions||'';
+    el.innerHTML=`
+      <div style="background:var(--accent-light);border-radius:var(--radius-sm);padding:12px 14px;margin:8px 0">
+        <div style="font-size:12px;font-weight:600;color:var(--accent-dark);margin-bottom:4px">🥗 Adapted for your diet (${restrictions.join(', ')})</div>
+        <div style="font-size:13px;color:var(--accent-dark);line-height:1.5">${esc(summary)}</div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <button class="btn sm" onclick="showAutoAdaptDetails()">View substitutions</button>
+          <button class="btn sm primary" onclick="saveAdaptedRecipe()">Save as my variant</button>
+        </div>
+      </div>
+      <div id="autoAdaptDetails" style="display:none">
+        <div class="section-head">Adapted Ingredients</div>
+        <div class="content-block">${formatIngredients(ing)}</div>
+        <div class="section-head">Adapted Directions</div>
+        <div class="content-block">${formatDirections(dir)}</div>
+      </div>`;
+  }catch{
+    el.innerHTML='';
+  }
+}
+
+function showAutoAdaptDetails(){
+  const el=document.getElementById('autoAdaptDetails');
+  if(!el) return;
+  el.style.display = el.style.display==='none' ? 'block' : 'none';
+}
+
+// ─── DIETARY BACKFILL (admin) ─────────────────────────────────────────────────
+
+async function backfillDietaryTags(){
+  if(!currentProfile?.is_admin){ showToast('Admin only'); return; }
+  const btn = document.getElementById('dietBackfillBtn');
+  const prog = document.getElementById('dietBackfillProgress');
+  btn.disabled=true; prog.style.display='block';
+
+  try{
+    const recipes = await supaFetch('/rest/v1/recipes?select=id,name,ingredients&order=name.asc&limit=500');
+    let done=0;
+    for(const r of recipes){
+      prog.textContent=`[${++done}/${recipes.length}] ${r.name}…`;
+      try{
+        const tags = await getDietaryTagsForRecipe(r.ingredients||'', r.name);
+        if(tags.length){
+          await supaFetch('/rest/v1/recipes?id=eq.'+r.id,'PATCH',{dietary_tags:tags},{'Prefer':'return=minimal'});
+          const local = allRecipes.find(x=>x.id===r.id);
+          if(local) local.dietary_tags=tags;
+        }
+      }catch{}
+      await new Promise(r=>setTimeout(r,300));
+    }
+    prog.textContent='Done! '+recipes.length+' recipes tagged.';
+  }catch(e){
+    prog.textContent='Error: '+e.message;
+  }
+  btn.disabled=false;
+}
+
+async function getDietaryTagsForRecipe(ingredients, name){
+  const prompt = `Analyze this recipe and return ONLY a JSON array of applicable dietary tags from this list:
+${DIET_TAGS.join(', ')}
+
+Recipe: ${name}
+Ingredients: ${ingredients}
+
+Return ONLY a JSON array like ["vegan","gluten-free"] — no explanation. If none apply, return [].`;
+  const text = await claude([{role:'user',content:prompt}], 'You are a dietary classification assistant. Respond only with a JSON array.');
+  const m = text.match(/\[[\s\S]*?\]/);
+  if(!m) return [];
+  try{ return JSON.parse(m[0]).filter(t=>DIET_TAGS.includes(t)); }catch{ return []; }
+}
+
+// ── SHARE / REFERRAL / INSTALL ────────────────────────────────────────────────
+
+// Capture ?join=CODE on page load and persist it so it survives the OAuth
+// redirect round-trip (Google sign-in returns to the bare origin URL)
+(function detectJoinCode(){
+  const joinCode = new URLSearchParams(window.location.search).get('join');
+  if(joinCode) localStorage.setItem('rd_join_code', joinCode.toUpperCase());
+})();
+
+// Capture ?ref=UUID and ?ref_name=Name from URL and persist to localStorage
+(function detectReferral(){
+  const params = new URLSearchParams(window.location.search);
+  const ref = params.get('ref');
+  const refName = params.get('ref_name');
+  if(ref){
+    localStorage.setItem('rd_ref_id', ref);
+    if(refName) localStorage.setItem('rd_ref_name', decodeURIComponent(refName));
+    // Strip params from URL without reload
+    const clean = window.location.pathname + window.location.hash;
+    window.history.replaceState(null, '', clean);
+  }
+})();
+
+function shareApp(){
+  if(!currentUser) return;
+  const name = encodeURIComponent(currentProfile?.display_name || currentUser.email.split('@')[0]);
+  const url = window.location.origin + window.location.pathname + '?ref=' + currentUser.id + '&ref_name=' + name;
+  const text = `Hey! I use Recipe Duck to organize all my recipes — you should try it. Join here:`;
+  if(navigator.share){
+    navigator.share({title:'Recipe Duck', text, url}).catch(()=>{});
+  } else {
+    navigator.clipboard?.writeText(text + '\n' + url)
+      .then(()=>{ showToast('Invite link copied to clipboard!'); })
+      .catch(()=>{ prompt('Copy your invite link:', url); });
+  }
+}
+
+let _deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredInstallPrompt = e;
+});
+
+function showInstallModal(isNewUser=false){
+  const modal = document.getElementById('installModal');
+  const btn = document.getElementById('installBtn');
+  const instructions = document.getElementById('installInstructions');
+  const msg = document.getElementById('installModalMsg');
+
+  if(isNewUser){
+    msg.textContent = "You're all set! For the best experience, add Recipe Duck to your home screen.";
+  } else {
+    msg.textContent = 'Add Recipe Duck to your home screen for quick access — it works like an app!';
+  }
+
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isAndroid = /android/i.test(navigator.userAgent);
+  const isMobile = isIOS || isAndroid;
+
+  if(_deferredInstallPrompt){
+    // Chrome/Android — native install prompt available
+    btn.textContent = '📱 Add to Home Screen';
+    btn.style.display = 'block';
+    instructions.style.display = 'none';
+  } else if(isIOS){
+    btn.style.display = 'none';
+    instructions.style.display = 'block';
+    instructions.innerHTML = `On Safari: tap the <strong>Share</strong> button <span style="font-size:16px">⎦↑</span> at the bottom of your screen, then tap <strong>"Add to Home Screen"</strong>.`;
+  } else {
+    // Desktop or already installed
+    btn.textContent = isMobile ? '📱 Add to Home Screen' : '🔖 Bookmark Recipe Duck';
+    btn.style.display = 'block';
+    instructions.style.display = 'none';
+  }
+
+  modal.style.display = 'flex';
+}
+
+async function triggerInstall(){
+  if(_deferredInstallPrompt){
+    _deferredInstallPrompt.prompt();
+    const { outcome } = await _deferredInstallPrompt.userChoice;
+    _deferredInstallPrompt = null;
+    closeInstallModal();
+  } else {
+    // Desktop fallback — show bookmark shortcut hint
+    const el = document.getElementById('installInstructions');
+    const btn = document.getElementById('installBtn');
+    const isMac = /mac/i.test(navigator.platform||navigator.userAgentData?.platform||'');
+    btn.style.display = 'none';
+    el.style.display = 'block';
+    el.innerHTML = `Press <strong>${isMac?'⌘':'Ctrl'}+D</strong> to bookmark Recipe Duck in your browser.`;
+  }
+}
+
+function closeInstallModal(){
+  document.getElementById('installModal').style.display = 'none';
 }
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
@@ -3094,7 +4132,9 @@ async function initAuth(){
     showLoginModal();
   }
   supabaseClient.auth.onAuthStateChange(async(event,session)=>{
-    if(event==='SIGNED_IN'&&session){
+    if(event==='PASSWORD_RECOVERY'){
+      showPasswordResetForm();
+    } else if(event==='SIGNED_IN'&&session){
       await onSignedIn(session);
     } else if(event==='SIGNED_OUT'){
       currentUser=null;currentProfile=null;currentSession=null;
@@ -3123,20 +4163,75 @@ async function onSignedIn(session){
   updateTopbarUser();
   await loadRecipes();
   loadApiKey();
-  // Handle deep-link join code in URL (?join=CODE)
-  const joinCode = new URLSearchParams(window.location.search).get('join');
+  updateDietTab();
+
+  // ── Referral attribution (runs once after new signup) ────────────────────
+  const refId = localStorage.getItem('rd_ref_id');
+  if(refId && refId !== currentUser.id){
+    try{
+      const existing = await supaFetch('/rest/v1/referrals?referee_id=eq.'+currentUser.id+'&select=id');
+      if(!existing.length){
+        await supaFetch('/rest/v1/referrals','POST',
+          [{referrer_id:refId, referee_id:currentUser.id, converted_at:new Date().toISOString()}],
+          {'Prefer':'return=minimal,resolution=ignore-duplicates'});
+      }
+    }catch{}
+    localStorage.removeItem('rd_ref_id');
+    localStorage.removeItem('rd_ref_name');
+    // Onboarding handles the install prompt for new users — skip the old modal
+    if(currentProfile?.onboarding_complete){
+      setTimeout(()=>showInstallModal(true), 800);
+    }
+  }
+
+  // Handle ?join=CODE deep link (swipe session invite). The code is stashed
+  // in localStorage on page load so it survives the OAuth redirect.
+  const joinCode = new URLSearchParams(window.location.search).get('join') || localStorage.getItem('rd_join_code');
   if(joinCode){
-    // Clear param from URL without reload
-    const url = window.location.pathname + window.location.hash;
-    window.history.replaceState(null,'',url);
-    switchTab('swipe');
-    const joinInput = document.getElementById('joinCodeInput');
-    if(joinInput){ joinInput.value = joinCode.toUpperCase(); joinInput.focus(); }
+    localStorage.removeItem('rd_join_code');
+    window.history.replaceState(null, '', window.location.pathname + window.location.hash);
+    showTab('swipe');
+    const inp = document.getElementById('joinCodeInput');
+    if(inp){ inp.value = joinCode.toUpperCase(); }
+    await joinSwipeSession();
     return;
   }
-  // Restore last-viewed recipe after refresh (sessionStorage persists soft refresh, clears on tab close)
+
+  // Restore an in-progress swipe session after refresh
+  const savedSwipeId = localStorage.getItem('rd_swipe_session');
+  if(savedSwipeId){
+    const restored = await restoreSwipeSession(savedSwipeId);
+    if(restored) return;
+  }
+
+  // Show onboarding for new users who haven't completed it
+  if(!currentProfile?.onboarding_complete){
+    setTimeout(()=>showOnboarding(), 600);
+    return;
+  }
+
+  // Restore last-viewed recipe after refresh
   const lastId = sessionStorage.getItem('rd_last_recipe');
   if(lastId) loadDetail(lastId);
+}
+
+async function restoreSwipeSession(sessionId){
+  try{
+    const [s]=await supaFetch('/rest/v1/swipe_sessions?id=eq.'+sessionId+'&select=*');
+    if(!s || s.status==='complete'){ localStorage.removeItem('rd_swipe_session'); return false; }
+    // Confirm we're still a participant; rejoin if waiting
+    try{ await supaFetch('/rest/v1/session_participants','POST',{session_id:s.id,user_id:currentUser.id},{'Prefer':'return=minimal,resolution=ignore-duplicates'}); }catch{}
+    swipeSession=s;
+    showTab('swipe');
+    document.getElementById('swipeCodeDisplay').textContent=s.code;
+    if(s.status==='active'){
+      await beginSwipingLocal();
+    } else {
+      showSwipeScreen('waiting');
+      startParticipantPoller();
+    }
+    return true;
+  }catch{ localStorage.removeItem('rd_swipe_session'); return false; }
 }
 
 function updateTopbarUser(){
@@ -3164,7 +4259,7 @@ const LOGIN_FORM_HTML = `
   <div class="login-field"><input type="email" id="loginEmail" placeholder="Email" autocomplete="email" onkeydown="if(event.key==='Enter')handleLogin()"></div>
   <div class="login-field"><input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')handleLogin()"></div>
   <div id="forgotRow" style="text-align:right;margin-top:4px;margin-bottom:4px">
-    <button onclick="handleForgotPassword()" style="background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">forgot password?</button>
+    <button onclick="handleForgotPassword()" style="background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;font-family:var(--font-ui)">forgot password?</button>
   </div>
   <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer;margin:10px 0;user-select:none" id="rememberMeRow">
     <input type="checkbox" id="rememberMe" checked style="width:14px;height:14px;accent-color:var(--accent);cursor:pointer">
@@ -3183,9 +4278,28 @@ const LOGIN_FORM_HTML = `
   </p>`;
 
 function showLoginModal(){
-  document.getElementById('loginCard').innerHTML = LOGIN_FORM_HTML;
-  document.getElementById('loginModal').classList.add('open');
+  const ref = localStorage.getItem('rd_ref_name');
+  let banner = '';
+  if(ref){
+    banner = `<div style="background:var(--accent-light);border:1px solid var(--accent);border-radius:10px;padding:12px 14px;margin-bottom:16px;text-align:center;font-size:13px;line-height:1.5">
+      🎉 <strong>${esc(ref)}</strong> invited you to Recipe Duck!<br>
+      <span style="color:var(--text2)">Create a free account to get started.</span>
+    </div>`;
+  }
+  document.getElementById('loginCard').innerHTML = banner + LOGIN_FORM_HTML;
+  const modal = document.getElementById('loginModal');
+  modal.classList.add('open');
   document.getElementById('app').style.display='none';
+  // If arriving via invite, default to signup mode
+  if(ref && modal.dataset.mode !== 'signup'){
+    modal.dataset.mode = 'signup';
+    document.getElementById('loginTitle').textContent = 'Sign Up';
+    document.getElementById('loginSubmitBtn').textContent = 'Create Account';
+    document.getElementById('loginToggleText').textContent = 'Already have an account?';
+    document.getElementById('loginToggleBtn').textContent = 'Sign In';
+    document.getElementById('loginNameRow').style.display = 'grid';
+    document.getElementById('rememberRow').style.display = 'none';
+  }
 }
 
 function hideLoginModal(){
@@ -3241,16 +4355,49 @@ function toggleLoginMode(){
   document.getElementById('loginError').textContent='';
 }
 
+function showPasswordResetForm(){
+  // Hide login if open, show the reset modal
+  hideLoginModal();
+  document.getElementById('passwordResetModal').style.display='flex';
+  document.getElementById('newPasswordInput').focus();
+}
+
+async function submitPasswordReset(){
+  const pw=document.getElementById('newPasswordInput').value;
+  const confirm=document.getElementById('newPasswordConfirm').value;
+  const errEl=document.getElementById('passwordResetError');
+  errEl.textContent='';
+  if(pw.length<6){errEl.textContent='Password must be at least 6 characters.';return;}
+  if(pw!==confirm){errEl.textContent='Passwords don\'t match.';return;}
+  const btn=document.querySelector('#passwordResetModal .login-submit-btn');
+  btn.textContent='Updating…';btn.disabled=true;
+  const{error}=await supabaseClient.auth.updateUser({password:pw});
+  btn.textContent='Update Password';btn.disabled=false;
+  if(error){errEl.textContent=error.message;return;}
+  document.getElementById('passwordResetModal').style.display='none';
+  showToast('Password updated! You\'re now signed in.');
+  // onAuthStateChange SIGNED_IN fires after updateUser, which calls onSignedIn
+}
+
 async function handleForgotPassword(){
   const email=document.getElementById('loginEmail').value.trim();
   if(!email){alert('Enter your email address first.');return;}
-  const{error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin});
   const errEl=document.getElementById('loginError');
-  if(error){errEl.style.color='var(--error)';errEl.textContent=error.message;}
-  else{errEl.style.color='var(--success)';errEl.textContent='Password reset email sent — check your inbox!';}
+  const{error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin});
+  if(error){
+    errEl.style.color='var(--error)';errEl.textContent=error.message;
+  } else {
+    // Supabase silently succeeds even for Google OAuth accounts (sends nothing).
+    // Always show the Google sign-in hint so OAuth users aren't left confused.
+    errEl.style.color='var(--success)';
+    errEl.innerHTML='If that email has a password account, a reset link is on its way.<br><span style="color:var(--text3);font-size:11px">Signed up with Google? Use the <strong>Continue with Google</strong> button below.</span>';
+  }
 }
 
 async function signInWithGoogle(){
+  // Respect the "keep me signed in" checkbox for OAuth logins too
+  const rememberEl=document.getElementById('rememberMe');
+  localStorage.setItem('rd_remember',(rememberEl?!rememberEl.checked:false)?'0':'1');
   const{error}=await supabaseClient.auth.signInWithOAuth({
     provider:'google',
     options:{redirectTo:window.location.origin}
@@ -3445,29 +4592,122 @@ const SL_CATEGORIES = [
   {name:'Beverages', rx:/\b(wine|beer|vodka|rum|whiskey|bourbon|gin|tequila|brandy|juice|broth|stock|water|sparkling|soda|coffee|tea|espresso|milk alternative|oat milk|almond milk|coconut milk|soy milk)\b/i},
 ];
 
-function categorizeIngredient(ing){
-  const t = ing.toLowerCase();
-  for(const c of SL_CATEGORIES){
-    if(c.rx.test(t)) return c.name;
+const SL_UNIT_MAP = {
+  tbsp:'tbsp',tablespoon:'tbsp',tablespoons:'tbsp',
+  tsp:'tsp',teaspoon:'tsp',teaspoons:'tsp',
+  cup:'cup',cups:'cup',c:'cup',
+  oz:'oz',ounce:'oz',ounces:'oz',
+  lb:'lb',lbs:'lb',pound:'lb',pounds:'lb',
+  g:'g',gram:'g',grams:'g',
+  kg:'kg',kilogram:'kg',kilograms:'kg',
+  ml:'ml',milliliter:'ml',milliliters:'ml',
+  l:'l',liter:'l',liters:'l',
+  clove:'clove',cloves:'clove',
+  slice:'slice',slices:'slice',
+  piece:'piece',pieces:'piece',
+  can:'can',cans:'can',
+  pkg:'pkg',package:'pkg',packages:'pkg',
+  stick:'stick',sticks:'stick',
+  sprig:'sprig',sprigs:'sprig',
+  bunch:'bunch',bunches:'bunch',
+  head:'head',heads:'head',
+  stalk:'stalk',stalks:'stalk',
+  pinch:'pinch',pinches:'pinch',
+  dash:'dash',dashes:'dash',
+};
+
+function slParseFraction(s){
+  s=s.trim();
+  const mix=s.match(/^(\d+)\s+(\d+)\/(\d+)$/);
+  if(mix) return +mix[1]+parseInt(mix[2])/parseInt(mix[3]);
+  const fr=s.match(/^(\d+)\/(\d+)$/);
+  if(fr) return parseInt(fr[1])/parseInt(fr[2]);
+  return parseFloat(s)||0;
+}
+
+// Unicode fractions → decimal
+function slNormalizeUnicode(s){
+  return s.replace(/½/g,'1/2').replace(/¼/g,'1/4').replace(/¾/g,'3/4')
+          .replace(/⅓/g,'1/3').replace(/⅔/g,'2/3').replace(/⅛/g,'1/8').replace(/⅜/g,'3/8');
+}
+
+function slParseIngredient(text){
+  text=slNormalizeUnicode(text.trim());
+  // Match leading quantity: mixed fraction, simple fraction, or decimal/int
+  const qtyRe=/^((?:\d+\s+)?\d+\/\d+|\d+(?:\.\d+)?)\s*/;
+  const qm=text.match(qtyRe);
+  if(!qm) return{qty:null,unit:null,name:text.toLowerCase(),prep:null};
+  const qty=slParseFraction(qm[1]);
+  let rest=text.slice(qm[0].length);
+  // Check if next token is a known unit
+  const unitRe=/^([a-zA-Z]+\.?)\s+/;
+  const um=rest.match(unitRe);
+  let unit=null;
+  if(um){
+    const cand=um[1].toLowerCase().replace(/\.$/,'');
+    if(SL_UNIT_MAP[cand]){ unit=SL_UNIT_MAP[cand]; rest=rest.slice(um[0].length); }
   }
+  // Split name from prep at first comma or parenthesis
+  let name=rest, prep=null;
+  const ci=rest.search(/[,(]/);
+  if(ci>0){ name=rest.slice(0,ci).trim(); prep=rest.slice(ci+1).trim(); }
+  return{qty,unit,name:name.toLowerCase(),prep};
+}
+
+function slFormatQty(n){
+  if(!n) return '';
+  if(n===Math.floor(n)) return String(n);
+  const whole=Math.floor(n), frac=n-whole;
+  const FRACS=[[1,8,'⅛'],[1,4,'¼'],[1,3,'⅓'],[3,8,'⅜'],[1,2,'½'],[5,8,'⅝'],[2,3,'⅔'],[3,4,'¾'],[7,8,'⅞']];
+  for(const[a,b,sym] of FRACS){ if(Math.abs(frac-a/b)<0.04) return (whole?whole+' ':'')+sym; }
+  return n%1<0.1?String(Math.round(n)):n.toFixed(1);
+}
+
+function slFormatConsolidated(totalQty,unit,name,prep){
+  let s='';
+  if(totalQty) s+=slFormatQty(totalQty)+' ';
+  if(unit) s+=unit+' ';
+  s+=name;
+  if(prep) s+=', '+prep;
+  return s;
+}
+
+function slConsolidate(items){
+  // Group by (unit, normalized name) — only consolidate when units match
+  const map=new Map();
+  for(const it of items){
+    const p=slParseIngredient(it.ingredient);
+    // Key: unit (or '') + '||' + name
+    const key=(p.unit||'')+'||'+p.name;
+    if(!map.has(key)) map.set(key,{p,sources:[],totalQty:0});
+    const g=map.get(key);
+    if(p.qty!==null) g.totalQty+=p.qty; else g.totalQty=null;
+    g.sources.push(it);
+  }
+  return Array.from(map.values());
+}
+
+function categorizeIngredient(ing){
+  const t=ing.toLowerCase();
+  for(const c of SL_CATEGORIES){ if(c.rx.test(t)) return c.name; }
   return 'Pantry';
 }
 
-let slView = 'aisle'; // 'aisle' | 'recipe'
+let slView='aisle';
 
 function setSlView(v){
-  slView = v;
-  document.getElementById('slViewAisle').classList.toggle('active', v==='aisle');
-  document.getElementById('slViewRecipe').classList.toggle('active', v==='recipe');
-  renderShoppingList(window._slItems || []);
+  slView=v;
+  document.getElementById('slViewAisle').classList.toggle('active',v==='aisle');
+  document.getElementById('slViewRecipe').classList.toggle('active',v==='recipe');
+  renderShoppingList(window._slItems||[]);
 }
 
 async function loadShoppingList(){
   if(!currentUser){ renderSlEmpty(); return; }
   document.getElementById('slContent').innerHTML='<div style="padding:3rem;text-align:center;color:var(--text3)">Loading...</div>';
   try{
-    const items = await supaFetch('/rest/v1/shopping_list_items?user_id=eq.'+currentUser.id+'&order=sort_order.asc,created_at.asc');
-    window._slItems = items;
+    const items=await supaFetch('/rest/v1/shopping_list_items?user_id=eq.'+currentUser.id+'&order=sort_order.asc,created_at.asc');
+    window._slItems=items;
     renderShoppingList(items);
   }catch(e){ document.getElementById('slContent').innerHTML='<div style="padding:2rem;text-align:center;color:var(--error)">Failed to load list.</div>'; }
 }
@@ -3480,69 +4720,117 @@ function renderSlEmpty(){
 }
 
 function renderShoppingList(items){
-  const el = document.getElementById('slContent');
+  const el=document.getElementById('slContent');
   if(!items||!items.length){ renderSlEmpty(); return; }
-  const CATEGORY_ORDER = ['Produce','Meat & Seafood','Dairy & Eggs','Bakery','Beverages','Frozen','Pantry','Other'];
-  let html = '';
+  const CATEGORY_ORDER=['Produce','Meat & Seafood','Dairy & Eggs','Bakery','Beverages','Frozen','Pantry','Other'];
+  let html='';
   if(slView==='aisle'){
-    const groups = {};
+    // Group by category first
+    const catGroups={};
     for(const it of items){
-      const k = it.category||'Other';
-      if(!groups[k]) groups[k]=[];
-      groups[k].push(it);
+      const k=it.category||'Other';
+      if(!catGroups[k]) catGroups[k]=[];
+      catGroups[k].push(it);
     }
-    const sorted = [...CATEGORY_ORDER.filter(k=>groups[k]), ...Object.keys(groups).filter(k=>!CATEGORY_ORDER.includes(k))];
+    const sorted=[...CATEGORY_ORDER.filter(k=>catGroups[k]),...Object.keys(catGroups).filter(k=>!CATEGORY_ORDER.includes(k))];
     for(const cat of sorted){
-      html += `<div class="sl-group"><div class="sl-group-title">${esc(cat)}</div>`;
-      for(const it of groups[cat]) html += slItemHTML(it, true);
-      html += '</div>';
+      html+=`<div class="sl-group"><div class="sl-group-title">${esc(cat)}</div>`;
+      const consolidated=slConsolidate(catGroups[cat]);
+      for(const g of consolidated) html+=slGroupHTML(g);
+      html+='</div>';
     }
   } else {
-    const groups = {};
+    // By recipe — no consolidation, individual items
+    const recipeGroups={};
     for(const it of items){
-      const k = it.recipe_name||'Other items';
-      if(!groups[k]) groups[k]=[];
-      groups[k].push(it);
+      const k=it.recipe_name||'Other items';
+      if(!recipeGroups[k]) recipeGroups[k]=[];
+      recipeGroups[k].push(it);
     }
-    for(const [rec, its] of Object.entries(groups)){
-      html += `<div class="sl-group"><div class="sl-group-title">${esc(rec)}</div>`;
-      for(const it of its) html += slItemHTML(it, false);
-      html += '</div>';
+    for(const[rec,its] of Object.entries(recipeGroups)){
+      html+=`<div class="sl-group"><div class="sl-group-title">${esc(rec)}</div>`;
+      for(const it of its) html+=slSingleItemHTML(it);
+      html+='</div>';
     }
   }
-  el.innerHTML = html;
+  el.innerHTML=html;
 }
 
-function slItemHTML(it, showRecipe){
-  return `<div class="sl-item${it.checked?' checked':''}" id="sli-${it.id}">
-    <input type="checkbox" ${it.checked?'checked':''} onchange="toggleSlItem('${it.id}',this.checked)">
-    <span class="sl-item-text">${esc(it.ingredient)}</span>
-    ${showRecipe&&it.recipe_name?`<span class="sl-item-recipe">${esc(it.recipe_name)}</span>`:''}
-    <button onclick="deleteSlItem('${it.id}')" style="background:none;border:none;cursor:pointer;padding:2px 4px;color:var(--text3);flex-shrink:0;display:flex;align-items:center" title="Remove">
-      <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
+function slGroupHTML(g){
+  const{p,sources,totalQty}=g;
+  const multi=sources.length>1;
+  const allChecked=sources.every(s=>s.checked);
+  const someChecked=sources.some(s=>s.checked);
+  // Display text for the consolidated row
+  const displayText=multi&&totalQty!==null
+    ? slFormatConsolidated(totalQty,p.unit,p.name,p.prep)
+    : sources[0].ingredient;
+  const ids=sources.map(s=>s.id).join(',');
+  let html=`<div class="sl-item-group" id="slg-${sources[0].id}">
+    <div class="sl-item${allChecked?' checked':''}">
+      <input type="checkbox" ${allChecked?'checked':''} ${someChecked&&!allChecked?'data-indeterminate="true"':''}
+        onchange="toggleSlGroup([${sources.map(s=>`'${s.id}'`).join(',')}],this.checked)"
+        ${someChecked&&!allChecked?'style="opacity:.5"':''}>
+      <span class="sl-item-text">${esc(displayText)}</span>
+    </div>`;
+  {
+    html+=`<div class="sl-subitems">`;
+    for(const s of sources){
+      const sp=slParseIngredient(s.ingredient);
+      const qtyStr=sp.qty!==null?(slFormatQty(sp.qty)+(sp.unit?' '+sp.unit:'')):'';
+      html+=`<div class="sl-subitem">
+        <span class="sl-subitem-qty">${esc(qtyStr)}</span>
+        <span class="sl-subitem-recipe">${esc(s.recipe_name||'')}</span>
+        <button class="sl-subitem-del" onclick="deleteSlItem('${s.id}')" title="Remove">
+          <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>`;
+    }
+    html+=`</div>`;
+  }
+  html+=`</div>`;
+  return html;
+}
+
+function slSingleItemHTML(it){
+  return `<div class="sl-item-group" id="slg-${it.id}">
+    <div class="sl-item${it.checked?' checked':''}">
+      <input type="checkbox" ${it.checked?'checked':''} onchange="toggleSlItem('${it.id}',this.checked)">
+      <span class="sl-item-text">${esc(it.ingredient)}</span>
+      <button onclick="deleteSlItem('${it.id}')" style="background:none;border:none;cursor:pointer;padding:2px 4px;color:var(--text3);flex-shrink:0;display:flex;align-items:center" title="Remove">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
   </div>`;
 }
 
+async function toggleSlGroup(ids, checked){
+  for(const id of ids){
+    const item=(window._slItems||[]).find(i=>i.id===id);
+    if(item) item.checked=checked;
+  }
+  // Re-render to update group checked state
+  renderShoppingList(window._slItems||[]);
+  await Promise.all(ids.map(id=>supaFetch('/rest/v1/shopping_list_items?id=eq.'+id,'PATCH',{checked},{'Prefer':'return=minimal'})));
+}
+
 async function toggleSlItem(id, checked){
-  const item = (window._slItems||[]).find(i=>i.id===id);
-  if(item) item.checked = checked;
-  document.getElementById('sli-'+id)?.classList.toggle('checked', checked);
+  const item=(window._slItems||[]).find(i=>i.id===id);
+  if(item) item.checked=checked;
+  renderShoppingList(window._slItems||[]);
   await supaFetch('/rest/v1/shopping_list_items?id=eq.'+id,'PATCH',{checked},{'Prefer':'return=minimal'});
 }
 
 async function deleteSlItem(id){
-  window._slItems = (window._slItems||[]).filter(i=>i.id!==id);
-  document.getElementById('sli-'+id)?.remove();
-  if(!(window._slItems||[]).length) renderSlEmpty();
+  window._slItems=(window._slItems||[]).filter(i=>i.id!==id);
+  if(!(window._slItems||[]).length){ renderSlEmpty(); } else { renderShoppingList(window._slItems||[]); }
   await supaFetch('/rest/v1/shopping_list_items?id=eq.'+id,'DELETE');
 }
 
 async function clearCheckedItems(){
   if(!currentUser) return;
-  const checked = (window._slItems||[]).filter(i=>i.checked).map(i=>i.id);
-  if(!checked.length) return;
-  window._slItems = (window._slItems||[]).filter(i=>!i.checked);
+  if(!(window._slItems||[]).some(i=>i.checked)) return;
+  window._slItems=(window._slItems||[]).filter(i=>!i.checked);
   renderShoppingList(window._slItems);
   await supaFetch('/rest/v1/shopping_list_items?user_id=eq.'+currentUser.id+'&checked=eq.true','DELETE');
 }
@@ -3550,35 +4838,30 @@ async function clearCheckedItems(){
 async function clearAllItems(){
   if(!currentUser) return;
   if(!confirm('Clear your entire shopping list?')) return;
-  window._slItems = [];
+  window._slItems=[];
   renderSlEmpty();
   await supaFetch('/rest/v1/shopping_list_items?user_id=eq.'+currentUser.id,'DELETE');
 }
 
-async function addToShoppingList(recipeId, recipeName, ingredientsRaw){
+async function addToShoppingList(recipeId){
   if(!currentUser){ alert('Sign in to use the shopping list.'); return; }
-  const btn = document.getElementById('addToListBtn');
+  track('shopping_list_used',{recipe_id:recipeId});
+  const btn=document.getElementById('addToListBtn');
   if(btn){ btn.disabled=true; btn.textContent='Adding…'; }
   try{
-    // Check if recipe already on list
-    const existing = await supaFetch('/rest/v1/shopping_list_items?user_id=eq.'+currentUser.id+'&recipe_id=eq.'+recipeId+'&select=id&limit=1');
+    const [recipe]=await supaFetch('/rest/v1/recipes?id=eq.'+recipeId+'&select=name,ingredients');
+    if(!recipe?.ingredients){ showToast('No ingredients found.'); if(btn){btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add to List';} return; }
+    const recipeName=recipe.name, ingredientsRaw=recipe.ingredients;
+    const existing=await supaFetch('/rest/v1/shopping_list_items?user_id=eq.'+currentUser.id+'&recipe_id=eq.'+recipeId+'&select=id&limit=1');
     if(existing&&existing.length){
       if(!confirm('This recipe is already on your list. Add it again?')){
         if(btn){ btn.disabled=false; btn.innerHTML='<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add to List'; }
         return;
       }
     }
-    const lines = ingredientsRaw.split('\n').map(l=>l.trim()).filter(l=>l&&!/^[#\[\{]/.test(l)&&l.length<200);
-    const maxOrder = Math.max(0,...(window._slItems||[]).map(i=>i.sort_order||0));
-    const rows = lines.map((ing,i)=>({
-      user_id:currentUser.id,
-      recipe_id:recipeId,
-      recipe_name:recipeName,
-      ingredient:ing,
-      category:categorizeIngredient(ing),
-      checked:false,
-      sort_order:maxOrder+i+1
-    }));
+    const lines=ingredientsRaw.split('\n').map(l=>l.trim()).filter(l=>l&&!/^[#\[\{]/.test(l)&&l.length<200);
+    const maxOrder=Math.max(0,...(window._slItems||[]).map(i=>i.sort_order||0));
+    const rows=lines.map((ing,i)=>({user_id:currentUser.id,recipe_id:recipeId,recipe_name:recipeName,ingredient:ing,category:categorizeIngredient(ing),checked:false,sort_order:maxOrder+i+1}));
     await supaFetch('/rest/v1/shopping_list_items','POST',rows,{'Prefer':'return=minimal'});
     showToast('Added to shopping list');
     if(btn){ btn.disabled=false; btn.innerHTML='<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add to List'; }
@@ -3588,60 +4871,77 @@ async function addToShoppingList(recipeId, recipeName, ingredientsRaw){
   }
 }
 
-function slListToText(){
-  const items = window._slItems||[];
-  if(!items.length) return '';
-  const CATEGORY_ORDER = ['Produce','Meat & Seafood','Dairy & Eggs','Bakery','Beverages','Frozen','Pantry','Other'];
-  const groups = {};
-  for(const it of items){ const k=it.category||'Other'; if(!groups[k]) groups[k]=[]; groups[k].push(it); }
-  const sorted = [...CATEGORY_ORDER.filter(k=>groups[k]), ...Object.keys(groups).filter(k=>!CATEGORY_ORDER.includes(k))];
-  let text = 'Shopping List\n\n';
+function slBuildConsolidatedGroups(items){
+  const CATEGORY_ORDER=['Produce','Meat & Seafood','Dairy & Eggs','Bakery','Beverages','Frozen','Pantry','Other'];
+  const catGroups={};
+  for(const it of items){ const k=it.category||'Other'; if(!catGroups[k]) catGroups[k]=[]; catGroups[k].push(it); }
+  const sorted=[...CATEGORY_ORDER.filter(k=>catGroups[k]),...Object.keys(catGroups).filter(k=>!CATEGORY_ORDER.includes(k))];
+  const result=[];
   for(const cat of sorted){
-    text += cat + '\n';
-    for(const it of groups[cat]) text += (it.checked?'✓ ':'• ') + it.ingredient + '\n';
-    text += '\n';
+    for(const g of slConsolidate(catGroups[cat])){
+      const{p,sources,totalQty}=g;
+      const multi=sources.length>1;
+      const displayText=multi&&totalQty!==null?slFormatConsolidated(totalQty,p.unit,p.name,p.prep):sources[0].ingredient;
+      result.push({cat,displayText,sources,totalQty,p,multi});
+    }
+  }
+  return result;
+}
+
+function slListToText(){
+  const items=window._slItems||[];
+  if(!items.length) return '';
+  const groups=slBuildConsolidatedGroups(items);
+  let text='Shopping List\n\n';
+  let lastCat='';
+  for(const g of groups){
+    if(g.cat!==lastCat){ text+=g.cat+'\n'; lastCat=g.cat; }
+    text+=(g.sources.every(s=>s.checked)?'✓ ':'• ')+g.displayText+'\n';
+    if(g.multi) for(const s of g.sources){
+      const sp=slParseIngredient(s.ingredient);
+      const qty=sp.qty!==null?(slFormatQty(sp.qty)+(sp.unit?' '+sp.unit:'')):'';
+      text+='    – '+(qty?qty+' for ':'')+s.recipe_name+'\n';
+    }
   }
   return text.trim();
 }
 
 async function shareShoppingList(){
-  const text = slListToText();
+  const text=slListToText();
   if(!text){ alert('Your shopping list is empty.'); return; }
-  if(navigator.share){
-    try{ await navigator.share({title:'Shopping List',text}); return; }catch(e){}
-  }
+  if(navigator.share){ try{ await navigator.share({title:'Shopping List',text}); return; }catch(e){} }
   await navigator.clipboard.writeText(text);
   showToast('List copied to clipboard');
 }
 
-function printShoppingList(){
-  const text = slListToText();
-  if(!text){ alert('Your shopping list is empty.'); return; }
-  const w = window.open('','_blank','width=600,height=800');
+  const items=window._slItems||[];
+  if(!items.length){ alert('Your shopping list is empty.'); return; }
+  const groups=slBuildConsolidatedGroups(items);
+  const w=window.open('','_blank','width=600,height=800');
   w.document.write(`<!DOCTYPE html><html><head><title>Shopping List</title><style>
     body{font-family:Georgia,serif;padding:2rem;max-width:500px;margin:0 auto}
     h1{font-size:22px;margin-bottom:1.5rem}
-    h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:#666;margin:1.2rem 0 .4rem;border-bottom:1px solid #ddd;padding-bottom:4px}
-    li{font-size:15px;margin:.25rem 0;list-style:none;display:flex;align-items:center;gap:.5rem}
-    li::before{content:'□';font-size:16px;color:#333}
-    li.checked::before{content:'☑';color:#888}
-    li.checked{text-decoration:line-through;color:#888}
-    @media print{body{padding:1rem}}
-  </style></head><body>`);
-  w.document.write('<h1>Shopping List</h1>');
-  const CATEGORY_ORDER = ['Produce','Meat & Seafood','Dairy & Eggs','Bakery','Beverages','Frozen','Pantry','Other'];
-  const items = window._slItems||[];
-  const groups = {};
-  for(const it of items){ const k=it.category||'Other'; if(!groups[k]) groups[k]=[]; groups[k].push(it); }
-  const sorted = [...CATEGORY_ORDER.filter(k=>groups[k]), ...Object.keys(groups).filter(k=>!CATEGORY_ORDER.includes(k))];
-  for(const cat of sorted){
-    w.document.write('<h2>'+cat+'</h2><ul>');
-    for(const it of groups[cat]) w.document.write('<li'+(it.checked?' class="checked"':'')+'>'+it.ingredient+'</li>');
-    w.document.write('</ul>');
+    h2{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:#888;margin:1.4rem 0 .5rem;border-bottom:1px solid #e0e0e0;padding-bottom:4px}
+    .item{display:flex;gap:.6rem;align-items:baseline;margin:.35rem 0;font-size:15px}
+    .item::before{content:'□';font-size:14px;flex-shrink:0}
+    .item.checked::before{content:'☑';color:#aaa}
+    .item.checked span{text-decoration:line-through;color:#aaa}
+    .sub{margin:.15rem 0 .15rem 2rem;font-size:12px;color:#888;display:flex;gap:.4rem}
+    .sub::before{content:'–'}
+    @media print{body{padding:.75rem}}
+  </style></head><body><h1>Shopping List</h1>`);
+  let lastCat='';
+  for(const g of groups){
+    if(g.cat!==lastCat){ w.document.write('<h2>'+g.cat+'</h2>'); lastCat=g.cat; }
+    const checked=g.sources.every(s=>s.checked);
+    w.document.write('<div class="item'+(checked?' checked':'')+'"><span>'+g.displayText+'</span></div>');
+    if(g.multi) for(const s of g.sources){
+      const sp=slParseIngredient(s.ingredient);
+      const qty=sp.qty!==null?(slFormatQty(sp.qty)+(sp.unit?' '+sp.unit:'')):'';
+      w.document.write('<div class="sub">'+(qty?qty+' for ':'')+s.recipe_name+'</div>');
+    }
   }
-  w.document.write('</body></html>');
-  w.document.close();
-  w.print();
+  w.document.write('</body></html>'); w.document.close(); w.print();
 }
 
 function showToast(msg){
@@ -3651,6 +4951,20 @@ function showToast(msg){
     document.body.appendChild(t); }
   t.textContent=msg; t.style.opacity='1';
   clearTimeout(t._to); t._to=setTimeout(()=>t.style.opacity='0',2500);
+}
+
+async function addSlManualItem(){
+  const input=document.getElementById('slAddInput');
+  const text=input.value.trim(); if(!text) return;
+  if(!currentUser){ alert('Sign in to use the shopping list.'); return; }
+  input.value='';
+  const maxOrder=Math.max(0,...(window._slItems||[]).map(i=>i.sort_order||0));
+  const row={user_id:currentUser.id,recipe_id:null,recipe_name:null,ingredient:text,category:categorizeIngredient(text),checked:false,sort_order:maxOrder+1};
+  try{
+    const [saved]=await supaFetch('/rest/v1/shopping_list_items','POST',[row],{});
+    window._slItems=(window._slItems||[]).concat(saved||{...row,id:crypto.randomUUID()});
+    renderShoppingList(window._slItems);
+  }catch(e){ input.value=text; showToast('Failed to add item.'); }
 }
 
 // ── NOTIFICATIONS ─────────────────────────────────────────────────────────────
@@ -3716,6 +5030,262 @@ function closeNotifOutside(e){
     toggleNotifDropdown(false);
     document.removeEventListener('click',closeNotifOutside);
   }
+}
+
+// ── ONBOARDING ───────────────────────────────────────────────────────────────
+
+const OB_STEPS = [
+  {
+    icon: '🦆',
+    title: 'Welcome to Recipe Duck!',
+    body: 'Recipe Duck exists for one reason: to actually help you cook.',
+    bullets: [
+      '🚫 No ads. No pop-ups. No "disable your ad blocker" banners.',
+      '🚫 No life stories or 4,000-word blog posts to scroll through.',
+      '✅ Just recipes, AI to help you make them, and friends to cook with.',
+    ],
+    bodyAfter: 'Let\'s Cook 🤘',
+  },
+  {
+    icon: '🤖',
+    title: 'Your AI sous chef',
+    body: `Recipe Duck's AI knows your kitchen as well as you do. Try asking:`,
+    bullets: [
+      '"Here\'s what\'s in my fridge — what can I make right now?"',
+      '"I don\'t like cilantro in this recipe, can you swap it out?"',
+      '"Make this dish spicier and cut the prep time in half."',
+      '"Turn these leftovers into something new."',
+    ],
+    bodyAfter: 'Just tap the ✨ button on any recipe — or start from scratch on the New tab.',
+  },
+  {
+    icon: '🃏',
+    title: 'Swipe with friends',
+    body: 'Ever used a dating app? Now you can swipe left and right with your friends to decide what to cook — start a session, share the link, and see what you both match on.',
+  },
+  {
+    icon: '🥗',
+    title: 'Cook any recipe, your way',
+    body: 'Have dietary restrictions? No problem. Every recipe can be adapted to fit your needs — just tap Adapt and the AI will rewrite it with smart substitutions. You can save your restrictions once and never think about it again, or adjust one-off for any recipe.',
+    interactive: 'diet',
+  },
+  {
+    icon: '🛒',
+    title: 'Never forget an ingredient',
+    body: 'Found a recipe you\'re ready to make? Tap "Add to Shopping List" and every ingredient is saved in one place. Share the list with whoever\'s heading to the store so you\'ve got everything you need.',
+  },
+  {
+    icon: '📱',
+    title: 'Add to your home screen',
+    body: 'Get the full app experience — opens instantly, works like a native app, no app store needed.',
+    interactive: 'install',
+  },
+];
+
+let _obCurrentStep = 0;
+let _obDietSelections = [];
+
+function showOnboarding(){
+  // Restore step if the app was backgrounded and reloaded mid-onboarding
+  const saved = sessionStorage.getItem('rd_ob_step');
+  _obCurrentStep = saved ? parseInt(saved, 10) : 0;
+  _obDietSelections = [...(currentProfile?.dietary_restrictions || [])];
+  document.getElementById('onboardingOverlay').style.display = 'flex';
+  renderObStep();
+  if(!saved) track('onboarding_started', {});
+}
+
+function renderObStep(){
+  // Persist current step so returning to the app after switching resumes here
+  sessionStorage.setItem('rd_ob_step', _obCurrentStep);
+
+  const step = OB_STEPS[_obCurrentStep];
+  const total = OB_STEPS.length;
+  const isLast = _obCurrentStep === total - 1;
+
+  // Dots
+  document.getElementById('obDots').innerHTML = OB_STEPS.map((_,i) =>
+    `<div style="width:${i===_obCurrentStep?20:7}px;height:7px;border-radius:4px;background:${i===_obCurrentStep?'var(--accent)':'var(--bg3)'};transition:all .25s"></div>`
+  ).join('');
+
+  // Back button
+  document.getElementById('obBackBtn').style.display = _obCurrentStep > 0 ? '' : 'none';
+
+  // Next button label
+  const nextBtn = document.getElementById('obNextBtn');
+  nextBtn.textContent = isLast ? '✓ Done' : 'Next →';
+
+  // Content
+  const content = document.getElementById('obContent');
+
+  if(step.interactive === 'diet'){
+    const sel = _obDietSelections;
+    content.innerHTML = `
+      <div style="font-size:52px;margin-bottom:14px">${step.icon}</div>
+      <div style="font-family:var(--font-heading);font-size:24px;font-weight:600;margin-bottom:10px">${step.title}</div>
+      <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:20px;max-width:320px">${step.body}</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:8px">
+        ${DIET_TAGS.map(t => `<button class="diet-chip${sel.includes(t)?' active':''}" onclick="obToggleDietChip(this,'${t}')">${esc(t)}</button>`).join('')}
+      </div>
+      <p style="font-size:12px;color:var(--text3);margin-top:8px">You can always change these later in My Diet Profile.</p>`;
+  } else if(step.interactive === 'install'){
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const canPrompt = !!_deferredInstallPrompt;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+    let installHTML = '';
+    if(isStandalone){
+      installHTML = `<div style="background:var(--accent-light);border-radius:var(--radius);padding:14px 16px;font-size:13px;color:var(--accent-dark);margin-top:16px">✅ Already installed — you're all set!</div>`;
+      nextBtn.textContent = '✓ Done';
+    } else if(canPrompt){
+      installHTML = `<button class="btn primary" onclick="obTriggerInstall()" style="width:100%;justify-content:center;padding:14px;font-size:15px;border-radius:50px;margin-top:16px">📱 Add to Home Screen</button>`;
+    } else if(isIOS){
+      installHTML = `
+        <div style="background:var(--bg2);border-radius:var(--radius);padding:16px;text-align:left;margin-top:16px;font-size:13px;line-height:1.8;color:var(--text2)">
+          <div style="margin-bottom:8px">In <strong>Safari</strong>:</div>
+          <div>1. Tap the <strong>Share</strong> button <span style="font-size:16px;vertical-align:middle">⎦↑</span> at the bottom</div>
+          <div>2. Scroll down and tap <strong>"Add to Home Screen"</strong></div>
+          <div>3. Tap <strong>Add</strong></div>
+        </div>`;
+    } else {
+      installHTML = `
+        <div style="background:var(--bg2);border-radius:var(--radius);padding:16px;text-align:left;margin-top:16px;font-size:13px;line-height:1.8;color:var(--text2)">
+          In <strong>Chrome</strong>: tap the menu (⋮) → <strong>"Add to Home Screen"</strong>
+        </div>`;
+    }
+    content.innerHTML = `
+      <div style="font-size:52px;margin-bottom:14px">${step.icon}</div>
+      <div style="font-family:var(--font-heading);font-size:24px;font-weight:600;margin-bottom:10px">${step.title}</div>
+      <p style="font-size:13px;color:var(--text2);line-height:1.6">${step.body}</p>
+      ${installHTML}`;
+  } else if(step.bullets){
+    content.innerHTML = `
+      <div style="font-size:52px;margin-bottom:14px;line-height:1">${step.icon}</div>
+      <div style="font-family:var(--font-heading);font-size:24px;font-weight:600;margin-bottom:10px">${step.title}</div>
+      <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px">${step.body}</p>
+      <div style="text-align:left;width:100%;display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+        ${step.bullets.map(b=>`<div style="background:var(--bg2);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;color:var(--text);font-style:italic;line-height:1.5">${esc(b)}</div>`).join('')}
+      </div>
+      <p style="font-size:12px;color:var(--text3);line-height:1.6">${step.bodyAfter||''}</p>`;
+  } else {
+    content.innerHTML = `
+      <div style="font-size:64px;margin-bottom:18px;line-height:1">${step.icon}</div>
+      <div style="font-family:var(--font-heading);font-size:24px;font-weight:600;margin-bottom:12px">${step.title}</div>
+      <p style="font-size:14px;color:var(--text2);line-height:1.7;max-width:340px">${step.body}</p>`;
+  }
+}
+
+function obToggleDietChip(btn, tag){
+  btn.classList.toggle('active');
+  if(btn.classList.contains('active')){
+    if(!_obDietSelections.includes(tag)) _obDietSelections.push(tag);
+  } else {
+    _obDietSelections = _obDietSelections.filter(t=>t!==tag);
+  }
+}
+
+async function obTriggerInstall(){
+  if(!_deferredInstallPrompt) return;
+  _deferredInstallPrompt.prompt();
+  const {outcome} = await _deferredInstallPrompt.userChoice;
+  _deferredInstallPrompt = null;
+  track('install_prompted', {outcome, source:'onboarding'});
+}
+
+async function obStep(dir){
+  // Save diet selections when leaving that step
+  if(OB_STEPS[_obCurrentStep].interactive === 'diet' && _obDietSelections.length){
+    supaFetch('/rest/v1/profiles?id=eq.'+currentUser.id,'PATCH',
+      {dietary_restrictions:_obDietSelections},{'Prefer':'return=minimal'}).catch(()=>{});
+    if(!currentProfile) currentProfile = {};
+    currentProfile.dietary_restrictions = _obDietSelections;
+    updateDietTab();
+  }
+
+  const next = _obCurrentStep + dir;
+  if(next >= OB_STEPS.length){
+    await finishOnboarding();
+    return;
+  }
+  _obCurrentStep = next;
+  renderObStep();
+}
+
+async function skipOnboarding(){
+  track('onboarding_skipped', {step: _obCurrentStep});
+  await finishOnboarding();
+}
+
+async function finishOnboarding(){
+  document.getElementById('onboardingOverlay').style.display = 'none';
+  sessionStorage.removeItem('rd_ob_step');
+  supaFetch('/rest/v1/profiles?id=eq.'+currentUser.id,'PATCH',
+    {onboarding_complete:true},{'Prefer':'return=minimal'}).catch(()=>{});
+  if(currentProfile) currentProfile.onboarding_complete = true;
+  track('onboarding_completed', {steps_seen: _obCurrentStep + 1});
+}
+
+// ── ANALYTICS ────────────────────────────────────────────────────────────────
+// Fire-and-forget event tracking. Never blocks the UI.
+function track(eventName, metadata={}){
+  if(!currentUser) return;
+  supaFetch('/rest/v1/events','POST',
+    {user_id:currentUser.id, event_name:eventName, metadata},
+    {'Prefer':'return=minimal'}
+  ).catch(()=>{});
+}
+
+// ── PULL TO REFRESH (mobile) ─────────────────────────────────────────────────
+// Dragging down from the top of a page does a light refresh (re-fetch data,
+// no full reload). Closing and reopening the app still does a hard load.
+(function setupPullToRefresh(){
+  const THRESHOLD=90; // require a more deliberate pull
+  let startY=0, pulling=false, dist=0, refreshing=false;
+
+  function activeScroller(){
+    return document.querySelector('.page.active')||[...document.querySelectorAll('.page')].find(p=>getComputedStyle(p).display!=='none');
+  }
+
+  document.addEventListener('touchstart',e=>{
+    if(refreshing) return;
+    if(e.target.closest('.overlay,.modal,.login-overlay')) return;
+    const sc=activeScroller();
+    if(!sc || sc.scrollTop>0) return;
+    startY=e.touches[0].clientY;
+    pulling=true; dist=0;
+  },{passive:true});
+
+  document.addEventListener('touchmove',e=>{
+    if(!pulling||refreshing) return;
+    const d=e.touches[0].clientY-startY;
+    // Abort if the finger moves upward at any point — must be a clean downward pull
+    if(d<0){ pulling=false; dist=0; return; }
+    dist=d;
+  },{passive:true});
+
+  // Cancel on touchcancel so stale pull state never lingers
+  document.addEventListener('touchcancel',()=>{ pulling=false; dist=0; },{passive:true});
+
+  document.addEventListener('touchend',async()=>{
+    if(!pulling||refreshing) return;
+    pulling=false;
+    if(dist*.5>=THRESHOLD){
+      refreshing=true;
+      try{ await lightRefresh(); showToast('Refreshed'); }catch{}
+      refreshing=false;
+    }
+    dist=0;
+  },{passive:true});
+})();
+
+async function lightRefresh(){
+  if(!currentUser) return;
+  _homeShuffleSeeds=null;
+  await loadRecipes();
+  // Never re-render the recipe detail on a pull-refresh — it wipes the scaler
+  // and AI chat. The recipe list re-fetches above; the detail stays as-is.
+  try{ if(typeof loadSwipeHistory==='function') loadSwipeHistory(); }catch{}
+  try{ if(typeof loadNotifications==='function') loadNotifications(); }catch{}
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────

@@ -33,7 +33,7 @@ While there, also update the **Confirm signup** template to match.
 **How it should work:**
 - Button in the recipe detail action row (alongside Cook, Edit, etc.)
 - On tap: opens a small modal/sheet with two options:
-  1. **Share link** — same flow as "Invite a Friend" (`navigator.share` on mobile, clipboard copy fallback on desktop). Link format: `https://project-4gzhc.vercel.app/?recipe=RECIPE_ID`
+  1. **Share link** — same flow as "Invite a Friend" (`navigator.share` on mobile, clipboard copy fallback on desktop). Link format: `https://recipeduck.ai/?recipe=RECIPE_ID`
   2. **QR code** — generate a QR code image for that same URL, displayed inline in the modal so the user can screenshot it or show their phone screen
 - QR code generation: use the free `api.qrserver.com` API (`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=URL`) — no install needed, just an `<img>` tag
 - The app needs to handle the `?recipe=RECIPE_ID` deep link on load: if present and user is signed in, call `loadDetail(recipeId)` automatically

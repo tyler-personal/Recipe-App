@@ -1035,10 +1035,15 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--text);height:10
     <button class="btn" id="dietBackfillBtn" onclick="backfillDietaryTags()">
       🥗 Tag All Recipes with Dietary Info
     </button>
+    <hr style="margin:1.25rem 0;border:none;border-top:1px solid var(--border)"/>
+    <div id="analyticsSection" style="display:none">
+      <label style="margin-bottom:10px;display:block">📊 Analytics</label>
+      <div id="analyticsContent">
+        <div style="font-size:12px;color:var(--text3)">Loading...</div>
+      </div>
+    </div>
   </div>
 </div>
-
-<!-- PASSWORD RESET MODAL -->
 <div id="passwordResetModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:800;align-items:center;justify-content:center;padding:1rem">
   <div class="login-card" style="width:100%;max-width:400px">
     <div style="font-family:var(--font-heading);font-size:22px;font-weight:600;margin-bottom:6px">Set a new password</div>
@@ -2893,9 +2898,104 @@ function showSettings(){
     } else warn.style.display='none';
   }).catch(()=>{});
   document.getElementById('settingsModal').classList.add('open');
+  if(currentProfile?.is_admin) loadAnalytics();
 }
 
 function closeSettings(){ document.getElementById('settingsModal').classList.remove('open'); }
+
+async function loadAnalytics(){
+  const section = document.getElementById('analyticsSection');
+  const content = document.getElementById('analyticsContent');
+  section.style.display = 'block';
+  content.innerHTML = '<div style="font-size:12px;color:var(--text3)">Loading...</div>';
+
+  try {
+    const [events, users, recipes] = await Promise.all([
+      supaFetch('/rest/v1/events?select=event_name,created_at,user_id'),
+      supaFetch('/rest/v1/profiles?select=id,created_at,onboarding_complete'),
+      supaFetch('/rest/v1/recipes?select=id,created_at,owner_id'),
+    ]);
+
+    const now = new Date();
+    const day1 = new Date(now - 864e5);
+    const day7 = new Date(now - 7*864e5);
+    const day30 = new Date(now - 30*864e5);
+
+    const since = (arr, d) => arr.filter(x => new Date(x.created_at) > d);
+    const countEvent = name => events.filter(e => e.event_name === name).length;
+    const countEventSince = (name, d) => events.filter(e => e.event_name === name && new Date(e.created_at) > d).length;
+
+    const totalUsers = users.length;
+    const newUsersWeek = since(users, day7).length;
+    const onboardingDone = users.filter(u => u.onboarding_complete).length;
+    const onboardingRate = totalUsers ? Math.round(onboardingDone/totalUsers*100) : 0;
+
+    const dauSet = new Set(events.filter(e=>new Date(e.created_at)>day1).map(e=>e.user_id));
+    const wauSet = new Set(events.filter(e=>new Date(e.created_at)>day7).map(e=>e.user_id));
+
+    const totalRecipes = recipes.length;
+    const newRecipesWeek = since(recipes, day7).length;
+
+    // Top viewed recipes
+    const viewCounts = {};
+    events.filter(e=>e.event_name==='recipe_viewed').forEach(e=>{
+      const id = e.metadata?.recipe_id || e.user_id;
+      viewCounts[id] = (viewCounts[id]||0)+1;
+    });
+
+    const tile = (label, value, sub='') => `
+      <div style="background:var(--bg2);border-radius:10px;padding:12px 14px;flex:1;min-width:100px">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px;font-family:var(--font-ui)">${label}</div>
+        <div style="font-size:22px;font-weight:700;color:var(--accent-dark);font-family:var(--font-ui)">${value}</div>
+        ${sub?`<div style="font-size:11px;color:var(--text3);margin-top:2px">${sub}</div>`:''}
+      </div>`;
+
+    const row = (...tiles) => `<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">${tiles.join('')}</div>`;
+
+    content.innerHTML = `
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:8px">Users</div>
+      ${row(
+        tile('Total', totalUsers),
+        tile('New this week', newUsersWeek),
+        tile('DAU', dauSet.size),
+        tile('WAU', wauSet.size)
+      )}
+      ${row(
+        tile('Onboarding complete', onboardingDone, `${onboardingRate}% of users`)
+      )}
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin:14px 0 8px">Recipes</div>
+      ${row(
+        tile('Total recipes', totalRecipes),
+        tile('Added this week', newRecipesWeek),
+        tile('Views (all time)', countEvent('recipe_viewed'))
+      )}
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin:14px 0 8px">Feature Usage (all time)</div>
+      ${row(
+        tile('AI generations', countEvent('ai_feature_used')),
+        tile('Swipes', countEvent('swipe_action')),
+        tile('Imports', countEvent('recipe_imported'))
+      )}
+      ${row(
+        tile('Scaler used', countEvent('scaler_used')),
+        tile('Shopping lists', countEvent('shopping_list_add')),
+        tile('PDFs shared', countEvent('pdf_shared'))
+      )}
+      ${row(
+        tile('Recipe shares', countEvent('recipe_shared')),
+        tile('Searches', countEvent('search_performed')),
+        tile('Cooks logged', countEvent('cook_logged'))
+      )}
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin:14px 0 8px">Last 7 days</div>
+      ${row(
+        tile('AI generations', countEventSince('ai_feature_used', day7)),
+        tile('Recipe views', countEventSince('recipe_viewed', day7)),
+        tile('New recipes', countEventSince('recipe_created', day7))
+      )}
+    `;
+  } catch(e) {
+    content.innerHTML = `<div style="font-size:12px;color:var(--error)">Failed to load analytics: ${e.message}</div>`;
+  }
+}
 
 // { id, name, urls:[], idx:0 }
 let _imgData = [];

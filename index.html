@@ -2915,7 +2915,7 @@ async function loadAnalytics(){
   try {
     const [events, users, recipes] = await Promise.all([
       supaFetch('/rest/v1/events?select=event_name,created_at,user_id,metadata&order=created_at.desc&limit=5000'),
-      supaFetch('/rest/v1/profiles?select=id,full_name,created_at,onboarding_complete'),
+      supaFetch('/rest/v1/profiles?select=id,display_name,created_at,onboarding_complete'),
       supaFetch('/rest/v1/recipes?select=id,name,created_at,owner_id'),
     ]);
     _analyticsData = { events, users, recipes };
@@ -2979,7 +2979,7 @@ function renderAnalytics(){
   let detailHtml = '';
   if(_analyticsDetail) {
     const recipeMap = Object.fromEntries(recipes.map(r=>[r.id,r.name]));
-    const userMap = Object.fromEntries(users.map(u=>[u.id, u.full_name||'(no name)']));
+    const userMap = Object.fromEntries(users.map(u=>[u.id, u.display_name||'(no name)']));
     const dtStyle = 'border-collapse:collapse;width:100%;font-size:12px;font-family:var(--font-ui)';
     const th = s => `<th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text3);font-weight:600;font-size:11px;text-transform:uppercase">${s}</th>`;
     const td = s => `<td style="padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text1)">${s}</td>`;
@@ -2991,7 +2991,7 @@ function renderAnalytics(){
         const lastActive = lastEv ? new Date(lastEv.created_at).toLocaleDateString() : '—';
         const joined = new Date(u.created_at).toLocaleDateString();
         const ob = u.onboarding_complete ? '✓' : '—';
-        return `<tr>${td(u.full_name||'(no name)')}${td(joined)}${td(lastActive)}${td(uc)}${td(ob)}</tr>`;
+        return `<tr>${td(u.display_name||'(no name)')}${td(joined)}${td(lastActive)}${td(uc)}${td(ob)}</tr>`;
       }).join('');
       detailHtml = `<table style="${dtStyle}"><thead><tr>${th('Name')}${th('Joined')}${th('Last active')}${th('Recipes')}${th('Onboarded')}</tr></thead><tbody>${rows}</tbody></table>`;
     } else if(_analyticsDetail==='views') {

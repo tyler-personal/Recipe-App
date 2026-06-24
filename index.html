@@ -2903,98 +2903,170 @@ function showSettings(){
 
 function closeSettings(){ document.getElementById('settingsModal').classList.remove('open'); }
 
+let _analyticsData = null;
+let _analyticsPeriod = '7d';
+let _analyticsDetail = null;
+
 async function loadAnalytics(){
   const section = document.getElementById('analyticsSection');
   const content = document.getElementById('analyticsContent');
   section.style.display = 'block';
   content.innerHTML = '<div style="font-size:12px;color:var(--text3)">Loading...</div>';
-
   try {
     const [events, users, recipes] = await Promise.all([
-      supaFetch('/rest/v1/events?select=event_name,created_at,user_id'),
-      supaFetch('/rest/v1/profiles?select=id,created_at,onboarding_complete'),
-      supaFetch('/rest/v1/recipes?select=id,created_at,owner_id'),
+      supaFetch('/rest/v1/events?select=event_name,created_at,user_id,metadata&order=created_at.desc&limit=5000'),
+      supaFetch('/rest/v1/profiles?select=id,full_name,created_at,onboarding_complete'),
+      supaFetch('/rest/v1/recipes?select=id,name,created_at,owner_id'),
     ]);
-
-    const now = new Date();
-    const day1 = new Date(now - 864e5);
-    const day7 = new Date(now - 7*864e5);
-    const day30 = new Date(now - 30*864e5);
-
-    const since = (arr, d) => arr.filter(x => new Date(x.created_at) > d);
-    const countEvent = name => events.filter(e => e.event_name === name).length;
-    const countEventSince = (name, d) => events.filter(e => e.event_name === name && new Date(e.created_at) > d).length;
-
-    const totalUsers = users.length;
-    const newUsersWeek = since(users, day7).length;
-    const onboardingDone = users.filter(u => u.onboarding_complete).length;
-    const onboardingRate = totalUsers ? Math.round(onboardingDone/totalUsers*100) : 0;
-
-    const dauSet = new Set(events.filter(e=>new Date(e.created_at)>day1).map(e=>e.user_id));
-    const wauSet = new Set(events.filter(e=>new Date(e.created_at)>day7).map(e=>e.user_id));
-
-    const totalRecipes = recipes.length;
-    const newRecipesWeek = since(recipes, day7).length;
-
-    // Top viewed recipes
-    const viewCounts = {};
-    events.filter(e=>e.event_name==='recipe_viewed').forEach(e=>{
-      const id = e.metadata?.recipe_id || e.user_id;
-      viewCounts[id] = (viewCounts[id]||0)+1;
-    });
-
-    const tile = (label, value, sub='') => `
-      <div style="background:var(--bg2);border-radius:10px;padding:12px 14px;flex:1;min-width:100px">
-        <div style="font-size:11px;color:var(--text3);margin-bottom:4px;font-family:var(--font-ui)">${label}</div>
-        <div style="font-size:22px;font-weight:700;color:var(--accent-dark);font-family:var(--font-ui)">${value}</div>
-        ${sub?`<div style="font-size:11px;color:var(--text3);margin-top:2px">${sub}</div>`:''}
-      </div>`;
-
-    const row = (...tiles) => `<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">${tiles.join('')}</div>`;
-
-    content.innerHTML = `
-      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:8px">Users</div>
-      ${row(
-        tile('Total', totalUsers),
-        tile('New this week', newUsersWeek),
-        tile('DAU', dauSet.size),
-        tile('WAU', wauSet.size)
-      )}
-      ${row(
-        tile('Onboarding complete', onboardingDone, `${onboardingRate}% of users`)
-      )}
-      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin:14px 0 8px">Recipes</div>
-      ${row(
-        tile('Total recipes', totalRecipes),
-        tile('Added this week', newRecipesWeek),
-        tile('Views (all time)', countEvent('recipe_viewed'))
-      )}
-      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin:14px 0 8px">Feature Usage (all time)</div>
-      ${row(
-        tile('AI generations', countEvent('ai_feature_used')),
-        tile('Swipes', countEvent('swipe_action')),
-        tile('Imports', countEvent('recipe_imported'))
-      )}
-      ${row(
-        tile('Scaler used', countEvent('scaler_used')),
-        tile('Shopping lists', countEvent('shopping_list_add')),
-        tile('PDFs shared', countEvent('pdf_shared'))
-      )}
-      ${row(
-        tile('Recipe shares', countEvent('recipe_shared')),
-        tile('Searches', countEvent('search_performed')),
-        tile('Cooks logged', countEvent('cook_logged'))
-      )}
-      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin:14px 0 8px">Last 7 days</div>
-      ${row(
-        tile('AI generations', countEventSince('ai_feature_used', day7)),
-        tile('Recipe views', countEventSince('recipe_viewed', day7)),
-        tile('New recipes', countEventSince('recipe_created', day7))
-      )}
-    `;
+    _analyticsData = { events, users, recipes };
+    _analyticsDetail = null;
+    renderAnalytics();
   } catch(e) {
     content.innerHTML = `<div style="font-size:12px;color:var(--error)">Failed to load analytics: ${e.message}</div>`;
   }
+}
+
+function renderAnalytics(){
+  const content = document.getElementById('analyticsContent');
+  if (!_analyticsData) return;
+  const { events, users, recipes } = _analyticsData;
+
+  const now = new Date();
+  const cutoffs = { '1d': new Date(now-864e5), '7d': new Date(now-7*864e5), '30d': new Date(now-30*864e5), 'all': new Date(0) };
+  const cutoff = cutoffs[_analyticsPeriod];
+
+  const fe = events.filter(e => new Date(e.created_at) > cutoff);
+  const fu = users.filter(u => new Date(u.created_at) > cutoff);
+  const fr = recipes.filter(r => new Date(r.created_at) > cutoff);
+
+  const cnt = name => fe.filter(e=>e.event_name===name).length;
+  const uniq = name => new Set(fe.filter(e=>e.event_name===name).map(e=>e.user_id)).size;
+
+  const prevCutoff = { '1d': new Date(now-2*864e5), '7d': new Date(now-14*864e5), '30d': new Date(now-60*864e5), 'all': new Date(0) }[_analyticsPeriod];
+  const prevFe = events.filter(e => new Date(e.created_at) > prevCutoff && new Date(e.created_at) <= cutoff);
+
+  const dauSet = new Set(events.filter(e=>new Date(e.created_at)>new Date(now-864e5)).map(e=>e.user_id));
+  const wauSet = new Set(events.filter(e=>new Date(e.created_at)>new Date(now-7*864e5)).map(e=>e.user_id));
+  const onboardingDone = users.filter(u=>u.onboarding_complete).length;
+  const obRate = users.length ? Math.round(onboardingDone/users.length*100) : 0;
+
+  const delta = (cur, prev) => {
+    if(_analyticsPeriod==='all' || prev===0) return '';
+    const d = cur - prev; const sign = d>0?'+':'';
+    return `<span style="font-size:10px;color:${d>=0?'#2a7a4f':'#c0392b'};margin-left:4px">${sign}${d}</span>`;
+  };
+
+  const periods = [['1d','Today'],['7d','7 days'],['30d','30 days'],['all','All time']];
+  const tabs = periods.map(([k,l])=>`<button onclick="_analyticsPeriod='${k}';_analyticsDetail=null;renderAnalytics()" style="padding:4px 10px;border-radius:6px;border:1px solid ${k===_analyticsPeriod?'var(--accent-dark)':'var(--border)'};background:${k===_analyticsPeriod?'var(--accent-dark)':'transparent'};color:${k===_analyticsPeriod?'#fff':'var(--text2)'};font-size:11px;cursor:pointer;font-family:var(--font-ui)">${l}</button>`).join('');
+
+  const tile = (label, value, sub, key, prevVal) => {
+    const isActive = _analyticsDetail === key;
+    return `<div onclick="_analyticsDetail=_analyticsDetail==='${key}'?null:'${key}';renderAnalytics()" style="background:${isActive?'var(--accent-dark)':'var(--bg2)'};border-radius:10px;padding:12px 14px;flex:1;min-width:90px;cursor:pointer;transition:all .15s;border:1.5px solid ${isActive?'var(--accent-dark)':'transparent'}">
+      <div style="font-size:11px;color:${isActive?'rgba(255,255,255,.75)':'var(--text3)'};margin-bottom:4px;font-family:var(--font-ui)">${label}</div>
+      <div style="font-size:22px;font-weight:700;color:${isActive?'#fff':'var(--accent-dark)'};font-family:var(--font-ui)">${value}${prevVal!==undefined?delta(value,prevVal):''}</div>
+      ${sub?`<div style="font-size:11px;color:${isActive?'rgba(255,255,255,.65)':'var(--text3)'};margin-top:2px">${sub}</div>`:''}
+    </div>`;
+  };
+  const row = (...t) => `<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">${t.join('')}</div>`;
+  const sec = label => `<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin:14px 0 8px">${label}</div>`;
+
+  // Compute per-period prev values
+  const pcnt = name => prevFe.filter(e=>e.event_name===name).length;
+  const newUsersPrev = users.filter(u=>new Date(u.created_at)>prevCutoff&&new Date(u.created_at)<=cutoff).length;
+  const newRecipesPrev = recipes.filter(r=>new Date(r.created_at)>prevCutoff&&new Date(r.created_at)<=cutoff).length;
+
+  // Detail panel
+  let detailHtml = '';
+  if(_analyticsDetail) {
+    const recipeMap = Object.fromEntries(recipes.map(r=>[r.id,r.name]));
+    const userMap = Object.fromEntries(users.map(u=>[u.id, u.full_name||'(no name)']));
+    const dtStyle = 'border-collapse:collapse;width:100%;font-size:12px;font-family:var(--font-ui)';
+    const th = s => `<th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text3);font-weight:600;font-size:11px;text-transform:uppercase">${s}</th>`;
+    const td = s => `<td style="padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text1)">${s}</td>`;
+
+    if(_analyticsDetail==='users') {
+      const rows = users.map(u=>{
+        const lastEv = events.filter(e=>e.user_id===u.id).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+        const uc = recipes.filter(r=>r.owner_id===u.id).length;
+        const lastActive = lastEv ? new Date(lastEv.created_at).toLocaleDateString() : '—';
+        const joined = new Date(u.created_at).toLocaleDateString();
+        const ob = u.onboarding_complete ? '✓' : '—';
+        return `<tr>${td(u.full_name||'(no name)')}${td(joined)}${td(lastActive)}${td(uc)}${td(ob)}</tr>`;
+      }).join('');
+      detailHtml = `<table style="${dtStyle}"><thead><tr>${th('Name')}${th('Joined')}${th('Last active')}${th('Recipes')}${th('Onboarded')}</tr></thead><tbody>${rows}</tbody></table>`;
+    } else if(_analyticsDetail==='views') {
+      const viewCounts = {};
+      fe.filter(e=>e.event_name==='recipe_viewed').forEach(e=>{
+        const id = e.metadata?.recipe_id;
+        if(id) viewCounts[id] = (viewCounts[id]||0)+1;
+      });
+      const topRecipes = Object.entries(viewCounts).sort((a,b)=>b[1]-a[1]).slice(0,15);
+      if(!topRecipes.length) { detailHtml='<div style="font-size:12px;color:var(--text3);padding:8px">No recipe view events in this period.</div>'; }
+      else {
+        const rows = topRecipes.map(([id,count])=>`<tr>${td(recipeMap[id]||id)}${td(count)}</tr>`).join('');
+        detailHtml = `<table style="${dtStyle}"><thead><tr>${th('Recipe')}${th('Views')}</tr></thead><tbody>${rows}</tbody></table>`;
+      }
+    } else {
+      // Per-user breakdown for feature events
+      const evMap = {
+        'ai':['ai_feature_used','AI Generations'], 'swipes':['swipe_action','Swipes'],
+        'imports':['recipe_imported','Imports'], 'scaler':['scaler_used','Scaler'],
+        'shopping':['shopping_list_add','Shopping List Adds'], 'pdf':['pdf_shared','PDF Shares'],
+        'shares':['recipe_shared','Shares'], 'search':['search_performed','Searches'], 'cooks':['cook_logged','Cooks Logged']
+      };
+      const ev = evMap[_analyticsDetail];
+      if(ev) {
+        const byUser = {};
+        fe.filter(e=>e.event_name===ev[0]).forEach(e=>{ byUser[e.user_id]=(byUser[e.user_id]||0)+1; });
+        const sorted = Object.entries(byUser).sort((a,b)=>b[1]-a[1]);
+        if(!sorted.length) { detailHtml=`<div style="font-size:12px;color:var(--text3);padding:8px">No ${ev[1].toLowerCase()} in this period.</div>`; }
+        else {
+          const rows = sorted.map(([uid,count])=>`<tr>${td(userMap[uid]||uid)}${td(count)}</tr>`).join('');
+          detailHtml = `<div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:8px">${ev[1]} by user</div><table style="${dtStyle}"><thead><tr>${th('User')}${th('Count')}</tr></thead><tbody>${rows}</tbody></table>`;
+        }
+      }
+    }
+  }
+
+  const detailPanel = _analyticsDetail ? `<div style="background:var(--bg2);border-radius:10px;padding:14px;margin-top:4px;margin-bottom:12px;max-height:260px;overflow-y:auto">${detailHtml}</div>` : '';
+
+  content.innerHTML = `
+    <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">${tabs}
+      <button onclick="loadAnalytics()" style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;margin-left:auto;font-family:var(--font-ui)">↻ Refresh</button>
+    </div>
+    ${sec('Users')}
+    ${row(
+      tile('Total users', users.length, `DAU ${dauSet.size} · WAU ${wauSet.size}`, 'users'),
+      tile('New users', fu.length, 'in period', 'new_users', newUsersPrev),
+      tile('Onboarded', onboardingDone, `${obRate}% of total`, 'onboarding')
+    )}
+    ${detailPanel && (_analyticsDetail==='users'||_analyticsDetail==='new_users'||_analyticsDetail==='onboarding') ? detailPanel : ''}
+    ${sec('Recipes')}
+    ${row(
+      tile('Total recipes', recipes.length, '', 'total_recipes'),
+      tile('New recipes', fr.length, 'in period', 'new_recipes', newRecipesPrev),
+      tile('Views', cnt('recipe_viewed'), 'in period', 'views', pcnt('recipe_viewed'))
+    )}
+    ${detailPanel && (_analyticsDetail==='total_recipes'||_analyticsDetail==='new_recipes'||_analyticsDetail==='views') ? detailPanel : ''}
+    ${sec('Feature Usage')}
+    ${row(
+      tile('AI generations', cnt('ai_feature_used'), `${uniq('ai_feature_used')} users`, 'ai', pcnt('ai_feature_used')),
+      tile('Swipes', cnt('swipe_action'), `${uniq('swipe_action')} users`, 'swipes', pcnt('swipe_action')),
+      tile('Imports', cnt('recipe_imported'), `${uniq('recipe_imported')} users`, 'imports', pcnt('recipe_imported'))
+    )}
+    ${row(
+      tile('Scaler used', cnt('scaler_used'), '', 'scaler', pcnt('scaler_used')),
+      tile('Shopping lists', cnt('shopping_list_add'), '', 'shopping', pcnt('shopping_list_add')),
+      tile('PDFs shared', cnt('pdf_shared'), '', 'pdf', pcnt('pdf_shared'))
+    )}
+    ${row(
+      tile('Shares', cnt('recipe_shared'), '', 'shares', pcnt('recipe_shared')),
+      tile('Searches', cnt('search_performed'), '', 'search', pcnt('search_performed')),
+      tile('Cooks logged', cnt('cook_logged'), '', 'cooks', pcnt('cook_logged'))
+    )}
+    ${detailPanel && !['users','new_users','onboarding','total_recipes','new_recipes','views'].includes(_analyticsDetail) ? detailPanel : ''}
+    <div style="font-size:10px;color:var(--text3);margin-top:10px;text-align:right">Click any tile for a breakdown · ${_analyticsPeriod==='all'?'Showing all time':('Showing last '+(_analyticsPeriod==='1d'?'24 hours':_analyticsPeriod))}</div>
+  `;
 }
 
 // { id, name, urls:[], idx:0 }

@@ -2915,12 +2915,13 @@ async function loadAnalytics(){
   section.style.display = 'block';
   content.innerHTML = '<div style="font-size:12px;color:var(--text3)">Loading...</div>';
   try {
-    const [events, users, recipes] = await Promise.all([
+    const [events, users, recipes, cooks] = await Promise.all([
       supaFetch('/rest/v1/events?select=event_name,created_at,user_id,metadata&order=created_at.desc&limit=5000'),
       supaFetch('/rest/v1/profiles?select=id,display_name,created_at,onboarding_complete'),
       supaFetch('/rest/v1/recipes?select=id,name,created_at,owner_id'),
+      supaFetch('/rest/v1/recipe_ratings?select=user_id,cooked_at,is_new_cook&is_new_cook=eq.true'),
     ]);
-    _analyticsData = { events, users, recipes };
+    _analyticsData = { events, users, recipes, cooks };
     _analyticsDetail = null;
     renderAnalytics();
   } catch(e) {
@@ -2971,6 +2972,63 @@ function renderAnalytics(){
   };
   const row = (...t) => `<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">${t.join('')}</div>`;
   const sec = label => `<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin:14px 0 8px">${label}</div>`;
+
+  // ── Funnel (always all-time cohort) ──────────────────────────────────────
+  const { cooks } = _analyticsData;
+  const totalUsersAll = users.length;
+
+  // Stage 1: signed up
+  const s1 = totalUsersAll;
+
+  // Stage 2: passed onboarding (completed OR skipped — i.e. didn't just bounce)
+  const obEventUsers = new Set(events.filter(e=>e.event_name==='onboarding_completed'||e.event_name==='onboarding_skipped').map(e=>e.user_id));
+  const s2 = users.filter(u=>u.onboarding_complete||obEventUsers.has(u.id)).length;
+
+  // Stage 3: added at least 1 recipe
+  const recipeCreators = new Set(recipes.map(r=>r.owner_id));
+  const s3 = recipeCreators.size;
+
+  // Stage 4: came back on day 3+ (has any event >= 3 days after their first event)
+  const firstEvent = {};
+  [...events].reverse().forEach(e=>{ firstEvent[e.user_id]=e.created_at; });
+  const s4 = Object.entries(firstEvent).filter(([uid, first])=>{
+    return events.some(e=>e.user_id===uid && (new Date(e.created_at)-new Date(first))>=3*864e5);
+  }).length;
+
+  // Stage 5: logged at least 1 cook
+  const cookedUsers = new Set((cooks||[]).map(c=>c.user_id));
+  const s5 = cookedUsers.size;
+
+  const pct = (n, d) => d ? Math.round(n/d*100) : 0;
+  const bar = (n, total) => {
+    const w = total ? Math.round(n/total*100) : 0;
+    return `<div style="height:6px;border-radius:3px;background:var(--border);margin-top:6px"><div style="height:6px;border-radius:3px;background:var(--accent);width:${w}%"></div></div>`;
+  };
+  const funnelRow = (step, label, n, prev, note='') => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${step}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--text1)">${label}</div>
+        ${note?`<div style="font-size:11px;color:var(--text3)">${note}</div>`:''}
+        ${bar(n, s1)}
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:18px;font-weight:700;color:var(--accent-dark);font-family:var(--font-ui)">${n}</div>
+        <div style="font-size:11px;color:${pct(n,prev)<50&&prev>0?'#c0392b':'var(--text3)'}">
+          ${prev && prev!==n ? pct(n,prev)+'% from prev' : pct(n,s1)+'% of total'}
+        </div>
+      </div>
+    </div>`;
+
+  const funnelHtml = `
+    ${sec('Conversion Funnel (all-time)')}
+    <div style="background:var(--bg2);border-radius:10px;padding:4px 14px 10px">
+      ${funnelRow(1,'Signed up',s1,s1)}
+      ${funnelRow(2,'Completed onboarding',s2,s1,'onboarding_complete or skipped')}
+      ${funnelRow(3,'Added first recipe',s3,s2,'at least 1 recipe created')}
+      ${funnelRow(4,'Came back on day 3+',s4,s3,'any activity ≥3 days after signup')}
+      ${funnelRow(5,'Logged a cook',s5,s4,'rated a recipe as a new cook')}
+    </div>`;
 
   // Compute per-period prev values
   const pcnt = name => prevFe.filter(e=>e.event_name===name).length;
@@ -3067,6 +3125,7 @@ function renderAnalytics(){
       tile('Cooks logged', cnt('cook_logged'), '', 'cooks', pcnt('cook_logged'))
     )}
     ${detailPanel && !['users','new_users','onboarding','total_recipes','new_recipes','views'].includes(_analyticsDetail) ? detailPanel : ''}
+    ${funnelHtml}
     <div style="font-size:10px;color:var(--text3);margin-top:10px;text-align:right">Click any tile for a breakdown · ${_analyticsPeriod==='all'?'Showing all time':('Showing last '+(_analyticsPeriod==='1d'?'24 hours':_analyticsPeriod))}</div>
   `;
 }
@@ -4816,6 +4875,7 @@ async function submitRating(){
       await supaFetch('/rest/v1/recipe_ratings','POST',body,{'Prefer':'return=minimal'});
       createNotification('rating',recipeId);
       if(is_new_cook !== false){
+        track('cook_logged', {recipe_id: recipeId});
         const prev = currentStreak;
         await loadStreak();
         checkStreakMilestone(prev, currentStreak);

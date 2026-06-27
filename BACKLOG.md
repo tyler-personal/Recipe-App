@@ -16,9 +16,8 @@ Admin-only section in Settings, gated by `is_admin`. Date filter tabs (Today/7d/
 
 ---
 
-## 🔲 Share Recipe — Non-Logged-In Landing UX
-
-**What:** When a non-logged-in user opens a `?recipe=ID` share link, they land on the login screen with no context. They should see a banner: "Someone shared a recipe with you — sign in to view it."
+## ✅ Share Recipe — Non-Logged-In Landing UX
+When a non-logged-in user opens a `?recipe=ID` share link, the login screen shows a banner: "Someone shared a recipe with you — sign in or create a free account to view it." After auth they're taken directly to the recipe.
 
 ---
 

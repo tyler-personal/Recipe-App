@@ -613,6 +613,7 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--text);height:10
             <button id="mobileSearchClear" onclick="document.getElementById('mobileSearchInput').value='';filterRecipes('');this.style.display='none'" style="display:none;position:absolute;right:8px;background:none;border:none;cursor:pointer;padding:4px;color:var(--text3);line-height:1;font-size:16px;align-items:center;justify-content:center">✕</button>
           </div>
         </div>
+        <div id="streakBanner" style="display:none;margin-bottom:10px"></div>
         <div class="group-tabs" id="groupTabs">
           <button class="group-tab active" onclick="setGrouping('all',this)">All</button>
           <button class="group-tab" onclick="setGrouping('mine',this)">My Recipes</button>
@@ -1261,6 +1262,7 @@ const IMAGE_SEARCH_FN = SUPA_URL + '/functions/v1/image-search';
 let allRecipes=[], currentId=null, editingId=null;
 let currentGrouping='all', drilldownGroup=null, lastURLText='', lastFileText='';
 let currentUser=null, currentProfile=null, currentSession=null;
+let currentStreak=0;
 let savedRecipeIds=new Set();
 
 // ── SUPABASE AUTH CLIENT ──────────────────────────────────────────────────────
@@ -4448,6 +4450,7 @@ async function onSignedIn(session){
   await loadRecipes();
   loadApiKey();
   updateDietTab();
+  loadStreak();
 
   // ── Referral attribution (runs once after new signup) ────────────────────
   const refId = localStorage.getItem('rd_ref_id');
@@ -4812,6 +4815,11 @@ async function submitRating(){
       if(is_new_cook!==undefined) body.is_new_cook=is_new_cook;
       await supaFetch('/rest/v1/recipe_ratings','POST',body,{'Prefer':'return=minimal'});
       createNotification('rating',recipeId);
+      if(is_new_cook !== false){
+        const prev = currentStreak;
+        await loadStreak();
+        checkStreakMilestone(prev, currentStreak);
+      }
     }
     closeRatingModal();
     loadDetail(recipeId);
@@ -4827,6 +4835,66 @@ async function deleteRating(){
     closeRatingModal();
     loadDetail(recipeId);
   }catch(e){ alert('Could not delete: '+e.message); }
+}
+
+async function loadStreak(){
+  if(!currentUser) return;
+  try {
+    const rows = await supaFetch(`/rest/v1/recipe_ratings?user_id=eq.${currentUser.id}&is_new_cook=eq.true&select=cooked_at&order=cooked_at.desc`);
+    if(!rows || !rows.length){ currentStreak=0; renderStreakBanner(); return; }
+
+    // Get ISO week number (Mon-based) + year as a unique key
+    const weekKey = d => {
+      const dt = new Date(d);
+      dt.setHours(0,0,0,0);
+      dt.setDate(dt.getDate() + 4 - (dt.getDay()||7));
+      const y = dt.getFullYear();
+      const w = Math.ceil(((dt - new Date(y,0,1))/864e5 + 1)/7);
+      return `${y}-${w}`;
+    };
+
+    const weeks = [...new Set(rows.map(r => weekKey(r.cooked_at)))];
+    // weeks is sorted desc (most recent first); count consecutive weeks
+    let streak = 1;
+    for(let i=1; i<weeks.length; i++){
+      const [y1,w1] = weeks[i-1].split('-').map(Number);
+      const [y2,w2] = weeks[i].split('-').map(Number);
+      // Check if w2 is exactly one week before w1
+      const d1 = new Date(y1, 0, 1 + (w1-1)*7);
+      const d2 = new Date(y2, 0, 1 + (w2-1)*7);
+      const diffWeeks = Math.round((d1-d2)/6048e5);
+      if(diffWeeks === 1) streak++;
+      else break;
+    }
+
+    // If most recent cook was more than 1 full week ago, streak is broken
+    const mostRecent = new Date(rows[0].cooked_at);
+    const thisWeek = weekKey(new Date());
+    const mostRecentWeek = weekKey(mostRecent);
+    const [ty,tw] = thisWeek.split('-').map(Number);
+    const [my,mw] = mostRecentWeek.split('-').map(Number);
+    const d1 = new Date(ty, 0, 1 + (tw-1)*7);
+    const d2 = new Date(my, 0, 1 + (mw-1)*7);
+    const gapWeeks = Math.round((d1-d2)/6048e5);
+    if(gapWeeks > 1){ currentStreak=0; renderStreakBanner(); return; }
+
+    currentStreak = streak;
+    renderStreakBanner();
+  } catch(e){ console.warn('streak load failed', e); }
+}
+
+function renderStreakBanner(){
+  const el = document.getElementById('streakBanner');
+  if(!el) return;
+  if(currentStreak < 1){ el.style.display='none'; return; }
+  const label = currentStreak === 1 ? '1-week streak' : `${currentStreak}-week streak`;
+  el.style.display = 'block';
+  el.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;background:#fff7ed;border:1px solid #f97316;border-radius:20px;padding:5px 14px;font-size:13px;font-weight:600;color:#c2410c;font-family:var(--font-ui)">🔥 ${label}<span style="font-size:11px;font-weight:400;color:#9a3412">Keep it up!</span></span>`;
+}
+
+function checkStreakMilestone(prevStreak, newStreak){
+  const milestones = {1:'First cook logged! 🎉', 4:'4-week streak 🔥', 8:'8-week streak — you\'re on fire! 🔥🔥', 12:'12-week streak — legendary! 🏆'};
+  if(milestones[newStreak] && newStreak > prevStreak) showToast(milestones[newStreak]);
 }
 
 async function deleteRatingEntry(entryId, recipeId){

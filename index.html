@@ -4572,8 +4572,14 @@ const LOGIN_FORM_HTML = `
 
 function showLoginModal(){
   const ref = localStorage.getItem('rd_ref_name');
+  const deepRecipe = localStorage.getItem('rd_deep_recipe');
   let banner = '';
-  if(ref){
+  if(deepRecipe){
+    banner = `<div style="background:#f0f7f4;border:1px solid var(--accent);border-radius:10px;padding:12px 14px;margin-bottom:16px;text-align:center;font-size:13px;line-height:1.5">
+      🍽️ <strong>Someone shared a recipe with you!</strong><br>
+      <span style="color:var(--text2)">Sign in or create a free account to view it.</span>
+    </div>`;
+  } else if(ref){
     banner = `<div style="background:var(--accent-light);border:1px solid var(--accent);border-radius:10px;padding:12px 14px;margin-bottom:16px;text-align:center;font-size:13px;line-height:1.5">
       🎉 <strong>${esc(ref)}</strong> invited you to Recipe Duck!<br>
       <span style="color:var(--text2)">Create a free account to get started.</span>

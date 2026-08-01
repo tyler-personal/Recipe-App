@@ -4761,7 +4761,7 @@ async function signInWithGoogle(){
   localStorage.setItem('rd_remember',(rememberEl?!rememberEl.checked:false)?'0':'1');
   const{error}=await supabaseClient.auth.signInWithOAuth({
     provider:'google',
-    options:{redirectTo:window.location.origin}
+    options:{redirectTo:window.location.origin, queryParams:{prompt:'select_account'}}
   });
   if(error){
     const errEl=document.getElementById('loginError');

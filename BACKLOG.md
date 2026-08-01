@@ -21,28 +21,13 @@ When a non-logged-in user opens a `?recipe=ID` share link, the login screen show
 
 ---
 
-## 🔲 Retention: Cook Streak
-
-**What:** Light gamification to pull users back. Show a streak counter for consecutive weeks where they logged at least one cook.
-
-- Calculated from the `cook_logs` table (already exists)
-- Display on home page or profile — "🔥 3-week streak"
-- Reset if a full week passes with no cook logged
-- Milestone toasts: "First cook!", "4-week streak 🔥"
+## ✅ Retention: Cook Streak
+Weekly streak counter (consecutive Mon-based weeks with ≥1 cook logged via `recipe_ratings`). Streak pill on home page: "🔥 3-week streak". Resets on a missed week. Milestone toasts at 1/4/8/12 weeks.
 
 ---
 
-## 🔲 Retention: Funnel Drop-off Tracking
-
-**What:** Instrument the key moments where users abandon to understand where value isn't landing.
-
-Key funnel stages:
-1. Signed up → completed onboarding (or skipped at which step)
-2. Completed onboarding → added first recipe (within first session)
-3. Added first recipe → came back on day 3+
-4. Returned → cooked a recipe (logged a cook)
-
-Some `track()` calls already exist. Add a funnel conversion view to the analytics dashboard showing % at each step.
+## ✅ Retention: Funnel Drop-off Tracking
+`track('cook_logged')` added. Conversion Funnel section in analytics dashboard (all-time): Signed up → Completed onboarding → Added first recipe → Came back day 3+ → Logged a cook, with % conversion and bar chart at each step.
 
 ---
 

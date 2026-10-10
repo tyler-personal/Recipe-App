@@ -4504,6 +4504,10 @@ async function initAuth(){
     if(event==='PASSWORD_RECOVERY'){
       showPasswordResetForm();
     } else if(event==='SIGNED_IN'&&session){
+      // supabase-js re-emits SIGNED_IN whenever the app returns to the foreground
+      // (e.g. after the phone locks). Don't rebuild the UI for the same user —
+      // it would drop them out of the recipe they were cooking from.
+      if(currentUser?.id===session.user.id){ currentSession=session; return; }
       await onSignedIn(session);
     } else if(event==='SIGNED_OUT'){
       currentUser=null;currentProfile=null;currentSession=null;
@@ -4589,10 +4593,34 @@ async function onSignedIn(session){
     return;
   }
 
-  // Restore last-viewed recipe after refresh
+  // Restore last-viewed recipe (and reading position) after refresh
   const lastId = sessionStorage.getItem('rd_last_recipe');
-  if(lastId) loadDetail(lastId);
+  if(lastId){
+    await loadDetail(lastId);
+    try{
+      const s = JSON.parse(sessionStorage.getItem('rd_last_scroll')||'null');
+      if(s && s.id===lastId) document.getElementById('page-detail').scrollTop = s.y;
+    }catch{}
+  }
 }
+
+// Remember how far down a recipe you've scrolled, so if iOS kills the backgrounded
+// app while you cook, reopening lands you back in the same spot.
+(function persistDetailScroll(){
+  const save = () => {
+    const id = sessionStorage.getItem('rd_last_recipe');
+    const pg = document.getElementById('page-detail');
+    if(id && pg?.classList.contains('active')){
+      try{ sessionStorage.setItem('rd_last_scroll', JSON.stringify({id, y: pg.scrollTop})); }catch{}
+    }
+  };
+  document.addEventListener('visibilitychange', () => { if(document.hidden) save(); });
+  window.addEventListener('pagehide', save);
+  let t;
+  document.addEventListener('scroll', e => {
+    if(e.target?.id==='page-detail'){ clearTimeout(t); t = setTimeout(save, 250); }
+  }, {capture:true, passive:true});
+})();
 
 async function restoreSwipeSession(sessionId){
   try{

@@ -3064,6 +3064,28 @@ function renderAnalytics(){
         const rows = topRecipes.map(([id,count])=>`<tr>${td(recipeMap[id]||id)}${td(count)}</tr>`).join('');
         detailHtml = `<table style="${dtStyle}"><thead><tr>${th('Recipe')}${th('Views')}</tr></thead><tbody>${rows}</tbody></table>`;
       }
+    } else if(_analyticsDetail==='new_users' || _analyticsDetail==='onboarding') {
+      const list = _analyticsDetail==='new_users' ? fu : users;
+      const title = _analyticsDetail==='new_users' ? 'New users in period' : 'Onboarding status';
+      if(!list.length) { detailHtml='<div style="font-size:12px;color:var(--text3);padding:8px">No users in this period.</div>'; }
+      else {
+        const rows = [...list].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).map(u=>
+          `<tr>${td(esc(u.display_name||'(no name)'))}${td(new Date(u.created_at).toLocaleDateString())}${td(u.onboarding_complete?'✓ Done':'Not finished')}</tr>`).join('');
+        detailHtml = `<div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:8px">${title}</div><table style="${dtStyle}"><thead><tr>${th('Name')}${th('Joined')}${th('Onboarding')}</tr></thead><tbody>${rows}</tbody></table>`;
+      }
+    } else if(_analyticsDetail==='total_recipes' || _analyticsDetail==='new_recipes') {
+      const list = _analyticsDetail==='new_recipes' ? fr : recipes;
+      const title = _analyticsDetail==='new_recipes' ? 'New recipes in period' : 'Recipes by owner';
+      if(!list.length) { detailHtml='<div style="font-size:12px;color:var(--text3);padding:8px">No recipes in this period.</div>'; }
+      else if(_analyticsDetail==='total_recipes') {
+        const byOwner = {};
+        list.forEach(r=>{ byOwner[r.owner_id]=(byOwner[r.owner_id]||0)+1; });
+        const rows = Object.entries(byOwner).sort((a,b)=>b[1]-a[1]).map(([uid,count])=>`<tr>${td(esc(userMap[uid]||'(unowned)'))}${td(count)}</tr>`).join('');
+        detailHtml = `<div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:8px">${title}</div><table style="${dtStyle}"><thead><tr>${th('Owner')}${th('Recipes')}</tr></thead><tbody>${rows}</tbody></table>`;
+      } else {
+        const rows = [...list].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).map(r=>`<tr>${td(esc(r.name))}${td(esc(userMap[r.owner_id]||'(unowned)'))}${td(new Date(r.created_at).toLocaleDateString())}</tr>`).join('');
+        detailHtml = `<div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:8px">${title}</div><table style="${dtStyle}"><thead><tr>${th('Recipe')}${th('Owner')}${th('Added')}</tr></thead><tbody>${rows}</tbody></table>`;
+      }
     } else {
       // Per-user breakdown for feature events
       const evMap = {
@@ -3086,7 +3108,7 @@ function renderAnalytics(){
     }
   }
 
-  const detailPanel = _analyticsDetail ? `<div style="background:var(--bg2);border-radius:10px;padding:14px;margin-top:4px;margin-bottom:12px;max-height:260px;overflow-y:auto">${detailHtml}</div>` : '';
+  const detailPanel = _analyticsDetail ? `<div id="analyticsDetailPanel" style="background:var(--bg2);border-radius:10px;padding:14px;margin-top:4px;margin-bottom:12px;max-height:260px;overflow-y:auto">${detailHtml}</div>` : '';
 
   content.innerHTML = `
     <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">${tabs}
@@ -3126,6 +3148,7 @@ function renderAnalytics(){
     ${funnelHtml}
     <div style="font-size:10px;color:var(--text3);margin-top:10px;text-align:right">Click any tile for a breakdown · ${_analyticsPeriod==='all'?'Showing all time':('Showing last '+(_analyticsPeriod==='1d'?'24 hours':_analyticsPeriod))}</div>
   `;
+  if(_analyticsDetail) document.getElementById('analyticsDetailPanel')?.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
 // { id, name, urls:[], idx:0 }

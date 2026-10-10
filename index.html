@@ -139,6 +139,11 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--text);height:10
 .notes-list{list-style:none;padding:0;margin:0}
 .notes-list li{padding:3px 0 3px 16px;position:relative;line-height:1.65}
 .notes-list li::before{content:'–';position:absolute;left:0;color:var(--accent)}
+.ai-note{background:var(--white);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius-sm);padding:12px 16px;margin-top:12px;font-size:13px;color:var(--text2)}
+.ai-note-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px}
+.ai-note-q{font-weight:600;color:var(--text);line-height:1.4}
+.ai-note-date{font-size:11px;color:var(--text3);white-space:nowrap}
+.ai-note p{margin:0;line-height:1.65}
 .nut-line{font-size:12px;color:var(--text3);margin-top:8px}
 
 /* NOTIFICATIONS */
@@ -1643,11 +1648,28 @@ function formatDirections(text){
   if(lines.length===1&&lines[0].length>200)lines=lines[0].split(/(?<=\.)\s+(?=[A-Z0-9])/).filter(l=>l.trim().length>0);
   return`<ol class="dir-list">${lines.map(l=>`<li>${esc(l)}</li>`).join('')}</ol>`;
 }
-function formatNotes(text){
-  if(!text)return'';
+function formatPlainNotes(text){
   const lines=text.split('\n').map(l=>l.replace(/^\s*[-•*·]\s*/,'').trim()).filter(Boolean);
+  if(!lines.length)return'';
   if(lines.length<=1)return`<div class="notes-block">${esc(text.trim())}</div>`;
   return`<div class="notes-block"><ul class="notes-list">${lines.map(l=>`<li>${esc(l)}</li>`).join('')}</ul></div>`;
+}
+// Notes are free text. Saved AI chat answers are stored as a "### Question · Mon D" header
+// followed by bullet lines, and shown as separate cards under any hand-written notes.
+function formatNotes(text){
+  if(!text)return'';
+  return text.split(/\n+(?=### )/).map(part=>{
+    if(!part.startsWith('### '))return formatPlainNotes(part);
+    const [head,...rest]=part.split('\n');
+    let title=head.slice(4).trim(), date='';
+    const sep=title.lastIndexOf(' · ');
+    if(sep>0){date=title.slice(sep+3).trim();title=title.slice(0,sep).trim();}
+    const items=rest.map(l=>l.replace(/^\s*[-•*·]\s*/,'').trim()).filter(Boolean);
+    const inline=s=>esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+    const body=items.length>1?`<ul class="notes-list">${items.map(l=>`<li>${inline(l)}</li>`).join('')}</ul>`
+      :items.length?`<p>${inline(items[0])}</p>`:'';
+    return`<div class="ai-note"><div class="ai-note-head"><span class="ai-note-q">💬 ${esc(title)}</span>${date?`<span class="ai-note-date">${esc(date)}</span>`:''}</div>${body}</div>`;
+  }).join('');
 }
 
 async function loadDetail(id){
@@ -2348,7 +2370,7 @@ function sharePDF(){
   const times=Array.from(detail.querySelectorAll('.time-item')).map(t=>(t.querySelector('.label')?.textContent||'')+': '+(t.querySelector('.val')?.textContent||'')).join('  ·  ');
   const ingItems=Array.from(detail.querySelectorAll('.ing-list li')).map(li=>'• '+li.textContent).join('\n');
   const dirItems=Array.from(detail.querySelectorAll('.dir-list li')).map((li,i)=>`${i+1}. `+li.textContent).join('\n');
-  const notes=detail.querySelector('.notes-block')?.innerText||'';
+  const notes=detail.querySelector('#notesBlock')?.innerText.trim()||'';
   const imgSrc=detail.querySelector('.recipe-hero')?.src||'';
   const recipeUrl=window.location.origin+window.location.pathname+'?recipe='+currentId;
   const qrSrc=`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(recipeUrl)}`;
@@ -2370,7 +2392,7 @@ h2{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;c
 .ingredients{columns:2;column-gap:24px;page-break-inside:avoid}
 .ingredients pre{white-space:pre-wrap;font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.8;break-inside:avoid}
 .directions pre{white-space:pre-wrap;font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.9}
-.notes-block{background:#f7f3e8;border-radius:8px;padding:14px 16px;font-size:13px;line-height:1.7}
+.notes-block{background:#f7f3e8;border-radius:8px;padding:14px 16px;font-size:13px;line-height:1.7;white-space:pre-line}
 .footer{margin-top:40px;padding-top:20px;border-top:1px solid #e8e4dc;display:flex;align-items:center;justify-content:space-between;page-break-inside:avoid}
 .footer-brand{font-size:11px;color:#999}
 .footer-brand strong{color:#154733;font-size:13px;display:block;margin-bottom:2px}
@@ -2717,8 +2739,9 @@ If your response includes a modified or updated version of the recipe, end with 
     msgs.scrollTop = msgs.scrollHeight;
     // Show save actions if AI suggested an update
     document.getElementById('rcActionRow').style.display = 'flex';
-    // Store last AI response for saving
+    // Store last AI response (and the question it answers) for saving
     window._lastRCResponse = text;
+    window._lastRCQuestion = msg;
   }catch(e){
     thinking.remove();
     const d = document.createElement('div');
@@ -2728,19 +2751,53 @@ If your response includes a modified or updated version of the recipe, end with 
   }
 }
 
+// Condense the last chat exchange into a short standalone note: a title (the question,
+// rephrased so it makes sense without the chat) plus a few bullets with the key details.
+async function summarizeChatForNote(answer){
+  const recent = recipeChatHistory.slice(-4).map(m=>`${m.role==='user'?'User':'Assistant'}: ${m.content}`).join('\n\n');
+  const prompt = `Turn this recipe-chat exchange into a short note to save on the recipe "${window._currentRecipe?.name||''}".
+
+${recent}
+
+Return ONLY JSON: {"title": string, "points": string[]}
+- title: the user's question rephrased as a short standalone question or topic (max 70 characters) that makes sense without the chat
+- points: 2-6 concise bullets (max about 140 characters each) capturing the answer's key actionable details. Keep specific quantities, temperatures, times and substitutions. If the answer rewrote the recipe, record only what changed.
+- plain text only: no markdown, no emoji`;
+  try{
+    const raw = await claude([{role:'user',content:prompt}], 'You write concise cooking notes. Output valid JSON only.');
+    const j = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    const clean = s => String(s).replace(/\s+/g,' ').replace(/^[-•*#\s]+/,'').trim();
+    const title = clean(j.title||'').slice(0,90);
+    const points = (Array.isArray(j.points)?j.points:[]).map(clean).filter(Boolean).slice(0,8);
+    if(title && points.length) return {title, points};
+  }catch(e){ console.warn('Note summary failed, saving a plain version', e); }
+  // Fallback: the question plus the first few lines of the answer, stripped of markdown
+  const points = answer.split('\n').map(l=>l.replace(/[*#]/g,'').replace(/^\s*[-•\d.)]+\s*/,'').trim()).filter(Boolean).slice(0,4);
+  return {title:(window._lastRCQuestion||'Chat note').replace(/\s+/g,' ').replace(/^[#\s]+/,'').slice(0,70), points};
+}
+
 async function saveChatAsNote(){
   if(!window._lastRCResponse || !currentId) return;
   const btn = document.querySelector('.chat-action-btn');
   const r = window._currentRecipe;
-  const timestamp = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'});
-  const newNote = (r.notes ? r.notes+'\n\n' : '') + `--- AI Note (${timestamp}) ---\n${window._lastRCResponse.replace(/<[^>]+>/g,'').replace(/UPDATE_AVAILABLE/g,'').trim()}`;
+  if(btn){ btn.disabled = true; btn.textContent = 'Summarizing…'; }
+  const answer = window._lastRCResponse.replace(/<[^>]+>/g,'').replace(/UPDATE_AVAILABLE/g,'').trim();
   try{
+    const {title, points} = await summarizeChatForNote(answer);
+    const timestamp = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const entry = `### ${title} · ${timestamp}\n${points.map(p=>'- '+p).join('\n')}`;
+    const newNote = (r.notes ? r.notes.trimEnd()+'\n\n' : '') + entry;
     await supaFetch('/rest/v1/recipes?id=eq.'+currentId,'PATCH',{notes:newNote},{'Prefer':'return=minimal'});
     window._currentRecipe.notes = newNote;
     const nb = document.getElementById('notesBlock');
     if(nb) nb.innerHTML = formatNotes(newNote);
     if(btn){ btn.textContent = '✓ Saved!'; setTimeout(()=>btn.textContent='💾 Save as note', 2000); }
-  }catch(e){alert('Save failed: '+e.message);}
+  }catch(e){
+    alert('Save failed: '+e.message);
+    if(btn) btn.textContent = '💾 Save as note';
+  }finally{
+    if(btn) btn.disabled = false;
+  }
 }
 
 async function updateRecipeFromChat(){

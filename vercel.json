@@ -1,4 +1,11 @@
 {
+  "rewrites": [
+    {
+      "source": "/",
+      "has": [{ "type": "query", "key": "recipe" }],
+      "destination": "/api/recipe-preview"
+    }
+  ],
   "headers": [
     {
       "source": "/apple-touch-icon.png",

@@ -676,11 +676,9 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--text);height:10
             <div class="model-row">
               <label style="text-transform:none;letter-spacing:0;font-size:13px;color:var(--text2)">Model:</label>
               <select class="model-select" id="modelSelect">
-                <option value="claude-sonnet-4-6">Sonnet 4.6 (fast)</option>
-                <option value="claude-opus-4-6">Opus 4.6</option>
-                <option value="claude-opus-4-7">Opus 4.7</option>
-                <option value="claude-opus-4-8">Opus 4.8 (most capable)</option>
-                <option value="claude-haiku-4-5-20251001">Haiku 4.5 (fastest)</option>
+                <option value="latest:sonnet">Sonnet (latest, fast)</option>
+                <option value="latest:opus">Opus (latest, most capable)</option>
+                <option value="latest:haiku">Haiku (latest, fastest)</option>
               </select>
             </div>
             <!-- Conversation thread -->
@@ -1285,7 +1283,7 @@ async function claude(messages, system, model){
   const r=await fetch(CLAUDE_PROXY,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:model||document.getElementById('modelSelect')?.value||'claude-sonnet-4-6',system:system||'',messages})
+    body:JSON.stringify({model:model||document.getElementById('modelSelect')?.value||'latest:sonnet',system:system||'',messages})
   });
   if(!r.ok){const e=await r.json();throw new Error(e.error?.message||'API error');}
   const d=await r.json();

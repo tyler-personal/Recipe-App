@@ -1280,9 +1280,12 @@ async function supaFetch(path, method='GET', body=null, extraHeaders={}){
 }
 
 async function claude(messages, system, model){
+  let token=currentSession?.access_token;
+  try{ token=(await supabaseClient.auth.getSession()).data.session?.access_token||token; }catch{}
+  if(!token) throw new Error('Please sign in to use AI features.');
   const r=await fetch(CLAUDE_PROXY,{
     method:'POST',
-    headers:{'Content-Type':'application/json'},
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
     body:JSON.stringify({model:model||document.getElementById('modelSelect')?.value||'latest:sonnet',system:system||'',messages})
   });
   if(!r.ok){const e=await r.json();throw new Error(e.error?.message||'API error');}

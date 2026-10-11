@@ -1040,6 +1040,24 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--text);height:10
       🥗 Tag All Recipes with Dietary Info
     </button>
     <hr style="margin:1.25rem 0;border:none;border-top:1px solid var(--border)"/>
+    <div id="digestSection" style="display:none">
+      <label style="margin-bottom:6px;display:block">📧 Weekly digest (test mode)</label>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:10px;line-height:1.5">Builds your own digest. It can only ever send to accounts on the test allow-list, so nothing reaches other users.</div>
+      <details style="margin-bottom:10px;font-size:12px;color:var(--text2)">
+        <summary style="cursor:pointer">Test overrides</summary>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+          <label style="text-transform:none;letter-spacing:0;font-size:12px;font-weight:400">Look back <input type="number" id="digestLookback" value="21" min="1" max="365" style="width:64px;display:inline-block;padding:3px 6px"/> days for activity</label>
+          <label style="text-transform:none;letter-spacing:0;font-size:12px;font-weight:400"><input type="checkbox" id="digestIncludeOwn" style="width:auto;margin-right:6px"/>Include my own recipes under "New in Recipe Duck"</label>
+          <label style="text-transform:none;letter-spacing:0;font-size:12px;font-weight:400"><input type="checkbox" id="digestForceOnb" style="width:auto;margin-right:6px"/>Pretend my onboarding is unfinished</label>
+        </div>
+      </details>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="digestAction('preview')">👀 Preview</button>
+        <button class="btn" onclick="digestAction('send')">✉️ Send test to me</button>
+      </div>
+      <div id="digestResult" style="font-size:12px;margin-top:10px;line-height:1.6;color:var(--text2)"></div>
+    </div>
+    <hr style="margin:1.25rem 0;border:none;border-top:1px solid var(--border)"/>
     <div id="analyticsSection" style="display:none">
       <label style="margin-bottom:10px;display:block">📊 Analytics</label>
       <div id="analyticsContent">
@@ -1677,6 +1695,11 @@ async function loadDetail(id){
   track('recipe_viewed',{recipe_id:id});
   currentId=id;
   sessionStorage.setItem('rd_last_recipe',id);
+  // Count a recipe as "engaged with" (not just glanced at) after ~45s of it staying open on screen
+  clearTimeout(window._engageTimer);
+  window._engageTimer=setTimeout(()=>{
+    if(currentId===id && !document.hidden && document.getElementById('page-detail')?.classList.contains('active')) track('recipe_engaged',{recipe_id:id,seconds:45});
+  },45000);
   // Show detail page
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -2958,10 +2981,44 @@ function showSettings(){
     } else warn.style.display='none';
   }).catch(()=>{});
   document.getElementById('settingsModal').classList.add('open');
-  if(currentProfile?.is_admin) loadAnalytics();
+  if(currentProfile?.is_admin){
+    document.getElementById('digestSection').style.display = 'block';
+    loadAnalytics();
+  }
 }
 
 function closeSettings(){ document.getElementById('settingsModal').classList.remove('open'); }
+
+// Admin test tool for the weekly digest. The function only ever sends to the test allow-list.
+async function digestAction(action){
+  const out = document.getElementById('digestResult');
+  out.textContent = action==='send' ? 'Sending…' : 'Building preview…';
+  let token = currentSession?.access_token;
+  try{ token = (await supabaseClient.auth.getSession()).data.session?.access_token || token; }catch{}
+  try{
+    const r = await fetch(SUPA_URL+'/functions/v1/weekly-digest',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({
+        action,
+        lookbackDays: parseInt(document.getElementById('digestLookback').value,10)||21,
+        includeOwn: document.getElementById('digestIncludeOwn').checked,
+        forceOnboarding: document.getElementById('digestForceOnb').checked,
+      })
+    });
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.error || ('HTTP '+r.status));
+    if(d.skip){ out.innerHTML = '⏭ <strong>Would not send.</strong> '+esc(d.reason); return; }
+    out.innerHTML = (action==='send' ? '✅ Sent to '+esc(d.sentTo)+'<br>' : '')
+      + '<strong>'+esc(d.subject)+'</strong><br>Sections: '+(d.sections||[]).map(esc).join(', ');
+    if(action==='preview' && d.html){
+      const f = document.createElement('iframe');
+      f.style.cssText = 'width:100%;height:640px;border:1px solid var(--border);border-radius:10px;margin-top:10px;background:#fff';
+      f.srcdoc = d.html;
+      out.appendChild(f);
+    }
+  }catch(e){ out.innerHTML = '<span style="color:var(--error)">'+esc(e.message)+'</span>'; }
+}
 
 let _analyticsData = null;
 let _analyticsPeriod = '7d';
@@ -4408,9 +4465,15 @@ Return ONLY a JSON array like ["vegan","gluten-free"] — no explanation. If non
 // ── SHARE / REFERRAL / INSTALL ────────────────────────────────────────────────
 
 // Capture ?recipe=ID on page load so it survives OAuth redirect
+// ...and &cooked=1 (open the "I cooked this" form) / ?onboarding=1 (finish setup), used by the weekly email
 (function detectRecipeDeepLink(){
-  const recipeId = new URLSearchParams(window.location.search).get('recipe');
-  if(recipeId) localStorage.setItem('rd_deep_recipe', recipeId);
+  const qs = new URLSearchParams(window.location.search);
+  const recipeId = qs.get('recipe');
+  if(recipeId){
+    localStorage.setItem('rd_deep_recipe', recipeId);
+    if(qs.get('cooked')==='1') localStorage.setItem('rd_deep_cooked','1'); else localStorage.removeItem('rd_deep_cooked');
+  }
+  if(qs.get('onboarding')==='1') localStorage.setItem('rd_deep_onboarding','1');
 })();
 
 // Capture ?join=CODE on page load and persist it so it survives the OAuth
@@ -4615,12 +4678,25 @@ async function onSignedIn(session){
     }
   }
 
-  // Handle ?recipe=ID deep link
+  // Handle ?onboarding=1 (from the weekly email): only relevant if they haven't finished
+  if(new URLSearchParams(window.location.search).get('onboarding')==='1' || localStorage.getItem('rd_deep_onboarding')==='1'){
+    localStorage.removeItem('rd_deep_onboarding');
+    window.history.replaceState(null, '', window.location.pathname + window.location.hash);
+    if(!currentProfile?.onboarding_complete){
+      setTimeout(()=>showOnboarding(), 600);
+      return;
+    }
+  }
+
+  // Handle ?recipe=ID deep link (&cooked=1 also opens the "I cooked this" form)
   const deepRecipe = new URLSearchParams(window.location.search).get('recipe') || localStorage.getItem('rd_deep_recipe');
   if(deepRecipe){
+    const wantCooked = new URLSearchParams(window.location.search).get('cooked')==='1' || localStorage.getItem('rd_deep_cooked')==='1';
     localStorage.removeItem('rd_deep_recipe');
+    localStorage.removeItem('rd_deep_cooked');
     window.history.replaceState(null, '', window.location.pathname + window.location.hash);
-    loadDetail(deepRecipe);
+    await loadDetail(deepRecipe);
+    if(wantCooked) openRatingModal(deepRecipe);
     return;
   }
 

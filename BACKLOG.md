@@ -31,13 +31,19 @@ Weekly streak counter (consecutive Mon-based weeks with ≥1 cook logged via `re
 
 ---
 
-## 🔲 Retention: Re-engagement Email
+## 🚧 Retention: Weekly Digest Email (TEST MODE: Tyler only)
 
-**What:** If a user hasn't opened the app in 7 days, send an email nudging them back.
+**Built:** `weekly-digest` edge function, `profiles.digest_enabled` / `digest_opt_out`, `digest_log`, `recipe_engaged` event (45s on a recipe), `?cooked=1` / `?onboarding=1` links, Settings → "Weekly digest (test mode)" with Preview and Send-test buttons.
 
-- Supabase scheduled function (pg_cron) that runs nightly
-- Finds users where last `events` row is >7 days ago
-- Sends via Resend: "You've got X recipes saved — here's one to cook this week" with a random recipe
-- One email max per user per 14 days (add `last_nudge_sent_at` to profiles)
+Sections (only those with real content; skipped entirely if nothing worth saying, and feature tips are never sent alone): finish onboarding, "did you make it?", recommendations (similarity scoring + AI-written reasons), new from the community, features not yet tried.
+
+**Safety:** hardcoded test allow-list in the function + opt-in flag + `DIGEST_LIVE` must be set to go beyond it. Unsubscribe link + List-Unsubscribe header in every email. Max 1 email / 6 days in batch runs.
+
+**Still to do before anyone else gets it:**
+- Add `DIGEST_SECRET` and `RESEND_API_KEY` as Edge Function secrets (dashboard)
+- Review real previews, tune thresholds/wording
+- Weekly schedule (pg_cron calling the function in batch mode; pg_net is already installed)
+- Add a physical mailing address to the footer (required for bulk email)
+- Decide opt-in vs opt-out rollout, then set `DIGEST_LIVE=true`
 
 ---

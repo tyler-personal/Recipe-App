@@ -1049,11 +1049,12 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--text);height:10
           <label style="text-transform:none;letter-spacing:0;font-size:12px;font-weight:400">Look back <input type="number" id="digestLookback" value="21" min="1" max="365" style="width:64px;display:inline-block;padding:3px 6px"/> days for activity</label>
           <label style="text-transform:none;letter-spacing:0;font-size:12px;font-weight:400"><input type="checkbox" id="digestIncludeOwn" style="width:auto;margin-right:6px"/>Include my own recipes under "New in Recipe Duck"</label>
           <label style="text-transform:none;letter-spacing:0;font-size:12px;font-weight:400"><input type="checkbox" id="digestForceOnb" style="width:auto;margin-right:6px"/>Pretend my onboarding is unfinished</label>
+          <label style="text-transform:none;letter-spacing:0;font-size:12px;font-weight:400">Preview / send as another user (email, must be allow-listed)<input type="email" id="digestTarget" placeholder="leave blank for me" style="margin-top:4px"/></label>
         </div>
       </details>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" onclick="digestAction('preview')">👀 Preview</button>
-        <button class="btn" onclick="digestAction('send')">✉️ Send test to me</button>
+        <button class="btn" onclick="digestAction('send')">✉️ Send test</button>
       </div>
       <div id="digestResult" style="font-size:12px;margin-top:10px;line-height:1.6;color:var(--text2)"></div>
     </div>
@@ -2992,6 +2993,8 @@ function closeSettings(){ document.getElementById('settingsModal').classList.rem
 // Admin test tool for the weekly digest. The function only ever sends to the test allow-list.
 async function digestAction(action){
   const out = document.getElementById('digestResult');
+  const target = document.getElementById('digestTarget').value.trim();
+  if(action==='send' && target && !confirm('Send a real email to '+target+'?')) return;
   out.textContent = action==='send' ? 'Sending…' : 'Building preview…';
   let token = currentSession?.access_token;
   try{ token = (await supabaseClient.auth.getSession()).data.session?.access_token || token; }catch{}
@@ -3004,6 +3007,7 @@ async function digestAction(action){
         lookbackDays: parseInt(document.getElementById('digestLookback').value,10)||21,
         includeOwn: document.getElementById('digestIncludeOwn').checked,
         forceOnboarding: document.getElementById('digestForceOnb').checked,
+        targetEmail: target || undefined,
       })
     });
     const d = await r.json();

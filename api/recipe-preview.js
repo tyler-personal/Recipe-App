@@ -70,6 +70,13 @@ module.exports = async function handler(req, res) {
         ? recipe.image_url
         : `${origin}/apple-touch-icon.png`;
       const url = `${origin}/?recipe=${id}`;
+
+      // /api/recipe-preview?recipe=ID&debug=1 shows what link-preview bots will see.
+      if (req.query && req.query.debug) {
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.setHeader('Cache-Control', 'no-store');
+        return res.status(200).send(`function is running\ntitle: ${title}\ndescription: ${desc}\nimage: ${image}\nurl: ${url}\n`);
+      }
       const tags = [
         `<meta name="description" content="${escAttr(desc)}">`,
         `<meta property="og:type" content="article">`,

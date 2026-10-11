@@ -1,24 +1,25 @@
 {
-  "rewrites": [
+  "routes": [
     {
-      "source": "/",
-      "has": [{ "type": "query", "key": "recipe" }],
-      "destination": "/api/recipe-preview"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/apple-touch-icon.png",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
-        { "key": "Pragma", "value": "no-cache" }
-      ]
+      "src": "/apple-touch-icon.png",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache"
+      },
+      "continue": true
     },
     {
-      "source": "/favicon.svg",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
-      ]
-    }
+      "src": "/favicon.svg",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate"
+      },
+      "continue": true
+    },
+    {
+      "src": "/",
+      "has": [{ "type": "query", "key": "recipe" }],
+      "dest": "/api/recipe-preview"
+    },
+    { "handle": "filesystem" }
   ]
 }

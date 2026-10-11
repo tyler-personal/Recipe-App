@@ -40,7 +40,7 @@ Sections (only those with real content; skipped entirely if nothing worth saying
 **Safety:** hardcoded test allow-list in the function + opt-in flag + `DIGEST_LIVE` must be set to go beyond it. Unsubscribe link + List-Unsubscribe header in every email. Max 1 email / 6 days in batch runs.
 
 **Still to do before anyone else gets it:**
-- Add `DIGEST_SECRET` and `RESEND_API_KEY` as Edge Function secrets (dashboard)
+- Add `RESEND_API_KEY` as an Edge Function secret (dashboard). `DIGEST_SECRET` is only needed later, for the weekly scheduler.
 - Review real previews, tune thresholds/wording
 - Weekly schedule (pg_cron calling the function in batch mode; pg_net is already installed)
 - Add a physical mailing address to the footer (required for bulk email)
